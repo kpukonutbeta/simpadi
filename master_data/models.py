@@ -36,10 +36,10 @@ class Provinsi(models.Model):
 class StandarBiaya(models.Model):
     provinsi = models.ForeignKey(Provinsi, on_delete=models.CASCADE)
     golongan = models.CharField(max_length=5, choices=Golongan.choices)
-    uang_harian = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Uang Harian")
-    plafon_penginapan = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Plafon Penginapan")
-    uang_representasi = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Uang Representasi")
-    plafon_transportasi = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Plafon Transportasi")
+    uang_harian = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Uang Harian")
+    plafon_penginapan = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Plafon Penginapan")
+    uang_representasi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Representasi")
+    plafon_transportasi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Plafon Transportasi")
     tahun = models.IntegerField(
         choices=[(2023, '2023 (Tahun Lalu)'), (2024, '2024 (Tahun Ini)')],
         default=2024,
@@ -57,8 +57,8 @@ class StandarBiaya(models.Model):
 class Anggaran(models.Model):
     kode_dipa = models.CharField(max_length=50, unique=True, verbose_name="Kode DIPA")
     nama_kegiatan = models.CharField(max_length=255, verbose_name="Nama Kegiatan")
-    pagu = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="Total Pagu")
-    sisa_pagu = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="Sisa Pagu")
+    pagu = models.DecimalField(max_digits=15, decimal_places=0, verbose_name="Total Pagu")
+    sisa_pagu = models.DecimalField(max_digits=15, decimal_places=0, verbose_name="Sisa Pagu")
 
     def __str__(self):
         return f"{self.kode_dipa} - {self.nama_kegiatan}"

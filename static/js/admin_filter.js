@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (select) {
                 const jbId = select.value;
-                const nominalVal = nominalInput ? nominalInput.value : 0;
+                const nominalVal = nominalInput ? nominalInput.value.replace(/\./g, '') : 0;
                 if (jbId) {
                     berkas.push({
                         'jenis_berkas_id': parseInt(jbId),
@@ -95,8 +95,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const formatRupiah = (val) => {
                 return 'Rp ' + parseFloat(val).toLocaleString('id-ID', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
                 });
             };
 
@@ -145,6 +145,52 @@ document.addEventListener('DOMContentLoaded', function() {
             updateAdminEstimasi();
         }
     });
+
+    // Thousand separator formatting for nominal inputs
+    function formatRupiahInput(value) {
+        let digits = value.replace(/\D/g, '');
+        if (!digits) return '';
+        return parseInt(digits, 10).toLocaleString('id-ID');
+    }
+
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('input[name$="-nominal"]')) {
+            let input = e.target;
+            if (input.type === 'number') {
+                input.type = 'text';
+            }
+            let cursorPosition = input.selectionStart;
+            let originalLength = input.value.length;
+            
+            let formatted = formatRupiahInput(input.value);
+            if (input.value !== formatted) {
+                input.value = formatted;
+                let newLength = formatted.length;
+                let diff = newLength - originalLength;
+                input.setSelectionRange(cursorPosition + diff, cursorPosition + diff);
+            }
+        }
+    });
+
+    // Format all nominal fields initially
+    document.querySelectorAll('input[name$="-nominal"]').forEach(input => {
+        if (input.type === 'number') {
+            input.type = 'text';
+        }
+        if (input.value) {
+            input.value = formatRupiahInput(input.value);
+        }
+    });
+
+    // Strip dots before form submit in Admin
+    const form = document.getElementById('perjalanandinas_form') || document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            form.querySelectorAll('input[name$="-nominal"]').forEach(input => {
+                input.value = input.value.replace(/\./g, '');
+            });
+        });
+    }
 
     // Run initial estimation on load in Admin
     setTimeout(updateAdminEstimasi, 500);

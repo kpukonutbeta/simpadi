@@ -261,7 +261,8 @@ def hitung_estimasi_ajax(request):
     berkas_list = data.get('berkas', [])
     for b in berkas_list:
         try:
-            nominal = float(b.get('nominal') or 0)
+            val_str = str(b.get('nominal') or 0).replace('.', '')
+            nominal = float(val_str)
         except (ValueError, TypeError):
             nominal = 0.0
             

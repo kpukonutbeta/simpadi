@@ -163,20 +163,20 @@ class BiayaPerjalanan(models.Model):
     perjalanan = models.OneToOneField(PerjalananDinas, on_delete=models.CASCADE, related_name='biaya')
     
     # Lumpsum components
-    uang_harian_riil = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    uang_representasi_riil = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    uang_harian_riil = models.DecimalField(max_digits=12, decimal_places=0, default=0)
+    uang_representasi_riil = models.DecimalField(max_digits=12, decimal_places=0, default=0)
     
     # At-cost components
-    biaya_penginapan_riil = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    biaya_transportasi_riil = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    biaya_penginapan_riil = models.DecimalField(max_digits=12, decimal_places=0, default=0)
+    biaya_transportasi_riil = models.DecimalField(max_digits=12, decimal_places=0, default=0)
     
     # Personal expense share (dana pribadi)
-    penginapan_dana_pribadi = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Dana Pribadi Penginapan")
-    transportasi_dana_pribadi = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Dana Pribadi Transportasi")
-    total_dana_pribadi = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Total Dana Pribadi")
+    penginapan_dana_pribadi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Dana Pribadi Penginapan")
+    transportasi_dana_pribadi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Dana Pribadi Transportasi")
+    total_dana_pribadi = models.DecimalField(max_digits=15, decimal_places=0, default=0, verbose_name="Total Dana Pribadi")
     
     # System calculated (locked)
-    total_dibayarkan = models.DecimalField(max_digits=15, decimal_places=2, editable=False, default=0)
+    total_dibayarkan = models.DecimalField(max_digits=15, decimal_places=0, editable=False, default=0)
 
     def save(self, *args, **kwargs):
         # Fetch SBM
@@ -253,7 +253,7 @@ class BerkasPerjalanan(models.Model):
     perjalanan = models.ForeignKey(PerjalananDinas, on_delete=models.CASCADE, related_name='berkas')
     jenis_berkas = models.ForeignKey(JenisBerkas, on_delete=models.PROTECT, verbose_name="Jenis Berkas", null=True, blank=True)
     file = models.FileField(upload_to='perjalanan_dinas/%Y/%m/', blank=True, null=True)
-    nominal = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Nominal Biaya")
+    nominal = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True, verbose_name="Nominal Biaya")
     keterangan = models.CharField(max_length=255, blank=True, null=True, verbose_name="Keterangan")
     
     is_verified = models.BooleanField(default=False, verbose_name="Verifikasi?")

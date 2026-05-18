@@ -187,26 +187,26 @@
             <div id="cost-preview-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem;">
                 <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
                     <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Uang Harian (Lumpsum SBM)</div>
-                    <div id="preview-uang-harian" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.uang_harian_riil|default:0|floatformat:2 }}</div>
+                    <div id="preview-uang-harian" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.uang_harian_riil|default:0|floatformat:0 }}</div>
                 </div>
                 <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
                     <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Uang Representasi (Lumpsum SBM)</div>
-                    <div id="preview-uang-representasi" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.uang_representasi_riil|default:0|floatformat:2 }}</div>
+                    <div id="preview-uang-representasi" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.uang_representasi_riil|default:0|floatformat:0 }}</div>
                 </div>
                 <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
                     <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Biaya Penginapan (Hotel / Akomodasi)</div>
-                    <div id="preview-biaya-penginapan" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.biaya_penginapan_riil|default:0|floatformat:2 }}</div>
+                    <div id="preview-biaya-penginapan" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.biaya_penginapan_riil|default:0|floatformat:0 }}</div>
                 </div>
                 <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
                     <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Biaya Transportasi (Tiket / Struk)</div>
-                    <div id="preview-biaya-transportasi" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.biaya_transportasi_riil|default:0|floatformat:2 }}</div>
+                    <div id="preview-biaya-transportasi" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.biaya_transportasi_riil|default:0|floatformat:0 }}</div>
                 </div>
             </div>
             
             <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
                 <div style="padding: 1rem 1.25rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.02) 0%, rgba(15, 23, 42, 0.02) 100%); border-radius: 0.5rem; border: 1px dashed var(--primary); display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
                     <span style="font-size: 0.875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Total Ditanggung Kantor</span>
-                    <span id="preview-total-dibayarkan" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">Rp {{ perjadin.biaya.total_dibayarkan|default:0|floatformat:2 }}</span>
+                    <span id="preview-total-dibayarkan" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">Rp {{ perjadin.biaya.total_dibayarkan|default:0|floatformat:0 }}</span>
                 </div>
             </div>
         </div>
@@ -574,7 +574,7 @@
 
                 if (select) {
                     const jbId = select.value;
-                    const nominalVal = nominalInput ? nominalInput.value : 0;
+                    const nominalVal = nominalInput ? nominalInput.value.replace(/\./g, '') : 0;
                     if (jbId) {
                         berkas.push({
                             'jenis_berkas_id': parseInt(jbId),
@@ -614,8 +614,8 @@
             
             const formatRupiah = (val) => {
                 return 'Rp ' + parseFloat(val).toLocaleString('id-ID', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
                 });
             };
 
@@ -756,6 +756,52 @@
                 });
             }
         });
+
+        // Thousand separator formatting for nominal inputs in employee form
+        function formatRupiahInput(value) {
+            let digits = value.replace(/\D/g, '');
+            if (!digits) return '';
+            return parseInt(digits, 10).toLocaleString('id-ID');
+        }
+
+        document.addEventListener('input', function(e) {
+            if (e.target.matches('input.nominal-input-field')) {
+                let input = e.target;
+                if (input.type === 'number') {
+                    input.type = 'text';
+                }
+                let cursorPosition = input.selectionStart;
+                let originalLength = input.value.length;
+                
+                let formatted = formatRupiahInput(input.value);
+                if (input.value !== formatted) {
+                    input.value = formatted;
+                    let newLength = formatted.length;
+                    let diff = newLength - originalLength;
+                    input.setSelectionRange(cursorPosition + diff, cursorPosition + diff);
+                }
+            }
+        });
+
+        // Format all nominal fields initially
+        document.querySelectorAll('input.nominal-input-field').forEach(input => {
+            if (input.type === 'number') {
+                input.type = 'text';
+            }
+            if (input.value) {
+                input.value = formatRupiahInput(input.value);
+            }
+        });
+
+        // Strip dots before form submit in Employee page
+        const employeeForm = document.querySelector('form');
+        if (employeeForm) {
+            employeeForm.addEventListener('submit', function() {
+                employeeForm.querySelectorAll('input.nominal-input-field').forEach(input => {
+                    input.value = input.value.replace(/\./g, '');
+                });
+            });
+        }
 
         // Run initial estimation on load
         updateEstimasi();

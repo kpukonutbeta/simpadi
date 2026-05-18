@@ -14,14 +14,14 @@
     </div>
     <div class="stat-card">
         <div class="stat-label">Total Biaya</div>
-        <div class="stat-value">Rp {{ total_biaya|floatformat:2 }}</div>
+        <div class="stat-value">Rp {{ total_biaya|floatformat:0 }}</div>
         <div class="stat-label">Rincian riil</div>
     </div>
     {% if is_admin %}
     <div class="stat-card">
         <div class="stat-label">Penyerapan Anggaran</div>
         <div class="stat-value">{{ penyerapan }}%</div>
-        <div class="stat-label" style="color: var(--text-muted);">Rp {{ sisa_pagu|floatformat:2 }} Sisa</div>
+        <div class="stat-label" style="color: var(--text-muted);">Rp {{ sisa_pagu|floatformat:0 }} Sisa</div>
     </div>
     {% else %}
     <div class="stat-card">
