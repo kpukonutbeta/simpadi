@@ -1,0 +1,693 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajukan Perjalanan Dinas - SIMPADI{% endblock %}
+
+{% block page_title %}Form Pengajuan SPD{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        margin-bottom: 2.5rem;
+    }
+    .form-section-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--primary);
+    }
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-main);
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        background: white;
+        transition: border-color 0.2s;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(159, 18, 57, 0.1);
+    }
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    .formset-row {
+        background: var(--glass-bg);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        border: 1px dashed var(--border);
+    }
+    .sticky-summary {
+        position: sticky;
+        top: 2rem;
+    }
+    .error-msg {
+        color: #ef4444;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Nomor SPD Header -->
+        {% if perjadin %}
+        <div class="card" style="margin-bottom: 2rem; background: linear-gradient(to right, #f8fafc, #f1f5f9); border-left: 5px solid var(--primary); padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Nomor Surat Perjalanan Dinas (SPD)</h2>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); font-family: 'Inter', sans-serif;">{{ perjadin.nomor_spd }}</div>
+                </div>
+                <div style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                    <i class="fas fa-file-invoice" style="font-size: 1.25rem; color: var(--primary);"></i>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Section 1: Data Umum -->
+        <div class="card form-section">
+            <div class="form-section-title">
+                <i class="fas fa-info-circle"></i> Informasi Utama
+            </div>
+            
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Tanggal Berangkat</label>
+                    {{ form.tanggal_berangkat }}
+                    {% if form.tanggal_berangkat.errors %}<div class="error-msg">{{ form.tanggal_berangkat.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tanggal Kembali</label>
+                    {{ form.tanggal_kembali }}
+                    {% if form.tanggal_kembali.errors %}<div class="error-msg">{{ form.tanggal_kembali.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Tempat Berangkat</label>
+                    {{ form.tempat_berangkat }}
+                    {% if form.tempat_berangkat.errors %}<div class="error-msg">{{ form.tempat_berangkat.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tempat Tujuan</label>
+                    {{ form.tempat_tujuan }}
+                    {% if form.tempat_tujuan.errors %}<div class="error-msg">{{ form.tempat_tujuan.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Provinsi Tujuan (Untuk SBM)</label>
+                    {{ form.tujuan_provinsi }}
+                    {% if form.tujuan_provinsi.errors %}<div class="error-msg">{{ form.tujuan_provinsi.errors.0 }}</div>{% endif %}
+                    <small style="color: var(--text-muted);">Digunakan untuk tarif harian & hotel.</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tahun SBM</label>
+                    {{ form.tahun_sbm }}
+                    {% if form.tahun_sbm.errors %}<div class="error-msg">{{ form.tahun_sbm.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Maksud Perjalanan</label>
+                {{ form.maksud_perjalanan }}
+                {% if form.maksud_perjalanan.errors %}<div class="error-msg">{{ form.maksud_perjalanan.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Sumber Anggaran</label>
+                    {{ form.anggaran }}
+                    {% if form.anggaran.errors %}<div class="error-msg">{{ form.anggaran.errors.0 }}</div>{% endif %}
+                    {% if not request.user.is_staff %}
+                    <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: #64748b; font-size: 0.75rem;">
+                        <i class="fas fa-lock" style="color: #fbbf24;"></i>
+                        <span>Sumber anggaran telah ditentukan oleh Admin dan tidak dapat diubah oleh Pegawai.</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jenis Perjalanan Dinas</label>
+                    {{ form.jenis_perjalanan }}
+                    {% if form.jenis_perjalanan.errors %}<div class="error-msg">{{ form.jenis_perjalanan.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jenis Transportasi</label>
+                    {{ form.jenis_transportasi }}
+                    {% if form.jenis_transportasi.errors %}<div class="error-msg">{{ form.jenis_transportasi.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+                    <div style="padding: 0.5rem 1rem; background: var(--glass-bg); border: 1px solid var(--border); border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; height: 38px; box-sizing: border-box;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0; width: 100%; white-space: nowrap;">
+                            {{ form.tidak_menginap }}
+                            <span>Tidak menginap di hotel</span>
+                        </label>
+                    </div>
+                    {% if form.tidak_menginap.errors %}<div class="error-msg">{{ form.tidak_menginap.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Rincian Estimasi Biaya Perjalanan Dinas -->
+        <div class="card form-section">
+            <div class="form-section-title">
+                <i class="fas fa-money-bill-wave"></i> Rincian Estimasi Biaya Perjalanan Dinas
+            </div>
+            {{ biaya_formset.management_form }}
+            {% for b_form in biaya_formset %}
+                {{ b_form.id }}
+            {% endfor %}
+            
+            {% if perjadin.biaya %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Uang Harian (Lumpsum SBM)</div>
+                    <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.uang_harian_riil|floatformat:2 }}</div>
+                </div>
+                <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Uang Representasi (Lumpsum SBM)</div>
+                    <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.uang_representasi_riil|floatformat:2 }}</div>
+                </div>
+                <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Biaya Penginapan (Hotel / Akomodasi)</div>
+                    <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.biaya_penginapan_riil|floatformat:2 }}</div>
+                </div>
+                <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Biaya Transportasi (Tiket / Struk)</div>
+                    <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.biaya_transportasi_riil|floatformat:2 }}</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="padding: 1rem 1.25rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.02) 0%, rgba(15, 23, 42, 0.02) 100%); border-radius: 0.5rem; border: 1px dashed var(--primary); display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
+                    <span style="font-size: 0.875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Total Ditanggung Kantor</span>
+                    <span style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">Rp {{ perjadin.biaya.total_dibayarkan|floatformat:2 }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); background: var(--glass-bg); border: 1px dashed var(--border); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+                <i class="fas fa-calculator" style="color: var(--primary); font-size: 1.25rem;"></i>
+                <span style="font-size: 0.875rem;">Rincian estimasi biaya dinas akan otomatis dikalkulasi dan ditampilkan di sini setelah Anda menyimpan draf ini.</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Section 3: Berkas Pendukung -->
+        <div id="berkas-original-container" style="display: none;">
+            {{ berkas_formset.management_form }}
+            {% for br_form in berkas_formset %}
+            <div class="formset-row" style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; position: relative; margin-bottom: 1rem;">
+                {{ br_form.id }}
+                <!-- Close/Delete Button for dynamic rows -->
+                <button type="button" class="remove-row-btn" style="position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: color 0.2s;" onclick="removeFormRow(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: start;">
+                    <div class="form-group">
+                        <label class="form-label">Jenis Berkas</label>
+                        {{ br_form.jenis_berkas }}
+                    </div>
+                    <div class="form-group nominal-wrapper" style="transition: all 0.3s ease;">
+                        <label class="form-label">Nominal Biaya (Rp)</label>
+                        {{ br_form.nominal }}
+                        {% if br_form.nominal.errors %}<div class="error-msg">{{ br_form.nominal.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Keterangan</label>
+                        {{ br_form.keterangan }}
+                        {% if br_form.keterangan.errors %}<div class="error-msg">{{ br_form.keterangan.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group file-upload-wrapper" style="transition: all 0.3s ease;">
+                        <label class="form-label">Upload File</label>
+                        {{ br_form.file }}
+                        {% if br_form.file.errors %}<div class="error-msg">{{ br_form.file.errors.0 }}</div>{% endif %}
+                    </div>
+                    {% if berkas_formset.can_delete and br_form.instance.pk %}
+                    <div class="form-group delete-checkbox-wrapper" style="display: none;">
+                        {{ br_form.DELETE }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Section 3A: Berkas Pendukung Dengan Nominal -->
+        <div class="card form-section">
+            <div class="form-section-title">
+                <i class="fas fa-file-invoice-dollar"></i> Berkas Pendukung dengan Nominal Biaya (Tiket, Hotel, Struk BBM, dll)
+            </div>
+            <div id="berkas-nominal-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Nominal rows will be appended here by JS on load -->
+            </div>
+            <button type="button" id="add-berkas-nominal-btn" class="btn" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
+                <i class="fas fa-plus"></i> Tambah Berkas Biaya / Nominal
+            </button>
+        </div>
+
+        <!-- Section 3B: Berkas Pendukung Tanpa Nominal -->
+        <div class="card form-section">
+            <div class="form-section-title">
+                <i class="fas fa-file-alt"></i> Berkas Pendukung Tanpa Nominal Biaya (Visum, Laporan Kegiatan, dll)
+            </div>
+            <div id="berkas-non-nominal-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Non-nominal rows will be appended here by JS on load -->
+            </div>
+            <button type="button" id="add-berkas-non-nominal-btn" class="btn" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
+                <i class="fas fa-plus"></i> Tambah Berkas Administratif (Tanpa Nominal)
+            </button>
+        </div>
+
+        <!-- Empty form template for dynamic addition -->
+        <div id="berkas-empty-form" style="display: none;">
+            <div class="formset-row" style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; position: relative;">
+                <!-- Close/Delete Button for dynamic rows -->
+                <button type="button" class="remove-row-btn" style="position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: color 0.2s;" onclick="removeFormRow(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: start;">
+                    <div class="form-group">
+                        <label class="form-label">Jenis Berkas</label>
+                        {{ berkas_formset.empty_form.jenis_berkas }}
+                    </div>
+                    <div class="form-group nominal-wrapper" style="transition: all 0.3s ease;">
+                        <label class="form-label">Nominal Biaya (Rp)</label>
+                        {{ berkas_formset.empty_form.nominal }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Keterangan</label>
+                        {{ berkas_formset.empty_form.keterangan }}
+                    </div>
+                    <div class="form-group file-upload-wrapper" style="transition: all 0.3s ease;">
+                        <label class="form-label">Upload File</label>
+                        {{ berkas_formset.empty_form.file }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-bottom: 3rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-paper-plane"></i> Simpan Sebagai Draft
+            </button>
+            <a href="{% url 'core:dashboard' %}" class="btn" style="background: #e2e8f0; color: #475569;">Batal</a>
+        </div>
+    </form>
+
+    <!-- Sidebar Info -->
+    <div class="sticky-summary">
+        <div class="card st-preview-card" onclick="openSTModal()" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; cursor: pointer; transition: transform 0.2s; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; right: 0; padding: 0.5rem; background: rgba(255,255,255,0.1);">
+                <i class="fas fa-search-plus" style="font-size: 0.75rem; color: #94a3b8;"></i>
+            </div>
+            <h3 style="margin-bottom: 1.5rem; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Surat Tugas</h3>
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem;">{{ surat_tugas.nomor_surat }}</div>
+                <div style="font-size: 0.875rem; color: #cbd5e1; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ surat_tugas.perihal }}</div>
+            </div>
+            <div style="border-top: 1px solid #334155; padding-top: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: #94a3b8; font-size: 0.875rem;">Tanggal Surat</span>
+                    <span style="font-weight: 600;">{{ surat_tugas.tgl_surat }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #94a3b8; font-size: 0.875rem;">Status Tugas</span>
+                    <span class="badge badge-success">Aktif</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem; border: 1px solid rgba(159, 18, 57, 0.2);">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <i class="fas fa-lightbulb" style="color: #fbbf24;"></i>
+                <h4 style="font-size: 0.875rem; font-weight: 700;">Petunjuk</h4>
+            </div>
+            <ul style="font-size: 0.8125rem; color: var(--text-muted); padding-left: 1.25rem; line-height: 1.6;">
+                <li>Pilih provinsi tujuan yang sesuai.</li>
+                <li>Sistem akan menghitung durasi otomatis (n+1).</li>
+                <li>Unggah bukti riil jika sudah tersedia.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Preview ST -->
+<div id="stModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Detail Surat Tugas</h2>
+            <span class="close" onclick="closeSTModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="info-row">
+                <div class="info-label">Nomor Surat</div>
+                <div class="info-value">{{ surat_tugas.nomor_surat }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Tanggal</div>
+                <div class="info-value">{{ surat_tugas.tgl_surat }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Perihal</div>
+                <div class="info-value" style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; line-height: 1.6;">{{ surat_tugas.perihal }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Pegawai Ditugaskan</div>
+                <div class="info-value">
+                    <div style="display: grid; gap: 0.5rem;">
+                        {% for p in surat_tugas.pegawai.all %}
+                        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f1f5f9; border-radius: 0.5rem;">
+                            <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; font-weight: 700;">{{ p.nama }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">NIP. {{ p.nip }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% if surat_tugas.file_path %}
+            <div style="margin-top: 2rem;">
+                <div class="info-label">Pratinjau Dokumen</div>
+                <div id="pdf-preview-container" style="width: 100%; height: 400px; border-radius: 0.75rem; overflow: hidden; border: 1px solid #e2e8f0; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">
+                    <iframe id="st-pdf-iframe" src="" style="width: 100%; height: 100%; border: none;" allow="autoplay"></iframe>
+                    <div id="preview-error" style="display: none; text-align: center; padding: 2rem;">
+                        <i class="fas fa-file-pdf fa-3x" style="color: #94a3b8; margin-bottom: 1rem;"></i>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Pratinjau tidak tersedia langsung.</p>
+                        <a href="{{ surat_tugas.file_path }}" target="_blank" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Buka di Tab Baru</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .st-preview-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.2);
+    }
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+        animation: fadeIn 0.3s ease;
+    }
+    .modal-content {
+        background-color: white;
+        margin: 2% auto;
+        padding: 0;
+        border-radius: 1.25rem;
+        width: 90%;
+        max-width: 800px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideDown { 
+        from { transform: translateY(-30px); opacity: 0; } 
+        to { transform: translateY(0); opacity: 1; } 
+    }
+    .modal-header {
+        padding: 1.25rem 2rem;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-header h2 { font-size: 1.125rem; margin: 0; font-weight: 700; letter-spacing: -0.025em; }
+    .close { color: rgba(255,255,255,0.8); font-size: 1.5rem; font-weight: 300; cursor: pointer; transition: color 0.2s; }
+    .close:hover { color: white; }
+    .modal-body { padding: 2rem; max-height: 85vh; overflow-y: auto; }
+    .info-row { margin-bottom: 1.5rem; }
+    .info-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .info-value { font-weight: 600; color: var(--text-main); font-size: 0.9375rem; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const nominalRequiredIds = {{ jenis_berkas_nominal|safe }};
+    const wajibRequiredIds = {{ jenis_berkas_wajib|safe }};
+    let originalOptions = [];
+
+    function toggleFieldsBasedOnJenis(row, isNominal) {
+        const select = row.querySelector('select[name$="-jenis_berkas"]');
+        const nominalWrapper = row.querySelector('.nominal-wrapper');
+        const uploadWrapper = row.querySelector('.file-upload-wrapper');
+        
+        const nominalInput = row.querySelector('input[name$="-nominal"]');
+        const fileInput = row.querySelector('input[name$="-file"]');
+        
+        if (!select) return;
+
+        // Filter select options based on whether this row belongs to the Nominal section
+        if (originalOptions.length > 0) {
+            filterSelectOptions(select, isNominal);
+        }
+
+        const val = select.value ? parseInt(select.value) : null;
+        
+        // 1. Handle Nominal Biaya Visibility
+        if (isNominal) {
+            if (nominalWrapper) nominalWrapper.style.display = 'block';
+            if (nominalInput) {
+                // If the selected value is valid, set required
+                if (val && nominalRequiredIds.includes(val)) {
+                    nominalInput.setAttribute('required', 'required');
+                } else {
+                    nominalInput.removeAttribute('required');
+                }
+            }
+        } else {
+            if (nominalWrapper) nominalWrapper.style.display = 'none';
+            if (nominalInput) {
+                nominalInput.removeAttribute('required');
+                nominalInput.value = '';
+            }
+        }
+
+        // 2. Handle Upload File Visibility
+        if (val && wajibRequiredIds.includes(val)) {
+            if (uploadWrapper) uploadWrapper.style.display = 'block';
+        } else {
+            if (uploadWrapper) uploadWrapper.style.display = 'none';
+        }
+    }
+
+    function filterSelectOptions(selectElement, isNominal) {
+        const valBefore = selectElement.value;
+        selectElement.innerHTML = ''; // Clear options
+        
+        originalOptions.forEach(opt => {
+            if (opt.value === "") {
+                const newOpt = new Option(opt.text, opt.value);
+                selectElement.add(newOpt);
+                return;
+            }
+            const val = parseInt(opt.value);
+            const optIsNominal = nominalRequiredIds.includes(val);
+            
+            if (isNominal && optIsNominal) {
+                const newOpt = new Option(opt.text, opt.value);
+                selectElement.add(newOpt);
+            } else if (!isNominal && !optIsNominal) {
+                const newOpt = new Option(opt.text, opt.value);
+                selectElement.add(newOpt);
+            }
+        });
+        
+        selectElement.value = valBefore;
+    }
+
+    function removeFormRow(btn) {
+        const row = btn.closest('.formset-row');
+        if (row) {
+            // If it's a new row, clear inputs and hide so Django ignores it
+            const inputs = row.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox' && input.name.endsWith('-DELETE')) {
+                    input.checked = true; // Mark for deletion if DELETE checkbox exists
+                } else {
+                    input.value = '';
+                    input.removeAttribute('required');
+                }
+            });
+            row.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const originalContainer = document.querySelector('#berkas-original-container');
+        const nominalContainer = document.querySelector('#berkas-nominal-container');
+        const nonNominalContainer = document.querySelector('#berkas-non-nominal-container');
+        
+        const addNominalBtn = document.querySelector('#add-berkas-nominal-btn');
+        const addNonNominalBtn = document.querySelector('#add-berkas-non-nominal-btn');
+        const totalFormsInput = document.querySelector('#id_berkas_perjalanan_set-TOTAL_FORMS') || document.querySelector('[id$="-TOTAL_FORMS"]');
+
+        // Extract original options from the empty form select
+        const emptyFormSelect = document.querySelector('#berkas-empty-form select[name$="-jenis_berkas"]');
+        if (emptyFormSelect) {
+            originalOptions = Array.from(emptyFormSelect.options).map(opt => ({
+                value: opt.value,
+                text: opt.text
+            }));
+        }
+
+        // 1. Distribute initial rows
+        if (originalContainer) {
+            const rows = Array.from(originalContainer.querySelectorAll('.formset-row'));
+            rows.forEach(row => {
+                const select = row.querySelector('select[name$="-jenis_berkas"]');
+                if (select) {
+                    const val = select.value ? parseInt(select.value) : null;
+                    const isNominal = val && nominalRequiredIds.includes(val);
+                    
+                    if (isNominal) {
+                        nominalContainer.appendChild(row);
+                        toggleFieldsBasedOnJenis(row, true);
+                    } else {
+                        nonNominalContainer.appendChild(row);
+                        toggleFieldsBasedOnJenis(row, false);
+                    }
+                    
+                    select.addEventListener('change', () => {
+                        const newVal = select.value ? parseInt(select.value) : null;
+                        const currentlyNominal = newVal && nominalRequiredIds.includes(newVal);
+                        toggleFieldsBasedOnJenis(row, currentlyNominal);
+                    });
+                }
+            });
+        }
+
+        // Helper to add a new form row
+        function addNewForm(isNominal) {
+            const currentCount = parseInt(totalFormsInput.value);
+            const templateHtml = document.querySelector('#berkas-empty-form').innerHTML;
+            
+            // Replace prefix __prefix__ with count
+            const resolvedHtml = templateHtml.replace(/__prefix__/g, currentCount);
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = resolvedHtml;
+            const newRow = tempDiv.firstElementChild;
+            
+            if (isNominal) {
+                nominalContainer.appendChild(newRow);
+                toggleFieldsBasedOnJenis(newRow, true);
+            } else {
+                nonNominalContainer.appendChild(newRow);
+                toggleFieldsBasedOnJenis(newRow, false);
+            }
+
+            // Bind change event to select dropdown
+            const select = newRow.querySelector('select[name$="-jenis_berkas"]');
+            if (select) {
+                select.addEventListener('change', () => {
+                    const newVal = select.value ? parseInt(select.value) : null;
+                    const currentlyNominal = newVal && nominalRequiredIds.includes(newVal);
+                    toggleFieldsBasedOnJenis(newRow, currentlyNominal);
+                });
+            }
+
+            // Increment form count
+            totalFormsInput.value = currentCount + 1;
+        }
+
+        if (addNominalBtn) {
+            addNominalBtn.addEventListener('click', () => addNewForm(true));
+        }
+        
+        if (addNonNominalBtn) {
+            addNonNominalBtn.addEventListener('click', () => addNewForm(false));
+        }
+    });
+
+    function openSTModal() {
+        const modal = document.getElementById('stModal');
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        // Handle PDF Preview logic
+        const rawUrl = "{{ surat_tugas.file_path }}";
+        if (rawUrl) {
+            const iframe = document.getElementById('st-pdf-iframe');
+            const errorDiv = document.getElementById('preview-error');
+            
+            let embedUrl = rawUrl;
+            
+            // Convert Google Drive view link to preview link
+            if (rawUrl.includes('drive.google.com')) {
+                if (rawUrl.includes('/view')) {
+                    embedUrl = rawUrl.replace('/view', '/preview');
+                } else if (rawUrl.includes('id=')) {
+                    // Handle id= format if needed
+                }
+            }
+
+            iframe.src = embedUrl;
+            
+            // Basic error handling (if iframe fails to load or blocked by CSP/X-Frame)
+            iframe.onerror = function() {
+                iframe.style.display = 'none';
+                errorDiv.style.display = 'block';
+            };
+        }
+    }
+
+    function closeSTModal() {
+        document.getElementById('stModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        // Clear iframe src to stop loading
+        const iframe = document.getElementById('st-pdf-iframe');
+        if (iframe) iframe.src = '';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('stModal');
+        if (event.target == modal) {
+            closeSTModal();
+        }
+    }
+</script>
+{% endblock %}

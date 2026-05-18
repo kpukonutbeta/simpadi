@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - SIMPADI{% endblock %}
+
+{% block page_title %}Ringkasan Eksekutif{% endblock %}
+
+{% block content %}
+<!-- Stats Grid -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Perjalanan Dinas</div>
+        <div class="stat-value">{{ total_perjalanan }}</div>
+        <div class="stat-label" style="color: #4ade80;"><i class="fas fa-arrow-up"></i> Terdata</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total Biaya</div>
+        <div class="stat-value">Rp {{ total_biaya|floatformat:2 }}</div>
+        <div class="stat-label">Rincian riil</div>
+    </div>
+    {% if is_admin %}
+    <div class="stat-card">
+        <div class="stat-label">Penyerapan Anggaran</div>
+        <div class="stat-value">{{ penyerapan }}%</div>
+        <div class="stat-label" style="color: var(--text-muted);">Rp {{ sisa_pagu|floatformat:2 }} Sisa</div>
+    </div>
+    {% else %}
+    <div class="stat-card">
+        <div class="stat-label">SPD Perlu Diisi</div>
+        <div class="stat-value">{{ spd_perlu_dilengkapi|length }}</div>
+        <div class="stat-label">Menunggu kelengkapan data</div>
+    </div>
+    {% endif %}
+</div>
+
+        {% if not is_admin %}
+        <!-- Surat Tugas Baru (Belum ada SPD) -->
+        {% if st_mendatang %}
+        <div class="card" style="margin-bottom: 2rem; border-left: 4px solid #fbbf24;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--text-main);">
+                    <i class="fas fa-bullhorn" style="color: #fbbf24; margin-right: 0.5rem;"></i> Pemberitahuan Tugas Baru
+                </h3>
+            </div>
+            <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.5rem;">Admin telah menerbitkan Surat Tugas berikut. Tunggu hingga Admin menerbitkan nomor SPD resmi untuk mengisi rincian biaya.</p>
+            
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nomor Surat</th>
+                            <th>Perihal</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for st in st_mendatang %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ st.nomor_surat }}</td>
+                            <td style="font-size: 0.875rem;">{{ st.perihal }}</td>
+                            <td>
+                                <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                                    <i class="fas fa-clock"></i> Menunggu SPD
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--text-main);">
+                    <i class="fas fa-file-signature" style="color: var(--primary); margin-right: 0.5rem;"></i> SPD Perlu Dilengkapi
+                </h3>
+            </div>
+            
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nomor SPD</th>
+                            <th>Perihal / Surat Tugas</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for spd in spd_perlu_dilengkapi %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700;">{{ spd.nomor_spd }}</div>
+                                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem;">ST: {{ spd.surat_tugas.nomor_surat }}</div>
+                            </td>
+                            <td>
+                                <div style="font-size: 0.875rem; font-weight: 600;">{{ spd.surat_tugas.perihal }}</div>
+                            </td>
+                            <td>
+                                <a href="{% url 'perjalanan:ajukan_perjadin' spd.surat_tugas.id %}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.75rem;">
+                                    <i class="fas fa-edit"></i> Lengkapi Data
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                <i class="fas fa-check-circle" style="display: block; font-size: 2rem; margin-bottom: 1rem; color: #10b981;"></i>
+                                Belum ada SPD baru yang perlu dilengkapi.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+{% if is_admin %}
+<!-- Recent Activity (Admin Only) -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="font-weight: 700;">Perjalanan Dinas Terbaru</h3>
+        <a href="/admin/perjalanan/perjalanandinas/" style="color: var(--primary); text-decoration: none; font-size: 0.875rem;">Lihat Semua</a>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Pegawai</th>
+                    <th>Tujuan</th>
+                    <th>Tanggal</th>
+                    <th>Durasi</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pd in recent_perjalanan %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">{{ pd.pegawai.nama }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ pd.pegawai.nip }}</div>
+                    </td>
+                    <td>{{ pd.tempat_tujuan }}</td>
+                    <td>{{ pd.tanggal_berangkat }}</td>
+                    <td>{{ pd.durasi_hari }} Hari</td>
+                    <td>
+                        {% if pd.status == 'APPROVED' %}
+                            <span class="badge badge-success">Approved</span>
+                        {% elif pd.status == 'PENDING' %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% elif pd.status == 'REJECTED' %}
+                            <span class="badge badge-danger">Rejected</span>
+                        {% else %}
+                            <span class="badge badge-secondary">{{ pd.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        Belum ada data perjalanan dinas terbaru.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

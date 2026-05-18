@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Terbitkan SPD Masal - SIMPADI{% endblock %}
+
+{% block page_title %}Penerbitan SPD Otomatis{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 0.5rem;"><i class="fas fa-magic"></i> Konfigurasi Penomoran</h3>
+        <p style="color: var(--text-muted);">Sistem akan mencari nomor terakhir dan melakukan <i>increment</i> otomatis untuk pegawai yang terpilih.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group" style="margin-bottom: 2rem; background: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <label class="form-label" style="color: var(--primary); font-weight: 800; margin: 0;">FORMAT NOMOR SPD (OTOMATIS)</label>
+                <a href="/admin/perjalanan/pengaturannomorspd/" target="_blank" style="font-size: 0.75rem; color: #3b82f6; text-decoration: none;">
+                    <i class="fas fa-cog"></i> Ubah Pengaturan
+                </a>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 1.25rem; font-weight: 700; color: #1e293b;">
+                <span style="color: #3b82f6;">[Next Number]</span>
+                <span style="color: #64748b;">{{ default_suffix }}</span>
+            </div>
+            <small style="display: block; margin-top: 0.5rem; color: var(--text-muted);">
+                Nomor akan digenerate otomatis mulai dari angka terakhir + 1. Suffix diatur melalui menu Pengaturan.
+            </small>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 2rem;">
+            <div class="form-group">
+                <label class="form-label">Tujuan Provinsi (Default SBM)</label>
+                <select name="provinsi" class="form-control" required>
+                    {% for p in provinsi_list %}
+                    <option value="{{ p.id }}">{{ p.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sumber Anggaran</label>
+                <select name="anggaran" class="form-control" required>
+                    {% for a in anggaran_list %}
+                    <option value="{{ a.id }}">{{ a.kode_dipa }} - {{ a.nama_kegiatan }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h4 style="font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem;">Surat Tugas Terpilih ({{ surat_tugas_list|length }})</h4>
+            <div style="display: grid; gap: 0.75rem;">
+                {% for st in surat_tugas_list %}
+                <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.75rem; background: white;">
+                    <div style="font-weight: 700;">{{ st.nomor_surat }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.5rem;">{{ st.perihal }}</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        {% for p in st.pegawai.all %}
+                        <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.7rem; border: 1px solid #e2e8f0;">
+                            <i class="fas fa-user"></i> {{ p.nama }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 2;">
+                <i class="fas fa-check-circle"></i> Terbitkan Semua SPD Sekarang
+            </button>
+            <a href="/admin/perjalanan/surattugas/" class="btn" style="background: #e2e8f0; color: #475569; flex: 1; text-align: center; text-decoration: none;">Batal</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .form-control { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 0.5rem; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+</style>
+{% endblock %}

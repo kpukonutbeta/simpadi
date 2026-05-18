@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SIMPADI{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.2">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">SIMPADI</div>
+        <ul class="nav-links">
+            <li class="nav-item">
+                <a href="{% url 'core:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-home"></i> Beranda
+                </a>
+            </li>
+            {% if request.user.is_staff %}
+            <li class="nav-header" style="padding: 1rem 1.5rem; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Manajemen (Admin)</li>
+            <li class="nav-item">
+                <a href="/admin/perjalanan/surattugas/" class="nav-link">
+                    <i class="fas fa-file-contract"></i> Surat Tugas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/master_data/pegawai/" class="nav-link">
+                    <i class="fas fa-users"></i> Data Pegawai
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/master_data/standarbiaya/" class="nav-link">
+                    <i class="fas fa-money-bill-wave"></i> SBM (Tarif)
+                </a>
+            </li>
+            {% else %}
+            <li class="nav-header" style="padding: 1rem 1.5rem; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Menu Pegawai</li>
+            <li class="nav-item">
+                <a href="{% url 'core:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-tasks"></i> Tugas Saya
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'perjalanan:riwayat_perjadin' %}" class="nav-link {% if request.resolver_match.url_name == 'riwayat_perjadin' %}active{% endif %}">
+                    <i class="fas fa-history"></i> Riwayat Perjadin
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item" style="margin-top: auto;">
+                <a href="{% url 'core:logout' %}" class="nav-link" style="color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i> Keluar
+                </a>
+            </li>
+        </ul>
+        <div class="user-profile">
+            <i class="fas fa-user-circle fa-2x"></i>
+            <div>
+                <div style="font-size: 0.875rem; font-weight: 600;">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{% if request.user.is_staff %}Administrator{% else %}Pegawai{% endif %}</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="actions">
+                <button class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Pengajuan Baru
+                </button>
+            </div>
+        </header>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="card badge-{{ message.tags }}" style="padding: 1rem; margin-bottom: 1rem;">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

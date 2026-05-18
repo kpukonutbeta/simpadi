@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Riwayat Perjalanan Dinas - SIMPADI{% endblock %}
+
+{% block page_title %}Riwayat Perjalanan Dinas{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 0.5rem;"><i class="fas fa-history"></i> Rekam Jejak Perjalanan</h3>
+        <p style="color: var(--text-muted);">Daftar seluruh perjalanan dinas yang telah diterbitkan untuk Anda.</p>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nomor SPD</th>
+                    <th>Perihal</th>
+                    <th>Tujuan</th>
+                    <th>Tanggal</th>
+                    <th>Durasi</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 700;">{{ item.nomor_spd }}</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem;">ST: {{ item.surat_tugas.nomor_surat }}</div>
+                    </td>
+                    <td style="font-size: 0.875rem;">{{ item.surat_tugas.perihal }}</td>
+                    <td>{{ item.tempat_tujuan }}</td>
+                    <td>{{ item.tanggal_berangkat|default:"-" }}</td>
+                    <td>{{ item.durasi_hari }} Hari</td>
+                    <td>
+                        {% if item.status == 'APPROVED' %}
+                            <span class="badge badge-success">Approved</span>
+                        {% elif item.status == 'PENDING' %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% elif item.status == 'REJECTED' %}
+                            <span class="badge badge-danger">Rejected</span>
+                        {% else %}
+                            <span class="badge badge-secondary">{{ item.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.status == 'DRAFT' or item.status == 'REJECTED' %}
+                        <a href="{% url 'perjalanan:ajukan_perjadin' item.surat_tugas.id %}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--glass-bg); border: 1px solid var(--border); color: var(--text-main);">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        {% endif %}
+                        <a href="#" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #f1f5f9; color: #475569; margin-left: 0.25rem;">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                        <i class="fas fa-folder-open" style="display: block; font-size: 3rem; margin-bottom: 1rem; color: #e2e8f0;"></i>
+                        Belum ada riwayat perjalanan dinas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
