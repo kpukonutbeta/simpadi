@@ -35,11 +35,25 @@ class SuratTugasAdmin(admin.ModelAdmin):
 
 class BiayaPerjalananInline(admin.StackedInline):
     model = BiayaPerjalanan
-    readonly_fields = ('uang_harian_riil', 'uang_representasi_riil', 'biaya_penginapan_riil', 'biaya_transportasi_riil', 'total_dibayarkan')
-    fields = ('uang_harian_riil', 'uang_representasi_riil', 'biaya_penginapan_riil', 'biaya_transportasi_riil', 'total_dibayarkan')
+    readonly_fields = ('uang_harian_riil', 'uang_representasi_riil', 'biaya_penginapan_riil', 'biaya_transportasi_riil', 'get_total_dibayarkan', 'get_total_tidak_dibayarkan')
+    fields = ('uang_harian_riil', 'uang_representasi_riil', 'biaya_penginapan_riil', 'biaya_transportasi_riil', 'get_total_dibayarkan', 'get_total_tidak_dibayarkan')
     extra = 1
     max_num = 1
     can_delete = False
+
+    def get_total_dibayarkan(self, obj):
+        val = obj.total_dibayarkan if obj else 0
+        formatted_val = f"Rp {val:,.0f}".replace(",", ".")
+        return mark_safe(f'<strong style="color: #0f172a; font-size: 1.1em;">{formatted_val}</strong>')
+    get_total_dibayarkan.short_description = "Total Dibayarkan"
+
+    def get_total_tidak_dibayarkan(self, obj):
+        val = obj.total_dana_pribadi if obj else 0
+        if val > 0:
+            formatted_val = f"Rp {val:,.0f}".replace(",", ".")
+            return mark_safe(f'<strong style="color: #dc2626; font-size: 1.1em;">{formatted_val}</strong>')
+        return "-"
+    get_total_tidak_dibayarkan.short_description = "Total Tidak Dibayarkan"
 
 class BerkasPerjalananNominalInline(admin.TabularInline):
     model = BerkasPerjalananNominal

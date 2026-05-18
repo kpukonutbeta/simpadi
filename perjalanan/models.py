@@ -249,6 +249,10 @@ class BiayaPerjalanan(models.Model):
         
         super().save(*args, **kwargs)
 
+    @property
+    def total_tidak_dibayarkan(self):
+        return self.total_dana_pribadi
+
 class BerkasPerjalanan(models.Model):
     perjalanan = models.ForeignKey(PerjalananDinas, on_delete=models.CASCADE, related_name='berkas')
     jenis_berkas = models.ForeignKey(JenisBerkas, on_delete=models.PROTECT, verbose_name="Jenis Berkas", null=True, blank=True)

@@ -105,13 +105,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const reprEl = document.querySelector('.field-uang_representasi_riil div.readonly');
             const hotelEl = document.querySelector('.field-biaya_penginapan_riil div.readonly');
             const transportEl = document.querySelector('.field-biaya_transportasi_riil div.readonly');
-            const totalEl = document.querySelector('.field-total_dibayarkan div.readonly');
+            const totalEl = document.querySelector('.field-get_total_dibayarkan div.readonly');
+            const tidakDibayarkanEl = document.querySelector('.field-get_total_tidak_dibayarkan div.readonly');
 
             if (harianEl) harianEl.textContent = formatRupiah(data.uang_harian_riil);
             if (reprEl) reprEl.textContent = formatRupiah(data.uang_representasi_riil);
             if (hotelEl) hotelEl.textContent = formatRupiah(data.biaya_penginapan_riil);
             if (transportEl) transportEl.textContent = formatRupiah(data.biaya_transportasi_riil);
-            if (totalEl) totalEl.textContent = formatRupiah(data.total_dibayarkan);
+            if (totalEl) totalEl.innerHTML = `<strong style="color: #0f172a; font-size: 1.1em;">${formatRupiah(data.total_dibayarkan)}</strong>`;
+            if (tidakDibayarkanEl) {
+                const unpaidVal = parseFloat(data.total_tidak_dibayarkan) || 0.0;
+                if (unpaidVal > 0) {
+                    tidakDibayarkanEl.innerHTML = `<strong style="color: #dc2626; font-size: 1.1em;">${formatRupiah(unpaidVal)}</strong>`;
+                } else {
+                    tidakDibayarkanEl.textContent = "-";
+                }
+            }
         })
         .catch(err => console.error('Admin estimation error:', err));
     }

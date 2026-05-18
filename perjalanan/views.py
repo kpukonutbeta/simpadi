@@ -308,11 +308,25 @@ def hitung_estimasi_ajax(request):
 
     total_dibayarkan = uang_harian_riil + uang_representasi_riil + biaya_penginapan_riil + biaya_transportasi_riil
 
+    # Compute unpaid/unreimbursed amount (total_tidak_dibayarkan)
+    penginapan_dana_pribadi = 0.0
+    if not tidak_menginap:
+        plafon_hotel_limit = plafon_hotel * durasi
+        if total_hotel_input > plafon_hotel_limit:
+            penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
+
+    transportasi_dana_pribadi = 0.0
+    if plafon_transport > 0 and total_transport_input > plafon_transport:
+        transportasi_dana_pribadi = total_transport_input - plafon_transport
+
+    total_tidak_dibayarkan = penginapan_dana_pribadi + transportasi_dana_pribadi
+
     return JsonResponse({
         'uang_harian_riil': uang_harian_riil,
         'uang_representasi_riil': uang_representasi_riil,
         'biaya_penginapan_riil': biaya_penginapan_riil,
         'biaya_transportasi_riil': biaya_transportasi_riil,
         'total_dibayarkan': total_dibayarkan,
+        'total_tidak_dibayarkan': total_tidak_dibayarkan,
         'durasi_hari': durasi
     })
