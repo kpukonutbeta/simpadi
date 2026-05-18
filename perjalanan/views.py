@@ -177,3 +177,141 @@ def riwayat_perjadin(request):
     history = PerjalananDinas.objects.filter(pegawai=pegawai).order_by('-tanggal_berangkat', '-created_at')
     
     return render(request, 'perjalanan/riwayat_list.html', {'history': history})
+
+
+import json
+from datetime import datetime
+from django.views.decorators.http import require_POST
+from master_data.models import StandarBiaya, Pegawai, JenisBerkas
+
+def parse_date(date_str):
+    if not date_str:
+        return None
+    date_str = str(date_str).strip()
+    # Try common formats: YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, YYYY/MM/DD
+    for fmt in ('%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y', '%Y/%m/%d'):
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+@login_required
+@require_POST
+def hitung_estimasi_ajax(request):
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+
+    # Retrieve parameters
+    tanggal_berangkat_str = data.get('tanggal_berangkat')
+    tanggal_kembali_str = data.get('tanggal_kembali')
+    tujuan_provinsi_id = data.get('tujuan_provinsi')
+    tidak_menginap = str(data.get('tidak_menginap')).lower() in ['true', '1', 'on', 'yes']
+    jenis_transportasi = data.get('jenis_transportasi')
+    tahun_sbm = data.get('tahun_sbm')
+    pegawai_id = data.get('pegawai_id')
+    
+    # If pegawai_id is not passed, use current user's profile
+    if not pegawai_id and hasattr(request.user, 'pegawai_profile'):
+        pegawai_obj = request.user.pegawai_profile
+    elif pegawai_id:
+        try:
+            pegawai_obj = Pegawai.objects.get(id=pegawai_id)
+        except Pegawai.DoesNotExist:
+            pegawai_obj = None
+    else:
+        pegawai_obj = None
+
+    # Parse dates to calculate duration using our robust parser
+    durasi = 0
+    if tanggal_berangkat_str and tanggal_kembali_str:
+        tb = parse_date(tanggal_berangkat_str)
+        tk = parse_date(tanggal_kembali_str)
+        if tb and tk:
+            durasi = (tk - tb).days + 1
+            if durasi < 0:
+                durasi = 0
+
+    # Fetch StandarBiaya
+    tarif_harian = 0.0
+    plafon_hotel = 0.0
+    tarif_representasi = 0.0
+    plafon_transport = 0.0
+
+    if tujuan_provinsi_id and pegawai_obj and tahun_sbm:
+        try:
+            sbm = StandarBiaya.objects.get(
+                provinsi_id=tujuan_provinsi_id,
+                golongan=pegawai_obj.golongan,
+                tahun=tahun_sbm
+            )
+            tarif_harian = float(sbm.uang_harian)
+            plafon_hotel = float(sbm.plafon_penginapan)
+            tarif_representasi = float(sbm.uang_representasi)
+            plafon_transport = float(getattr(sbm, 'plafon_transportasi', 0))
+        except StandarBiaya.DoesNotExist:
+            pass
+
+    # Sum berkas nominals
+    total_hotel_input = 0.0
+    total_transport_input = 0.0
+    
+    berkas_list = data.get('berkas', [])
+    for b in berkas_list:
+        try:
+            nominal = float(b.get('nominal') or 0)
+        except (ValueError, TypeError):
+            nominal = 0.0
+            
+        jb_id = b.get('jenis_berkas_id')
+        if nominal > 0 and jb_id:
+            try:
+                jb = JenisBerkas.objects.get(id=jb_id)
+                kategori = jb.kategori_biaya if hasattr(jb, 'kategori_biaya') else 'none'
+                if kategori == 'penginapan':
+                    if not tidak_menginap:
+                        total_hotel_input += nominal
+                elif kategori == 'transportasi':
+                    if jenis_transportasi != 'mobil_dinas':
+                        total_transport_input += nominal
+                else:
+                    nama_berkas = (jb.nama or "").upper()
+                    if "HOTEL" in nama_berkas or "PENGINAPAN" in nama_berkas:
+                        if not tidak_menginap:
+                            total_hotel_input += nominal
+                    elif "TIKET" in nama_berkas or "TRANSPORT" in nama_berkas or "TAXI" in nama_berkas or "PESAWAT" in nama_berkas:
+                        if jenis_transportasi != 'mobil_dinas':
+                            total_transport_input += nominal
+            except JenisBerkas.DoesNotExist:
+                pass
+
+    # Calculation
+    uang_harian_riil = float(durasi * tarif_harian)
+    uang_representasi_riil = float(durasi * tarif_representasi)
+
+    if tidak_menginap:
+        biaya_penginapan_riil = 0.30 * plafon_hotel * durasi
+    else:
+        plafon_hotel_limit = plafon_hotel * durasi
+        biaya_penginapan_riil = min(total_hotel_input, plafon_hotel_limit)
+
+    if jenis_transportasi == 'mobil_dinas':
+        biaya_transportasi_riil = 0.0
+    else:
+        if plafon_transport > 0:
+            biaya_transportasi_riil = min(total_transport_input, plafon_transport)
+        else:
+            biaya_transportasi_riil = total_transport_input
+
+    total_dibayarkan = uang_harian_riil + uang_representasi_riil + biaya_penginapan_riil + biaya_transportasi_riil
+
+    return JsonResponse({
+        'uang_harian_riil': uang_harian_riil,
+        'uang_representasi_riil': uang_representasi_riil,
+        'biaya_penginapan_riil': biaya_penginapan_riil,
+        'biaya_transportasi_riil': biaya_transportasi_riil,
+        'total_dibayarkan': total_dibayarkan,
+        'durasi_hari': durasi
+    })

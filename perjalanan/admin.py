@@ -115,6 +115,9 @@ class PerjalananDinasAdmin(admin.ModelAdmin):
     )
     inlines = [BerkasPerjalananNominalInline, BerkasPerjalananNonNominalInline, BiayaPerjalananInline]
 
+    class Media:
+        js = ('js/admin_filter.js',)
+
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         context.update({
             'show_save_and_add_another': False,
