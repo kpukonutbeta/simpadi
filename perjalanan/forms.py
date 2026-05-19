@@ -8,8 +8,7 @@ class PerjalananDinasForm(forms.ModelForm):
         fields = [
             'tempat_berangkat', 'tempat_tujuan', 'tujuan_provinsi',
             'maksud_perjalanan', 'tanggal_berangkat', 'tanggal_kembali',
-            'jenis_perjalanan', 'jenis_transportasi', 'anggaran', 'tahun_sbm',
-            'tidak_menginap'
+            'jenis_perjalanan', 'jenis_transportasi', 'anggaran', 'tahun_sbm'
         ]
         widgets = {
             'tanggal_berangkat': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
@@ -22,7 +21,6 @@ class PerjalananDinasForm(forms.ModelForm):
             'jenis_transportasi': forms.Select(attrs={'class': 'form-control'}),
             'anggaran': forms.Select(attrs={'class': 'form-control'}),
             'tahun_sbm': forms.Select(attrs={'class': 'form-control'}),
-            'tidak_menginap': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):

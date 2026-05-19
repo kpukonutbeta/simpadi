@@ -67,15 +67,13 @@ class BerkasPerjalananPenginapanInline(admin.TabularInline):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(
-            Q(jenis_berkas__kategori_biaya='penginapan') | Q(jenis_berkas__nama__icontains='hotel') | Q(jenis_berkas__nama__icontains='penginapan'),
-            jenis_berkas__nominal_biaya=True
+            jenis_berkas__kategori_biaya='penginapan'
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "jenis_berkas":
             kwargs["queryset"] = JenisBerkas.objects.filter(
-                Q(kategori_biaya='penginapan') | Q(nama__icontains='hotel') | Q(nama__icontains='penginapan'),
-                nominal_biaya=True
+                kategori_biaya='penginapan'
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -98,14 +96,14 @@ class BerkasPerjalananTransportasiInline(admin.TabularInline):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(
-            ~Q(jenis_berkas__kategori_biaya='penginapan') & ~Q(jenis_berkas__nama__icontains='hotel') & ~Q(jenis_berkas__nama__icontains='penginapan'),
+            jenis_berkas__kategori_biaya='transportasi',
             jenis_berkas__nominal_biaya=True
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "jenis_berkas":
             kwargs["queryset"] = JenisBerkas.objects.filter(
-                ~Q(kategori_biaya='penginapan') & ~Q(nama__icontains='hotel') & ~Q(nama__icontains='penginapan'),
+                kategori_biaya='transportasi',
                 nominal_biaya=True
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
@@ -128,11 +126,19 @@ class BerkasPerjalananNonNominalInline(admin.TabularInline):
     verbose_name_plural = "Berkas Pendukung Tanpa Nominal Biaya"
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(jenis_berkas__nominal_biaya=False)
+        return super().get_queryset(request).filter(
+            jenis_berkas__nominal_biaya=False
+        ).exclude(
+            jenis_berkas__kategori_biaya='penginapan'
+        )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "jenis_berkas":
-            kwargs["queryset"] = JenisBerkas.objects.filter(nominal_biaya=False)
+            kwargs["queryset"] = JenisBerkas.objects.filter(
+                nominal_biaya=False
+            ).exclude(
+                kategori_biaya='penginapan'
+            )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
@@ -164,7 +170,7 @@ class PerjalananDinasAdmin(admin.ModelAdmin):
         'tanggal_berangkat', 'tanggal_kembali',
         'tempat_berangkat', 'tempat_tujuan', 'tujuan_provinsi', 'tahun_sbm',
         'maksud_perjalanan',
-        'anggaran', 'jenis_perjalanan', 'jenis_transportasi', 'tidak_menginap'
+        'anggaran', 'jenis_perjalanan', 'jenis_transportasi'
     )
     inlines = [BerkasPerjalananPenginapanInline, BerkasPerjalananTransportasiInline, BerkasPerjalananNonNominalInline, BiayaPerjalananInline]
 

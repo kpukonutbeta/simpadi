@@ -94,7 +94,6 @@ class PerjalananDinas(models.Model):
         default=2024, 
         verbose_name="Tahun SBM"
     )
-    tidak_menginap = models.BooleanField(default=False, verbose_name="Tidak Menginap (Biaya Penginapan Rp 0)")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -197,25 +196,29 @@ class BiayaPerjalanan(models.Model):
         # Calculate real hotel and transport from BerkasPerjalanan based on jenis_berkas.kategori_biaya
         total_hotel_input = 0
         total_malam_hotel = 0
+        total_malam_lumpsum = 0
         total_transport_input = 0
         if self.perjalanan_id:
             for b in BerkasPerjalanan.objects.filter(perjalanan_id=self.perjalanan_id):
-                if b.nominal:
-                    kategori = b.jenis_berkas.kategori_biaya if (b.jenis_berkas and hasattr(b.jenis_berkas, 'kategori_biaya')) else 'none'
-                    if kategori == 'penginapan':
-                        total_hotel_input += b.nominal
-                        total_malam_hotel += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
-                    elif kategori == 'transportasi':
-                        if self.perjalanan.jenis_transportasi != PerjalananDinas.JenisTransportasi.MOBIL_DINAS:
-                            total_transport_input += b.nominal
-                    else:
-                        nama_berkas = (b.jenis_berkas.nama if b.jenis_berkas else "").upper()
-                        if "HOTEL" in nama_berkas or "PENGINAPAN" in nama_berkas:
+                jenis = b.jenis_berkas
+                if not jenis:
+                    continue
+                kategori = jenis.kategori_biaya
+                
+                # Check for penginapan category
+                if kategori == 'penginapan':
+                    if jenis.nominal_biaya: # Hotel bill
+                        if b.nominal:
                             total_hotel_input += b.nominal
                             total_malam_hotel += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
-                        elif "TIKET" in nama_berkas or "TRANSPORT" in nama_berkas or "TAXI" in nama_berkas or "PESAWAT" in nama_berkas:
-                            if self.perjalanan.jenis_transportasi != PerjalananDinas.JenisTransportasi.MOBIL_DINAS:
-                                total_transport_input += b.nominal
+                    else: # Lumpsum claim
+                        total_malam_lumpsum += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
+                
+                # Check for transportasi category
+                elif kategori == 'transportasi':
+                    if self.perjalanan.jenis_transportasi != PerjalananDinas.JenisTransportasi.MOBIL_DINAS:
+                        if b.nominal:
+                            total_transport_input += b.nominal
 
         # Logic 1: Lumpsum Harian & Representasi (taken from SBM automatically)
         durasi = self.perjalanan.durasi_hari
@@ -223,25 +226,27 @@ class BiayaPerjalanan(models.Model):
         self.uang_representasi_riil = durasi * tarif_representasi
 
         # Logic 2: Capping Hotel/Penginapan (Partial 30%)
-        if self.perjalanan.tidak_menginap:
-            self.biaya_penginapan_riil = 0
-            self.penginapan_dana_pribadi = total_hotel_input
+        total_malam_perjalanan = max(0, durasi - 1)
+        
+        # Validation: total malam claimed (hotel + lumpsum) cannot exceed total malam perjalanan
+        if total_malam_hotel + total_malam_lumpsum > total_malam_perjalanan:
+            raise ValidationError(
+                f"Total klaim penginapan ({total_malam_hotel} malam hotel + {total_malam_lumpsum} malam lumpsum = {total_malam_hotel + total_malam_lumpsum} malam) "
+                f"melebihi batas malam perjalanan ({total_malam_perjalanan} malam)."
+            )
+            
+        plafon_hotel_limit = plafon_hotel * total_malam_hotel
+        biaya_hotel_riil = min(total_hotel_input, plafon_hotel_limit)
+        
+        from decimal import Decimal
+        biaya_hotel_lumpsum = Decimal('0.30') * plafon_hotel * total_malam_lumpsum
+        
+        self.biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
+        
+        if total_hotel_input > plafon_hotel_limit:
+            self.penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
         else:
-            total_malam_perjalanan = max(0, durasi - 1)
-            sisa_malam_tanpa_hotel = max(0, total_malam_perjalanan - total_malam_hotel)
-            
-            plafon_hotel_limit = plafon_hotel * total_malam_hotel
-            biaya_hotel_riil = min(total_hotel_input, plafon_hotel_limit)
-            
-            from decimal import Decimal
-            biaya_hotel_lumpsum = Decimal('0.30') * plafon_hotel * sisa_malam_tanpa_hotel
-            
-            self.biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
-            
-            if total_hotel_input > plafon_hotel_limit:
-                self.penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
-            else:
-                self.penginapan_dana_pribadi = 0
+            self.penginapan_dana_pribadi = 0
 
         # Logic 3: Capping Transportasi (At-Cost)
         if plafon_transport > 0 and total_transport_input > plafon_transport:

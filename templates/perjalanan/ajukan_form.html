@@ -160,12 +160,6 @@
                     <label class="form-label">Jenis Transportasi</label>
                     {{ form.jenis_transportasi }}
                     {% if form.jenis_transportasi.errors %}<div class="error-msg">{{ form.jenis_transportasi.errors.0 }}</div>{% endif %}
-                </div>
-                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.8rem;">
-                    {{ form.tidak_menginap }}
-                    <label class="form-label" style="margin-bottom: 0; cursor: pointer; display: inline-flex; align-items: center;">Tidak Menginap (Biaya Penginapan Rp 0)</label>
-                    {% if form.tidak_menginap.errors %}<div class="error-msg">{{ form.tidak_menginap.errors.0 }}</div>{% endif %}
-                </div>
             </div>
         </div>
 
@@ -369,6 +363,13 @@
                     <span style="font-size: 0.75rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em;">Total Tidak Dibayarkan</span>
                     <span id="preview-total-tidak-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #dc2626;">Rp {{ perjadin.biaya.total_tidak_dibayarkan|default:0|floatformat:0 }}</span>
                 </div>
+                <div id="row-warning-overlimit" style="padding: 0.75rem 1rem; background: #fff1f2; border-radius: 0.5rem; border: 1px solid #fda4af; display: none; flex-direction: column; gap: 0.25rem; box-shadow: var(--shadow-sm);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-exclamation-triangle" style="color: #e11d48;"></i>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #be123c; text-transform: uppercase;">Melebihi Batas Malam</span>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #9f1239; line-height: 1.4;">Total malam hotel + lumpsum melebihi batas durasi perjalanan dinas. Mohon sesuaikan jumlah malam menginap.</span>
+                </div>
             </div>
         </div>
     </div>
@@ -507,15 +508,26 @@
 
         const val = select.value ? parseInt(select.value) : null;
         
-        // 1. Handle Nominal Biaya Visibility
-        if (sectionType === 'penginapan' || sectionType === 'nominal') {
+        // 1. Handle Nominal Biaya Visibility & ReadOnly State
+        const isLumpsumPenginapan = val && penginapanRequiredIds.includes(val) && !nominalRequiredIds.includes(val);
+
+        if (sectionType === 'nominal' || sectionType === 'penginapan') {
             if (nominalWrapper) nominalWrapper.style.display = 'block';
             if (nominalInput) {
-                // If the selected value is valid, set required
-                if (val && nominalRequiredIds.includes(val)) {
-                    nominalInput.setAttribute('required', 'required');
-                } else {
+                if (isLumpsumPenginapan) {
+                    nominalInput.readOnly = true;
+                    nominalInput.style.backgroundColor = '#f1f5f9';
+                    nominalInput.style.cursor = 'not-allowed';
                     nominalInput.removeAttribute('required');
+                } else {
+                    nominalInput.readOnly = false;
+                    nominalInput.style.backgroundColor = '';
+                    nominalInput.style.cursor = '';
+                    if (val) {
+                        nominalInput.setAttribute('required', 'required');
+                    } else {
+                        nominalInput.removeAttribute('required');
+                    }
                 }
             }
         } else {
@@ -523,6 +535,9 @@
             if (nominalInput) {
                 nominalInput.removeAttribute('required');
                 nominalInput.value = '';
+                nominalInput.readOnly = false;
+                nominalInput.style.backgroundColor = '';
+                nominalInput.style.cursor = '';
             }
         }
 
@@ -651,8 +666,6 @@
             }
         });
 
-        const tidakMenginap = document.querySelector('#id_tidak_menginap')?.checked || false;
-
         const payload = {
             tanggal_berangkat: tanggalBerangkat,
             tanggal_kembali: tanggalKembali,
@@ -660,7 +673,6 @@
             jenis_transportasi: jenisTransportasi,
             tahun_sbm: tahunSbm,
             pegawai_id: pegawaiId,
-            tidak_menginap: tidakMenginap,
             berkas: berkas
         };
 
@@ -708,6 +720,53 @@
             } else {
                 if (rowTidakDibayarkanEl) rowTidakDibayarkanEl.style.display = 'none';
             }
+
+            const warningOverlimitEl = document.querySelector('#row-warning-overlimit');
+            const submitBtn = document.querySelector('button[type="submit"]');
+            
+            if (data.over_limit) {
+                if (warningOverlimitEl) warningOverlimitEl.style.display = 'flex';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.5';
+                    submitBtn.style.cursor = 'not-allowed';
+                    submitBtn.title = "Total klaim penginapan melebihi batas malam perjalanan.";
+                }
+            } else {
+                if (warningOverlimitEl) warningOverlimitEl.style.display = 'none';
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                    submitBtn.title = "";
+                }
+            }
+            // Populate lumpsum nominal inputs dynamically
+            const plafonHotel = parseFloat(data.plafon_hotel) || 0;
+            const lumpsumNominal = 0.30 * plafonHotel;
+            
+            const rows = document.querySelectorAll('.formset-row');
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const select = row.querySelector('select[name$="-jenis_berkas"]');
+                    if (select) {
+                        const val = select.value ? parseInt(select.value) : null;
+                        const isLumpsum = val && penginapanRequiredIds.includes(val) && !nominalRequiredIds.includes(val);
+                        if (isLumpsum) {
+                            const malamInput = row.querySelector('input[name$="-malam_menginap"]');
+                            const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
+                            const nominalInput = row.querySelector('input[name$="-nominal"]');
+                            if (nominalInput) {
+                                const calculatedValue = lumpsumNominal * malamVal;
+                                nominalInput.value = calculatedValue.toLocaleString('id-ID', {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0
+                                });
+                            }
+                        }
+                    }
+                }
+            });
         })
         .catch(err => console.error('Estimation error:', err));
     }
@@ -820,7 +879,6 @@
             '#id_tanggal_berangkat',
             '#id_tanggal_kembali',
             '#id_tujuan_provinsi',
-            '#id_tidak_menginap',
             '#id_jenis_transportasi',
             '#id_tahun_sbm'
         ];
