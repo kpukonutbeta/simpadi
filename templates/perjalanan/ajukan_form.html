@@ -161,18 +161,8 @@
                     {{ form.jenis_transportasi }}
                     {% if form.jenis_transportasi.errors %}<div class="error-msg">{{ form.jenis_transportasi.errors.0 }}</div>{% endif %}
                 </div>
-                <div class="form-group">
-                    <label class="form-label">&nbsp;</label>
-                    <div style="padding: 0.5rem 1rem; background: var(--glass-bg); border: 1px solid var(--border); border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; height: 38px; box-sizing: border-box;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0; width: 100%; white-space: nowrap;">
-                            {{ form.tidak_menginap }}
-                            <span>Tidak menginap di hotel</span>
-                        </label>
-                    </div>
-                    {% if form.tidak_menginap.errors %}<div class="error-msg">{{ form.tidak_menginap.errors.0 }}</div>{% endif %}
                 </div>
             </div>
-        </div>
 
         <!-- Hidden Biaya Formset fields -->
         {{ biaya_formset.management_form }}
@@ -190,7 +180,7 @@
                 <button type="button" class="remove-row-btn" style="position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: color 0.2s;" onclick="removeFormRow(this)">
                     <i class="fas fa-times"></i>
                 </button>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: start;">
+                <div class="berkas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
                     <div class="form-group">
                         <label class="form-label">Jenis Berkas</label>
                         {{ br_form.jenis_berkas }}
@@ -199,6 +189,11 @@
                         <label class="form-label">Nominal Biaya (Rp)</label>
                         {{ br_form.nominal }}
                         {% if br_form.nominal.errors %}<div class="error-msg">{{ br_form.nominal.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group malam-wrapper" style="transition: all 0.3s ease; display: none;">
+                        <label class="form-label">Hari Menginap</label>
+                        {{ br_form.malam_menginap }}
+                        {% if br_form.malam_menginap.errors %}<div class="error-msg">{{ br_form.malam_menginap.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="form-group">
                         <label class="form-label">Keterangan</label>
@@ -220,20 +215,33 @@
             {% endfor %}
         </div>
 
-        <!-- Section 3A: Berkas Pendukung Dengan Nominal -->
+        <!-- Section 3A: Berkas Pendukung Penginapan -->
         <div class="card form-section">
             <div class="form-section-title">
-                <i class="fas fa-file-invoice-dollar"></i> Berkas Pendukung dengan Nominal Biaya (Tiket, Hotel, Struk BBM, dll)
+                <i class="fas fa-bed"></i> Berkas Pendukung untuk Penginapan
+            </div>
+            <div id="berkas-penginapan-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Penginapan rows will be appended here by JS on load -->
+            </div>
+            <button type="button" id="add-berkas-penginapan-btn" class="btn" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
+                <i class="fas fa-plus"></i> Tambah Berkas Penginapan
+            </button>
+        </div>
+
+        <!-- Section 3B: Berkas Pendukung Dengan Nominal -->
+        <div class="card form-section">
+            <div class="form-section-title">
+                <i class="fas fa-file-invoice-dollar"></i> Berkas Pendukung untuk Transportasi (Tiket, Struk BBM, dll)
             </div>
             <div id="berkas-nominal-container" style="display: flex; flex-direction: column; gap: 1rem;">
                 <!-- Nominal rows will be appended here by JS on load -->
             </div>
             <button type="button" id="add-berkas-nominal-btn" class="btn" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
-                <i class="fas fa-plus"></i> Tambah Berkas Biaya / Nominal
+                <i class="fas fa-plus"></i> Tambah Berkas Transportasi
             </button>
         </div>
 
-        <!-- Section 3B: Berkas Pendukung Tanpa Nominal -->
+        <!-- Section 3C: Berkas Pendukung Tanpa Nominal -->
         <div class="card form-section">
             <div class="form-section-title">
                 <i class="fas fa-file-alt"></i> Berkas Pendukung Tanpa Nominal Biaya (Visum, Laporan Kegiatan, dll)
@@ -253,7 +261,7 @@
                 <button type="button" class="remove-row-btn" style="position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: color 0.2s;" onclick="removeFormRow(this)">
                     <i class="fas fa-times"></i>
                 </button>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: start;">
+                <div class="berkas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
                     <div class="form-group">
                         <label class="form-label">Jenis Berkas</label>
                         {{ berkas_formset.empty_form.jenis_berkas }}
@@ -261,6 +269,10 @@
                     <div class="form-group nominal-wrapper" style="transition: all 0.3s ease;">
                         <label class="form-label">Nominal Biaya (Rp)</label>
                         {{ berkas_formset.empty_form.nominal }}
+                    </div>
+                    <div class="form-group malam-wrapper" style="transition: all 0.3s ease; display: none;">
+                        <label class="form-label">Hari Menginap</label>
+                        {{ berkas_formset.empty_form.malam_menginap }}
                     </div>
                     <div class="form-group">
                         <label class="form-label">Keterangan</label>
@@ -468,27 +480,30 @@
 <script>
     const nominalRequiredIds = {{ jenis_berkas_nominal|safe }};
     const wajibRequiredIds = {{ jenis_berkas_wajib|safe }};
+    const penginapanRequiredIds = {{ jenis_berkas_penginapan|safe }};
     let originalOptions = [];
 
-    function toggleFieldsBasedOnJenis(row, isNominal) {
+    function toggleFieldsBasedOnJenis(row, sectionType) {
         const select = row.querySelector('select[name$="-jenis_berkas"]');
         const nominalWrapper = row.querySelector('.nominal-wrapper');
+        const malamWrapper = row.querySelector('.malam-wrapper');
         const uploadWrapper = row.querySelector('.file-upload-wrapper');
         
         const nominalInput = row.querySelector('input[name$="-nominal"]');
+        const malamInput = row.querySelector('input[name$="-malam_menginap"]');
         const fileInput = row.querySelector('input[name$="-file"]');
         
         if (!select) return;
 
-        // Filter select options based on whether this row belongs to the Nominal section
+        // Filter select options based on whether this row belongs to the specific section
         if (originalOptions.length > 0) {
-            filterSelectOptions(select, isNominal);
+            filterSelectOptions(select, sectionType);
         }
 
         const val = select.value ? parseInt(select.value) : null;
         
         // 1. Handle Nominal Biaya Visibility
-        if (isNominal) {
+        if (sectionType === 'penginapan' || sectionType === 'nominal') {
             if (nominalWrapper) nominalWrapper.style.display = 'block';
             if (nominalInput) {
                 // If the selected value is valid, set required
@@ -506,15 +521,49 @@
             }
         }
 
-        // 2. Handle Upload File Visibility
-        if (val && wajibRequiredIds.includes(val)) {
-            if (uploadWrapper) uploadWrapper.style.display = 'block';
+        // 2. Handle Malam Menginap Visibility
+        if (sectionType === 'penginapan') {
+            if (malamWrapper) malamWrapper.style.display = 'block';
+            if (malamInput) {
+                if (val && penginapanRequiredIds.includes(val)) {
+                    malamInput.setAttribute('required', 'required');
+                } else {
+                    malamInput.removeAttribute('required');
+                }
+            }
         } else {
-            if (uploadWrapper) uploadWrapper.style.display = 'none';
+            if (malamWrapper) malamWrapper.style.display = 'none';
+            if (malamInput) {
+                malamInput.removeAttribute('required');
+                malamInput.value = '';
+            }
+        }
+
+        // 3. Handle Upload File Visibility
+        if (uploadWrapper) {
+            uploadWrapper.style.display = 'block';
+            const label = uploadWrapper.querySelector('label');
+            if (label) {
+                if (val && wajibRequiredIds.includes(val)) {
+                    label.innerHTML = 'Upload File <span style="color:red">*</span>';
+                } else {
+                    label.innerHTML = 'Upload File <span style="font-size:0.75rem; color:#64748b; font-weight:normal;">(Opsional)</span>';
+                }
+            }
+        }
+        
+        // 4. Handle Grid Columns Layout
+        const berkasGrid = row.querySelector('.berkas-grid');
+        if (berkasGrid) {
+            if (sectionType === 'non-nominal') {
+                berkasGrid.style.gridTemplateColumns = '1fr 1fr 1fr';
+            } else {
+                berkasGrid.style.gridTemplateColumns = '1fr 1fr';
+            }
         }
     }
 
-    function filterSelectOptions(selectElement, isNominal) {
+    function filterSelectOptions(selectElement, sectionType) {
         const valBefore = selectElement.value;
         selectElement.innerHTML = ''; // Clear options
         
@@ -525,12 +574,16 @@
                 return;
             }
             const val = parseInt(opt.value);
+            const optIsPenginapan = penginapanRequiredIds.includes(val);
             const optIsNominal = nominalRequiredIds.includes(val);
             
-            if (isNominal && optIsNominal) {
+            if (sectionType === 'penginapan' && optIsPenginapan) {
                 const newOpt = new Option(opt.text, opt.value);
                 selectElement.add(newOpt);
-            } else if (!isNominal && !optIsNominal) {
+            } else if (sectionType === 'nominal' && !optIsPenginapan && optIsNominal) {
+                const newOpt = new Option(opt.text, opt.value);
+                selectElement.add(newOpt);
+            } else if (sectionType === 'non-nominal' && !optIsPenginapan && !optIsNominal) {
                 const newOpt = new Option(opt.text, opt.value);
                 selectElement.add(newOpt);
             }
@@ -563,8 +616,6 @@
         const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
         const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
         const tujuanProvinsi = document.querySelector('#id_tujuan_provinsi')?.value;
-        const tidakMenginapCheckbox = document.querySelector('#id_tidak_menginap');
-        const tidakMenginap = tidakMenginapCheckbox ? tidakMenginapCheckbox.checked : false;
         const jenisTransportasi = document.querySelector('#id_jenis_transportasi')?.value;
         const tahunSbm = document.querySelector('#id_tahun_sbm')?.value;
         const pegawaiId = "{{ perjadin.pegawai.id }}";
@@ -575,6 +626,7 @@
             if (row.style.display !== 'none') {
                 const select = row.querySelector('select[name$="-jenis_berkas"]');
                 const nominalInput = row.querySelector('.nominal-input-field');
+                const malamInput = row.querySelector('input[name$="-malam_menginap"]');
                 const deleteInput = row.querySelector('input[name$="-DELETE"]');
                 
                 if (deleteInput && deleteInput.checked) return;
@@ -582,10 +634,12 @@
                 if (select) {
                     const jbId = select.value;
                     const nominalVal = nominalInput ? nominalInput.value.replace(/\./g, '') : 0;
+                    const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
                     if (jbId) {
                         berkas.push({
                             'jenis_berkas_id': parseInt(jbId),
-                            'nominal': parseFloat(nominalVal) || 0.0
+                            'nominal': parseFloat(nominalVal) || 0.0,
+                            'malam_menginap': malamVal
                         });
                     }
                 }
@@ -596,7 +650,6 @@
             tanggal_berangkat: tanggalBerangkat,
             tanggal_kembali: tanggalKembali,
             tujuan_provinsi: tujuanProvinsi,
-            tidak_menginap: tidakMenginap,
             jenis_transportasi: jenisTransportasi,
             tahun_sbm: tahunSbm,
             pegawai_id: pegawaiId,
@@ -653,9 +706,11 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const originalContainer = document.querySelector('#berkas-original-container');
+        const penginapanContainer = document.querySelector('#berkas-penginapan-container');
         const nominalContainer = document.querySelector('#berkas-nominal-container');
         const nonNominalContainer = document.querySelector('#berkas-non-nominal-container');
         
+        const addPenginapanBtn = document.querySelector('#add-berkas-penginapan-btn');
         const addNominalBtn = document.querySelector('#add-berkas-nominal-btn');
         const addNonNominalBtn = document.querySelector('#add-berkas-non-nominal-btn');
         const totalFormsInput = document.querySelector('#id_berkas_perjalanan_set-TOTAL_FORMS') || document.querySelector('[id$="-TOTAL_FORMS"]');
@@ -669,6 +724,14 @@
             }));
         }
 
+        // Helper function to get section type
+        function getSectionType(val) {
+            if (!val) return 'non-nominal';
+            if (penginapanRequiredIds.includes(val)) return 'penginapan';
+            if (nominalRequiredIds.includes(val)) return 'nominal';
+            return 'non-nominal';
+        }
+
         // 1. Distribute initial rows
         if (originalContainer) {
             const rows = Array.from(originalContainer.querySelectorAll('.formset-row'));
@@ -676,20 +739,21 @@
                 const select = row.querySelector('select[name$="-jenis_berkas"]');
                 if (select) {
                     const val = select.value ? parseInt(select.value) : null;
-                    const isNominal = val && nominalRequiredIds.includes(val);
+                    const sectionType = getSectionType(val);
                     
-                    if (isNominal) {
+                    if (sectionType === 'penginapan') {
+                        penginapanContainer.appendChild(row);
+                    } else if (sectionType === 'nominal') {
                         nominalContainer.appendChild(row);
-                        toggleFieldsBasedOnJenis(row, true);
                     } else {
                         nonNominalContainer.appendChild(row);
-                        toggleFieldsBasedOnJenis(row, false);
                     }
+                    toggleFieldsBasedOnJenis(row, sectionType);
                     
                     select.addEventListener('change', () => {
                         const newVal = select.value ? parseInt(select.value) : null;
-                        const currentlyNominal = newVal && nominalRequiredIds.includes(newVal);
-                        toggleFieldsBasedOnJenis(row, currentlyNominal);
+                        const newSectionType = getSectionType(newVal);
+                        toggleFieldsBasedOnJenis(row, newSectionType);
                         updateEstimasi();
                     });
                 }
@@ -697,7 +761,7 @@
         }
 
         // Helper to add a new form row
-        function addNewForm(isNominal) {
+        function addNewForm(sectionType) {
             const currentCount = parseInt(totalFormsInput.value);
             const templateHtml = document.querySelector('#berkas-empty-form').innerHTML;
             
@@ -708,21 +772,22 @@
             tempDiv.innerHTML = resolvedHtml;
             const newRow = tempDiv.firstElementChild;
             
-            if (isNominal) {
+            if (sectionType === 'penginapan') {
+                penginapanContainer.appendChild(newRow);
+            } else if (sectionType === 'nominal') {
                 nominalContainer.appendChild(newRow);
-                toggleFieldsBasedOnJenis(newRow, true);
             } else {
                 nonNominalContainer.appendChild(newRow);
-                toggleFieldsBasedOnJenis(newRow, false);
             }
+            toggleFieldsBasedOnJenis(newRow, sectionType);
 
             // Bind change event to select dropdown
             const select = newRow.querySelector('select[name$="-jenis_berkas"]');
             if (select) {
                 select.addEventListener('change', () => {
                     const newVal = select.value ? parseInt(select.value) : null;
-                    const currentlyNominal = newVal && nominalRequiredIds.includes(newVal);
-                    toggleFieldsBasedOnJenis(newRow, currentlyNominal);
+                    const newSectionType = getSectionType(newVal);
+                    toggleFieldsBasedOnJenis(newRow, newSectionType);
                     updateEstimasi();
                 });
             }
@@ -732,12 +797,14 @@
             updateEstimasi();
         }
 
-        if (addNominalBtn) {
-            addNominalBtn.addEventListener('click', () => addNewForm(true));
+        if (addPenginapanBtn) {
+            addPenginapanBtn.addEventListener('click', () => addNewForm('penginapan'));
         }
-        
+        if (addNominalBtn) {
+            addNominalBtn.addEventListener('click', () => addNewForm('nominal'));
+        }
         if (addNonNominalBtn) {
-            addNonNominalBtn.addEventListener('click', () => addNewForm(false));
+            addNonNominalBtn.addEventListener('click', () => addNewForm('non-nominal'));
         }
 
         // Bind change/input events to main form inputs for real-time preview

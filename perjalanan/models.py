@@ -78,10 +78,7 @@ class PerjalananDinas(models.Model):
         verbose_name="Jenis Transportasi"
     )
     
-    tidak_menginap = models.BooleanField(
-        default=False,
-        verbose_name="Saya tidak menginap di hotel/penginapan"
-    )
+    
     
     # Detail Perjalanan (Akan dilengkapi pegawai/admin)
     tempat_berangkat = models.CharField(max_length=255, verbose_name="Tempat Berangkat", default="KPU Kab. Konawe Utara")
@@ -198,22 +195,25 @@ class BiayaPerjalanan(models.Model):
 
         # Calculate real hotel and transport from BerkasPerjalanan based on jenis_berkas.kategori_biaya
         total_hotel_input = 0
+        total_malam_hotel = 0
         total_transport_input = 0
         if self.perjalanan_id:
             for b in BerkasPerjalanan.objects.filter(perjalanan_id=self.perjalanan_id):
                 if b.nominal:
                     kategori = b.jenis_berkas.kategori_biaya if (b.jenis_berkas and hasattr(b.jenis_berkas, 'kategori_biaya')) else 'none'
                     if kategori == 'penginapan':
-                        if not self.perjalanan.tidak_menginap:
-                            total_hotel_input += b.nominal
+                        total_hotel_input += b.nominal
+                        if b.malam_menginap:
+                            total_malam_hotel += b.malam_menginap
                     elif kategori == 'transportasi':
                         if self.perjalanan.jenis_transportasi != PerjalananDinas.JenisTransportasi.MOBIL_DINAS:
                             total_transport_input += b.nominal
                     else:
                         nama_berkas = (b.jenis_berkas.nama if b.jenis_berkas else "").upper()
                         if "HOTEL" in nama_berkas or "PENGINAPAN" in nama_berkas:
-                            if not self.perjalanan.tidak_menginap:
-                                total_hotel_input += b.nominal
+                            total_hotel_input += b.nominal
+                            if b.malam_menginap:
+                                total_malam_hotel += b.malam_menginap
                         elif "TIKET" in nama_berkas or "TRANSPORT" in nama_berkas or "TAXI" in nama_berkas or "PESAWAT" in nama_berkas:
                             if self.perjalanan.jenis_transportasi != PerjalananDinas.JenisTransportasi.MOBIL_DINAS:
                                 total_transport_input += b.nominal
@@ -223,18 +223,22 @@ class BiayaPerjalanan(models.Model):
         self.uang_harian_riil = durasi * tarif_harian
         self.uang_representasi_riil = durasi * tarif_representasi
 
-        # Logic 2: Capping Hotel/Penginapan (At-Cost)
-        if self.perjalanan.tidak_menginap:
-            self.biaya_penginapan_riil = Decimal('0.30') * plafon_hotel * durasi
-            self.penginapan_dana_pribadi = 0
+        # Logic 2: Capping Hotel/Penginapan (Partial 30%)
+        total_malam_perjalanan = max(0, durasi - 1)
+        sisa_malam_tanpa_hotel = max(0, total_malam_perjalanan - total_malam_hotel)
+        
+        plafon_hotel_limit = plafon_hotel * total_malam_hotel
+        biaya_hotel_riil = min(total_hotel_input, plafon_hotel_limit)
+        
+        from decimal import Decimal
+        biaya_hotel_lumpsum = Decimal('0.30') * plafon_hotel * sisa_malam_tanpa_hotel
+        
+        self.biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
+        
+        if total_hotel_input > plafon_hotel_limit:
+            self.penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
         else:
-            plafon_hotel_limit = plafon_hotel * durasi
-            if total_hotel_input > plafon_hotel_limit:
-                self.biaya_penginapan_riil = plafon_hotel_limit
-                self.penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
-            else:
-                self.biaya_penginapan_riil = total_hotel_input
-                self.penginapan_dana_pribadi = 0
+            self.penginapan_dana_pribadi = 0
 
         # Logic 3: Capping Transportasi (At-Cost)
         if plafon_transport > 0 and total_transport_input > plafon_transport:
@@ -257,6 +261,7 @@ class BerkasPerjalanan(models.Model):
     perjalanan = models.ForeignKey(PerjalananDinas, on_delete=models.CASCADE, related_name='berkas')
     jenis_berkas = models.ForeignKey(JenisBerkas, on_delete=models.PROTECT, verbose_name="Jenis Berkas", null=True, blank=True)
     file = models.FileField(upload_to='perjalanan_dinas/%Y/%m/', blank=True, null=True)
+    malam_menginap = models.IntegerField(null=True, blank=True, verbose_name="Malam Menginap")
     nominal = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True, verbose_name="Nominal Biaya")
     keterangan = models.CharField(max_length=255, blank=True, null=True, verbose_name="Keterangan")
     

@@ -8,7 +8,7 @@ class PerjalananDinasForm(forms.ModelForm):
         fields = [
             'tempat_berangkat', 'tempat_tujuan', 'tujuan_provinsi',
             'maksud_perjalanan', 'tanggal_berangkat', 'tanggal_kembali',
-            'jenis_perjalanan', 'jenis_transportasi', 'tidak_menginap', 'anggaran', 'tahun_sbm'
+            'jenis_perjalanan', 'jenis_transportasi', 'anggaran', 'tahun_sbm'
         ]
         widgets = {
             'tanggal_berangkat': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
@@ -19,7 +19,6 @@ class PerjalananDinasForm(forms.ModelForm):
             'maksud_perjalanan': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'jenis_perjalanan': forms.Select(attrs={'class': 'form-control'}),
             'jenis_transportasi': forms.Select(attrs={'class': 'form-control'}),
-            'tidak_menginap': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'anggaran': forms.Select(attrs={'class': 'form-control'}),
             'tahun_sbm': forms.Select(attrs={'class': 'form-control'}),
         }
@@ -51,13 +50,19 @@ BiayaPerjalananFormSet = inlineformset_factory(
 class BerkasPerjalananForm(forms.ModelForm):
     class Meta:
         model = BerkasPerjalanan
-        fields = ['jenis_berkas', 'nominal', 'keterangan', 'file']
+        fields = ['jenis_berkas', 'nominal', 'keterangan', 'file', 'malam_menginap']
         widgets = {
             'jenis_berkas': forms.Select(attrs={'class': 'form-control'}),
             'file': forms.FileInput(attrs={'class': 'form-control'}),
             'nominal': forms.NumberInput(attrs={'class': 'form-control nominal-input-field', 'placeholder': 'Rp 0', 'min': '0'}),
             'keterangan': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Keterangan tambahan (opsional)'}),
+            'malam_menginap': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Jml Hari', 'min': '1'}),
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['malam_menginap'].initial = 1
 
 BerkasPerjalananFormSet = inlineformset_factory(
     PerjalananDinas, BerkasPerjalanan,

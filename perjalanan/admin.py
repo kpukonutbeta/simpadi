@@ -116,8 +116,8 @@ class PengaturanNomorSPDAdmin(admin.ModelAdmin):
 
 @admin.register(PerjalananDinas)
 class PerjalananDinasAdmin(admin.ModelAdmin):
-    list_display = ('nomor_spd', 'surat_tugas', 'pegawai', 'jenis_perjalanan', 'jenis_transportasi', 'tidak_menginap', 'status', 'tanggal_berangkat', 'durasi_hari')
-    list_filter = ('surat_tugas', 'jenis_perjalanan', 'jenis_transportasi', 'tidak_menginap', 'tujuan_provinsi', 'status', 'tahun_sbm', 'tanggal_berangkat')
+    list_display = ('nomor_spd', 'surat_tugas', 'pegawai', 'jenis_perjalanan', 'jenis_transportasi', 'status', 'tanggal_berangkat', 'durasi_hari')
+    list_filter = ('surat_tugas', 'jenis_perjalanan', 'jenis_transportasi', 'tujuan_provinsi', 'status', 'tahun_sbm', 'tanggal_berangkat')
     search_fields = ('nomor_spd', 'pegawai__nama', 'pegawai__nip', 'surat_tugas__nomor_surat')
     readonly_fields = ('nomor_spd',) # Nomor SPD otomatis, tidak bisa diedit manual
     fields = (
@@ -125,7 +125,7 @@ class PerjalananDinasAdmin(admin.ModelAdmin):
         'tanggal_berangkat', 'tanggal_kembali',
         'tempat_berangkat', 'tempat_tujuan', 'tujuan_provinsi', 'tahun_sbm',
         'maksud_perjalanan',
-        'anggaran', 'jenis_perjalanan', 'jenis_transportasi', 'tidak_menginap'
+        'anggaran', 'jenis_perjalanan', 'jenis_transportasi'
     )
     inlines = [BerkasPerjalananNominalInline, BerkasPerjalananNonNominalInline, BiayaPerjalananInline]
 
