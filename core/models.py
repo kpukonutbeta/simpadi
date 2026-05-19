@@ -3,6 +3,11 @@ from django.db import models
 
 class User(AbstractUser):
     email = models.EmailField(unique=True, verbose_name="Alamat Email")
+    is_staff = models.BooleanField(
+        default=False,
+        verbose_name="Status Operator",
+        help_text="Menentukan apakah pengguna dapat masuk ke situs admin/operator."
+    )
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

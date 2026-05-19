@@ -174,46 +174,11 @@
             </div>
         </div>
 
-        <!-- Section 2: Rincian Estimasi Biaya Perjalanan Dinas -->
-        <div class="card form-section">
-            <div class="form-section-title">
-                <i class="fas fa-money-bill-wave"></i> Rincian Estimasi Biaya Perjalanan Dinas
-            </div>
-            {{ biaya_formset.management_form }}
-            {% for b_form in biaya_formset %}
-                {{ b_form.id }}
-            {% endfor %}
-            
-            <div id="cost-preview-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem;">
-                <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Uang Harian (Lumpsum SBM)</div>
-                    <div id="preview-uang-harian" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.uang_harian_riil|default:0|floatformat:0 }}</div>
-                </div>
-                <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Uang Representasi (Lumpsum SBM)</div>
-                    <div id="preview-uang-representasi" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.uang_representasi_riil|default:0|floatformat:0 }}</div>
-                </div>
-                <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Biaya Penginapan (Hotel / Akomodasi)</div>
-                    <div id="preview-biaya-penginapan" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.biaya_penginapan_riil|default:0|floatformat:0 }}</div>
-                </div>
-                <div class="summary-item" style="padding: 1rem; background: var(--glass-bg); border-radius: 0.5rem; border: 1px solid var(--border);">
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Biaya Transportasi (Tiket / Struk)</div>
-                    <div id="preview-biaya-transportasi" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">Rp {{ perjadin.biaya.biaya_transportasi_riil|default:0|floatformat:0 }}</div>
-                </div>
-            </div>
-            
-            <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                <div style="padding: 1rem 1.25rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
-                    <span style="font-size: 0.875rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">Total Dibayarkan</span>
-                    <span id="preview-total-dibayarkan" style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">Rp {{ perjadin.biaya.total_dibayarkan|default:0|floatformat:0 }}</span>
-                </div>
-                <div id="row-total-tidak-dibayarkan" style="padding: 1rem 1.25rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.02) 0%, rgba(220, 38, 38, 0.02) 100%); border-radius: 0.5rem; border: 1px dashed #dc2626; display: {% if perjadin.biaya.total_tidak_dibayarkan > 0 %}flex{% else %}none{% endif %}; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
-                    <span style="font-size: 0.875rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em;">Total Tidak Dibayarkan</span>
-                    <span id="preview-total-tidak-dibayarkan" style="font-size: 1.5rem; font-weight: 800; color: #dc2626;">Rp {{ perjadin.biaya.total_tidak_dibayarkan|default:0|floatformat:0 }}</span>
-                </div>
-            </div>
-        </div>
+        <!-- Hidden Biaya Formset fields -->
+        {{ biaya_formset.management_form }}
+        {% for b_form in biaya_formset %}
+            {{ b_form.id }}
+        {% endfor %}
 
         <!-- Section 3: Berkas Pendukung -->
         <div id="berkas-original-container" style="display: none;">
@@ -350,6 +315,44 @@
                 <li>Sistem akan menghitung durasi otomatis (n+1).</li>
                 <li>Unggah bukti riil jika sudah tersedia.</li>
             </ul>
+        </div>
+
+        <!-- Section 2: Rincian Biaya Perjalanan Dinas -->
+        <div class="card" style="margin-top: 1.5rem; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <i class="fas fa-wallet" style="color: var(--primary);"></i>
+                <h4 style="font-size: 0.875rem; font-weight: 700;">Rincian Biaya Perjalanan Dinas</h4>
+            </div>
+            
+            <div id="cost-preview-container" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 0.25rem 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 0.5rem;">
+                    <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500;">Uang Harian</span>
+                    <span id="preview-uang-harian" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_harian_riil|default:0|floatformat:0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 0.5rem;">
+                    <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500;">Uang Representasi</span>
+                    <span id="preview-uang-representasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_representasi_riil|default:0|floatformat:0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 0.5rem;">
+                    <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500;">Biaya Penginapan</span>
+                    <span id="preview-biaya-penginapan" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_penginapan_riil|default:0|floatformat:0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 0.5rem;">
+                    <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500;">Biaya Transportasi</span>
+                    <span id="preview-biaya-transportasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_transportasi_riil|default:0|floatformat:0 }}</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="padding: 0.75rem 1rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">Total Dibayarkan</span>
+                    <span id="preview-total-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">Rp {{ perjadin.biaya.total_dibayarkan|default:0|floatformat:0 }}</span>
+                </div>
+                <div id="row-total-tidak-dibayarkan" style="padding: 0.75rem 1rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.02) 0%, rgba(220, 38, 38, 0.02) 100%); border-radius: 0.5rem; border: 1px dashed #dc2626; display: {% if perjadin.biaya.total_tidak_dibayarkan > 0 %}flex{% else %}none{% endif %}; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em;">Total Tidak Dibayarkan</span>
+                    <span id="preview-total-tidak-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #dc2626;">Rp {{ perjadin.biaya.total_tidak_dibayarkan|default:0|floatformat:0 }}</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
