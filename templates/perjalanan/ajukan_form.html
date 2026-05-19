@@ -161,6 +161,10 @@
                     {{ form.jenis_transportasi }}
                     {% if form.jenis_transportasi.errors %}<div class="error-msg">{{ form.jenis_transportasi.errors.0 }}</div>{% endif %}
                 </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.8rem;">
+                    {{ form.tidak_menginap }}
+                    <label class="form-label" style="margin-bottom: 0; cursor: pointer; display: inline-flex; align-items: center;">Tidak Menginap (Biaya Penginapan Rp 0)</label>
+                    {% if form.tidak_menginap.errors %}<div class="error-msg">{{ form.tidak_menginap.errors.0 }}</div>{% endif %}
                 </div>
             </div>
 
@@ -646,6 +650,8 @@
             }
         });
 
+        const tidakMenginap = document.querySelector('#id_tidak_menginap')?.checked || false;
+
         const payload = {
             tanggal_berangkat: tanggalBerangkat,
             tanggal_kembali: tanggalKembali,
@@ -653,6 +659,7 @@
             jenis_transportasi: jenisTransportasi,
             tahun_sbm: tahunSbm,
             pegawai_id: pegawaiId,
+            tidak_menginap: tidakMenginap,
             berkas: berkas
         };
 
@@ -825,7 +832,7 @@
         });
 
         // Delegate listener for nominal inputs & jenis berkas selects inside containers
-        ['#berkas-nominal-container', '#berkas-non-nominal-container'].forEach(contSel => {
+        ['#berkas-penginapan-container', '#berkas-nominal-container', '#berkas-non-nominal-container'].forEach(contSel => {
             const container = document.querySelector(contSel);
             if (container) {
                 container.addEventListener('change', (e) => {

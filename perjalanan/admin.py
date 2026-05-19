@@ -5,7 +5,7 @@ from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.safestring import mark_safe
 from .models import (
     PerjalananDinas, BiayaPerjalanan, BerkasPerjalanan, SuratTugas,
-    PengaturanNomorSPD, BerkasPerjalananNominal, BerkasPerjalananNonNominal
+    PengaturanNomorSPD, BerkasPerjalananPenginapan, BerkasPerjalananTransportasi, BerkasPerjalananNonNominal
 )
 from master_data.models import JenisBerkas
 
@@ -55,20 +55,59 @@ class BiayaPerjalananInline(admin.StackedInline):
         return "-"
     get_total_tidak_dibayarkan.short_description = "Total Tidak Dibayarkan"
 
-class BerkasPerjalananNominalInline(admin.TabularInline):
-    model = BerkasPerjalananNominal
-    fields = ('jenis_berkas', 'nominal', 'keterangan', 'file', 'is_verified')
+from django.db.models import Q
+
+class BerkasPerjalananPenginapanInline(admin.TabularInline):
+    model = BerkasPerjalananPenginapan
+    fields = ('jenis_berkas', 'nominal', 'malam_menginap', 'keterangan', 'file', 'is_verified')
     extra = 1
     can_delete = True
-    verbose_name = "Berkas Pendukung dengan Nominal Biaya"
-    verbose_name_plural = "Berkas Pendukung dengan Nominal Biaya"
+    verbose_name = "Berkas Pendukung untuk Penginapan"
+    verbose_name_plural = "Berkas Pendukung untuk Penginapan"
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(jenis_berkas__nominal_biaya=True)
+        return super().get_queryset(request).filter(
+            Q(jenis_berkas__kategori_biaya='penginapan') | Q(jenis_berkas__nama__icontains='hotel') | Q(jenis_berkas__nama__icontains='penginapan'),
+            jenis_berkas__nominal_biaya=True
+        )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "jenis_berkas":
-            kwargs["queryset"] = JenisBerkas.objects.filter(nominal_biaya=True)
+            kwargs["queryset"] = JenisBerkas.objects.filter(
+                Q(kategori_biaya='penginapan') | Q(nama__icontains='hotel') | Q(nama__icontains='penginapan'),
+                nominal_biaya=True
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == 'jenis_berkas' and formfield and hasattr(formfield.widget, 'can_delete_related'):
+            formfield.widget.can_delete_related = False
+        if db_field.name == 'file' and formfield:
+            formfield.widget = AdminFileWidgetNewTab(attrs=formfield.widget.attrs)
+        return formfield
+
+
+class BerkasPerjalananTransportasiInline(admin.TabularInline):
+    model = BerkasPerjalananTransportasi
+    fields = ('jenis_berkas', 'nominal', 'keterangan', 'file', 'is_verified')
+    extra = 1
+    can_delete = True
+    verbose_name = "Berkas Pendukung untuk Transportasi"
+    verbose_name_plural = "Berkas Pendukung untuk Transportasi"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(
+            ~Q(jenis_berkas__kategori_biaya='penginapan') & ~Q(jenis_berkas__nama__icontains='hotel') & ~Q(jenis_berkas__nama__icontains='penginapan'),
+            jenis_berkas__nominal_biaya=True
+        )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "jenis_berkas":
+            kwargs["queryset"] = JenisBerkas.objects.filter(
+                ~Q(kategori_biaya='penginapan') & ~Q(nama__icontains='hotel') & ~Q(nama__icontains='penginapan'),
+                nominal_biaya=True
+            )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
@@ -125,9 +164,9 @@ class PerjalananDinasAdmin(admin.ModelAdmin):
         'tanggal_berangkat', 'tanggal_kembali',
         'tempat_berangkat', 'tempat_tujuan', 'tujuan_provinsi', 'tahun_sbm',
         'maksud_perjalanan',
-        'anggaran', 'jenis_perjalanan', 'jenis_transportasi'
+        'anggaran', 'jenis_perjalanan', 'jenis_transportasi', 'tidak_menginap'
     )
-    inlines = [BerkasPerjalananNominalInline, BerkasPerjalananNonNominalInline, BiayaPerjalananInline]
+    inlines = [BerkasPerjalananPenginapanInline, BerkasPerjalananTransportasiInline, BerkasPerjalananNonNominalInline, BiayaPerjalananInline]
 
     class Media:
         js = ('js/admin_filter.js',)

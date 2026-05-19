@@ -285,8 +285,7 @@ def hitung_estimasi_ajax(request):
                 kategori = jb.kategori_biaya if hasattr(jb, 'kategori_biaya') else 'none'
                 if kategori == 'penginapan':
                     total_hotel_input += nominal
-                    if malam_menginap > 0:
-                        total_malam_hotel += malam_menginap
+                    total_malam_hotel += malam_menginap if malam_menginap > 0 else 1
                 elif kategori == 'transportasi':
                     if jenis_transportasi != 'mobil_dinas':
                         total_transport_input += nominal
@@ -294,25 +293,32 @@ def hitung_estimasi_ajax(request):
                     nama_berkas = (jb.nama or "").upper()
                     if "HOTEL" in nama_berkas or "PENGINAPAN" in nama_berkas:
                         total_hotel_input += nominal
-                        if malam_menginap > 0:
-                            total_malam_hotel += malam_menginap
+                        total_malam_hotel += malam_menginap if malam_menginap > 0 else 1
                     elif "TIKET" in nama_berkas or "TRANSPORT" in nama_berkas or "TAXI" in nama_berkas or "PESAWAT" in nama_berkas:
                         if jenis_transportasi != 'mobil_dinas':
                             total_transport_input += nominal
             except JenisBerkas.DoesNotExist:
                 pass
 
+    tidak_menginap = data.get('tidak_menginap', False)
+    if isinstance(tidak_menginap, str):
+        tidak_menginap = tidak_menginap.lower() in ['true', 'on', '1']
+
     # Calculation
     uang_harian_riil = float(durasi * tarif_harian)
     uang_representasi_riil = float(durasi * tarif_representasi)
 
-    total_malam_perjalanan = max(0, durasi - 1)
-    sisa_malam_tanpa_hotel = max(0, total_malam_perjalanan - total_malam_hotel)
-    
-    plafon_hotel_limit = plafon_hotel * total_malam_hotel
-    biaya_hotel_riil = min(total_hotel_input, plafon_hotel_limit)
-    biaya_hotel_lumpsum = 0.30 * plafon_hotel * sisa_malam_tanpa_hotel
-    biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
+    if tidak_menginap:
+        biaya_penginapan_riil = 0.0
+        penginapan_dana_pribadi = total_hotel_input
+    else:
+        total_malam_perjalanan = max(0, durasi - 1)
+        sisa_malam_tanpa_hotel = max(0, total_malam_perjalanan - total_malam_hotel)
+        
+        plafon_hotel_limit = plafon_hotel * total_malam_hotel
+        biaya_hotel_riil = min(total_hotel_input, plafon_hotel_limit)
+        biaya_hotel_lumpsum = 0.30 * plafon_hotel * sisa_malam_tanpa_hotel
+        biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
 
     if jenis_transportasi == 'mobil_dinas':
         biaya_transportasi_riil = 0.0
@@ -325,9 +331,12 @@ def hitung_estimasi_ajax(request):
     total_dibayarkan = uang_harian_riil + uang_representasi_riil + biaya_penginapan_riil + biaya_transportasi_riil
 
     # Compute unpaid/unreimbursed amount (total_tidak_dibayarkan)
-    penginapan_dana_pribadi = 0.0
-    if total_hotel_input > plafon_hotel_limit:
-        penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
+    if tidak_menginap:
+        penginapan_dana_pribadi = total_hotel_input
+    else:
+        penginapan_dana_pribadi = 0.0
+        if total_hotel_input > plafon_hotel_limit:
+            penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
 
     transportasi_dana_pribadi = 0.0
     if plafon_transport > 0 and total_transport_input > plafon_transport:

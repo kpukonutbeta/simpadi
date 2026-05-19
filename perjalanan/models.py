@@ -94,6 +94,7 @@ class PerjalananDinas(models.Model):
         default=2024, 
         verbose_name="Tahun SBM"
     )
+    tidak_menginap = models.BooleanField(default=False, verbose_name="Tidak Menginap (Biaya Penginapan Rp 0)")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -203,8 +204,7 @@ class BiayaPerjalanan(models.Model):
                     kategori = b.jenis_berkas.kategori_biaya if (b.jenis_berkas and hasattr(b.jenis_berkas, 'kategori_biaya')) else 'none'
                     if kategori == 'penginapan':
                         total_hotel_input += b.nominal
-                        if b.malam_menginap:
-                            total_malam_hotel += b.malam_menginap
+                        total_malam_hotel += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
                     elif kategori == 'transportasi':
                         if self.perjalanan.jenis_transportasi != PerjalananDinas.JenisTransportasi.MOBIL_DINAS:
                             total_transport_input += b.nominal
@@ -212,8 +212,7 @@ class BiayaPerjalanan(models.Model):
                         nama_berkas = (b.jenis_berkas.nama if b.jenis_berkas else "").upper()
                         if "HOTEL" in nama_berkas or "PENGINAPAN" in nama_berkas:
                             total_hotel_input += b.nominal
-                            if b.malam_menginap:
-                                total_malam_hotel += b.malam_menginap
+                            total_malam_hotel += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
                         elif "TIKET" in nama_berkas or "TRANSPORT" in nama_berkas or "TAXI" in nama_berkas or "PESAWAT" in nama_berkas:
                             if self.perjalanan.jenis_transportasi != PerjalananDinas.JenisTransportasi.MOBIL_DINAS:
                                 total_transport_input += b.nominal
@@ -224,21 +223,25 @@ class BiayaPerjalanan(models.Model):
         self.uang_representasi_riil = durasi * tarif_representasi
 
         # Logic 2: Capping Hotel/Penginapan (Partial 30%)
-        total_malam_perjalanan = max(0, durasi - 1)
-        sisa_malam_tanpa_hotel = max(0, total_malam_perjalanan - total_malam_hotel)
-        
-        plafon_hotel_limit = plafon_hotel * total_malam_hotel
-        biaya_hotel_riil = min(total_hotel_input, plafon_hotel_limit)
-        
-        from decimal import Decimal
-        biaya_hotel_lumpsum = Decimal('0.30') * plafon_hotel * sisa_malam_tanpa_hotel
-        
-        self.biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
-        
-        if total_hotel_input > plafon_hotel_limit:
-            self.penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
+        if self.perjalanan.tidak_menginap:
+            self.biaya_penginapan_riil = 0
+            self.penginapan_dana_pribadi = total_hotel_input
         else:
-            self.penginapan_dana_pribadi = 0
+            total_malam_perjalanan = max(0, durasi - 1)
+            sisa_malam_tanpa_hotel = max(0, total_malam_perjalanan - total_malam_hotel)
+            
+            plafon_hotel_limit = plafon_hotel * total_malam_hotel
+            biaya_hotel_riil = min(total_hotel_input, plafon_hotel_limit)
+            
+            from decimal import Decimal
+            biaya_hotel_lumpsum = Decimal('0.30') * plafon_hotel * sisa_malam_tanpa_hotel
+            
+            self.biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
+            
+            if total_hotel_input > plafon_hotel_limit:
+                self.penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
+            else:
+                self.penginapan_dana_pribadi = 0
 
         # Logic 3: Capping Transportasi (At-Cost)
         if plafon_transport > 0 and total_transport_input > plafon_transport:
@@ -299,11 +302,18 @@ class BerkasPerjalanan(models.Model):
         return f"{self.jenis_berkas.nama if self.jenis_berkas else 'Berkas'} - {self.perjalanan}"
 
 
-class BerkasPerjalananNominal(BerkasPerjalanan):
+class BerkasPerjalananPenginapan(BerkasPerjalanan):
     class Meta:
         proxy = True
-        verbose_name = "Berkas Pendukung dengan Nominal Biaya"
-        verbose_name_plural = "Berkas Pendukung dengan Nominal Biaya"
+        verbose_name = "Berkas Pendukung untuk Penginapan"
+        verbose_name_plural = "Berkas Pendukung untuk Penginapan"
+
+
+class BerkasPerjalananTransportasi(BerkasPerjalanan):
+    class Meta:
+        proxy = True
+        verbose_name = "Berkas Pendukung untuk Transportasi"
+        verbose_name_plural = "Berkas Pendukung untuk Transportasi"
 
 
 class BerkasPerjalananNonNominal(BerkasPerjalanan):

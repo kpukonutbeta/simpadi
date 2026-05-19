@@ -57,10 +57,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (select) {
                 const jbId = select.value;
                 const nominalVal = nominalInput ? nominalInput.value.replace(/\./g, '') : 0;
+                const malamInput = row.querySelector('input[name$="-malam_menginap"]');
+                const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
                 if (jbId) {
                     berkas.push({
                         'jenis_berkas_id': parseInt(jbId),
-                        'nominal': parseFloat(nominalVal) || 0.0
+                        'nominal': parseFloat(nominalVal) || 0.0,
+                        'malam_menginap': malamVal
                     });
                 }
             }
