@@ -33,6 +33,19 @@ class Provinsi(models.Model):
         verbose_name = "Provinsi"
         verbose_name_plural = "Data Provinsi"
 
+class Kota(models.Model):
+    provinsi = models.ForeignKey(Provinsi, on_delete=models.CASCADE, related_name='kota_set', verbose_name="Provinsi")
+    nama = models.CharField(max_length=100, verbose_name="Nama Kota/Kabupaten")
+
+    def __str__(self):
+        return self.nama
+
+    class Meta:
+        unique_together = ('provinsi', 'nama')
+        ordering = ['provinsi__nama', 'nama']
+        verbose_name = "Kota/Kabupaten"
+        verbose_name_plural = "Data Kota/Kabupaten"
+
 class StandarBiaya(models.Model):
     provinsi = models.ForeignKey(Provinsi, on_delete=models.CASCADE)
     golongan = models.CharField(max_length=5, choices=Golongan.choices)
@@ -123,3 +136,40 @@ class PejabatPenandatangan(models.Model):
     class Meta:
         verbose_name = "Pejabat Penandatangan"
         verbose_name_plural = "Pejabat Penandatangan"
+
+class StandarBiayaTiket(models.Model):
+    class KelasTiket(models.TextChoices):
+        BISNIS = 'bisnis', 'Bisnis'
+        EKONOMI = 'ekonomi', 'Ekonomi'
+
+    kota_asal = models.ForeignKey(
+        Kota,
+        on_delete=models.PROTECT,
+        related_name='tiket_asal_set',
+        verbose_name="Kota Asal"
+    )
+    kota_tujuan = models.ForeignKey(
+        Kota,
+        on_delete=models.PROTECT,
+        related_name='tiket_tujuan_set',
+        verbose_name="Kota Tujuan"
+    )
+    kelas = models.CharField(
+        max_length=10,
+        choices=KelasTiket.choices,
+        verbose_name="Kelas Tiket"
+    )
+    nominal = models.DecimalField(
+        max_digits=14,
+        decimal_places=0,
+        verbose_name="Nominal Biaya (PP)"
+    )
+
+    def __str__(self):
+        return f"{self.kota_asal} → {self.kota_tujuan} ({self.get_kelas_display()})"
+
+    class Meta:
+        unique_together = ('kota_asal', 'kota_tujuan', 'kelas')
+        ordering = ['kota_asal__nama', 'kota_tujuan__nama', 'kelas']
+        verbose_name = "Standar Biaya Masukan (SBM) Tiket Pesawat Dalam Negeri"
+        verbose_name_plural = "Standar Biaya Masukan (SBM) Tiket Pesawat Dalam Negeri"

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Pegawai, Provinsi, StandarBiaya, Anggaran, JenisBerkas, PejabatPenandatangan
+from .models import Pegawai, Provinsi, Kota, StandarBiaya, Anggaran, JenisBerkas, PejabatPenandatangan, StandarBiayaTiket
 from core.models import User
 from django import forms
 
@@ -90,12 +90,86 @@ class ProvinsiAdmin(admin.ModelAdmin):
     list_display = ('nama',)
     search_fields = ('nama',)
 
+@admin.register(Kota)
+class KotaAdmin(admin.ModelAdmin):
+    list_display = ('nama', 'provinsi')
+    list_filter = ('provinsi',)
+    search_fields = ('nama', 'provinsi__nama')
+    ordering = ('provinsi__nama', 'nama')
+
 @admin.register(StandarBiaya)
 class StandarBiayaAdmin(admin.ModelAdmin):
-    list_display = ('provinsi', 'golongan', 'tahun', 'uang_harian', 'uang_harian_fullboard_luar', 'uang_harian_fullboard_dalam', 'plafon_penginapan', 'plafon_transportasi', 'uang_representasi')
+    list_display = (
+        'provinsi', 'golongan', 'tahun',
+        'fmt_uang_harian', 'fmt_fullboard_luar', 'fmt_fullboard_dalam',
+        'fmt_plafon_penginapan', 'fmt_plafon_transportasi', 'fmt_uang_representasi'
+    )
     list_filter = ('provinsi', 'golongan', 'tahun')
+
+    @staticmethod
+    def _rupiah(val):
+        return f"Rp{val:,.0f}".replace(',', '.')
+
+    def fmt_uang_harian(self, obj): return self._rupiah(obj.uang_harian)
+    fmt_uang_harian.short_description = "Uang Harian"
+    fmt_uang_harian.admin_order_field = 'uang_harian'
+
+    def fmt_fullboard_luar(self, obj): return self._rupiah(obj.uang_harian_fullboard_luar)
+    fmt_fullboard_luar.short_description = "Fullboard Luar Kota"
+    fmt_fullboard_luar.admin_order_field = 'uang_harian_fullboard_luar'
+
+    def fmt_fullboard_dalam(self, obj): return self._rupiah(obj.uang_harian_fullboard_dalam)
+    fmt_fullboard_dalam.short_description = "Fullboard Dalam Kota"
+    fmt_fullboard_dalam.admin_order_field = 'uang_harian_fullboard_dalam'
+
+    def fmt_plafon_penginapan(self, obj): return self._rupiah(obj.plafon_penginapan)
+    fmt_plafon_penginapan.short_description = "Plafon Penginapan"
+    fmt_plafon_penginapan.admin_order_field = 'plafon_penginapan'
+
+    def fmt_plafon_transportasi(self, obj): return self._rupiah(obj.plafon_transportasi)
+    fmt_plafon_transportasi.short_description = "Plafon Transportasi"
+    fmt_plafon_transportasi.admin_order_field = 'plafon_transportasi'
+
+    def fmt_uang_representasi(self, obj): return self._rupiah(obj.uang_representasi)
+    fmt_uang_representasi.short_description = "Uang Representasi"
+    fmt_uang_representasi.admin_order_field = 'uang_representasi'
+
+    class Media:
+        js = ('js/rupiah_input.js',)
 
 @admin.register(Anggaran)
 class AnggaranAdmin(admin.ModelAdmin):
-    list_display = ('kode_dipa', 'nama_kegiatan', 'pagu', 'sisa_pagu')
+    list_display = ('kode_dipa', 'nama_kegiatan', 'fmt_pagu', 'fmt_sisa_pagu')
     search_fields = ('kode_dipa', 'nama_kegiatan')
+
+    @staticmethod
+    def _rupiah(val):
+        return f"Rp{val:,.0f}".replace(',', '.')
+
+    def fmt_pagu(self, obj): return self._rupiah(obj.pagu)
+    fmt_pagu.short_description = "Total Pagu"
+    fmt_pagu.admin_order_field = 'pagu'
+
+    def fmt_sisa_pagu(self, obj): return self._rupiah(obj.sisa_pagu)
+    fmt_sisa_pagu.short_description = "Sisa Pagu"
+    fmt_sisa_pagu.admin_order_field = 'sisa_pagu'
+
+    class Media:
+        js = ('js/rupiah_input.js',)
+
+
+@admin.register(StandarBiayaTiket)
+class StandarBiayaTiketAdmin(admin.ModelAdmin):
+    list_display = ('kota_asal', 'kota_tujuan', 'kelas', 'nominal_rupiah')
+    list_filter = ('kelas', 'kota_asal__provinsi')
+    search_fields = ('kota_asal__nama', 'kota_tujuan__nama')
+    ordering = ('kota_asal__nama', 'kota_tujuan__nama', 'kelas')
+    autocomplete_fields = ('kota_asal', 'kota_tujuan')
+
+    def nominal_rupiah(self, obj):
+        return f"Rp{obj.nominal:,.0f}".replace(',', '.')
+    nominal_rupiah.short_description = "Nominal Biaya (PP)"
+    nominal_rupiah.admin_order_field = 'nominal'
+
+    class Media:
+        js = ('js/rupiah_input.js',)
