@@ -446,7 +446,7 @@
                     <div id="preview-error" style="display: none; text-align: center; padding: 2rem;">
                         <i class="fas fa-file-pdf fa-3x" style="color: #94a3b8; margin-bottom: 1rem;"></i>
                         <p style="font-size: 0.875rem; color: var(--text-muted);">Pratinjau tidak tersedia langsung.</p>
-                        <a href="{{ surat_tugas.file_path }}" target="_blank" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Buka di Tab Baru</a>
+                        <a href="{{ surat_tugas.file_path.url }}" target="_blank" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Buka di Tab Baru</a>
                     </div>
                 </div>
             </div>
@@ -1051,7 +1051,7 @@
         document.body.style.overflow = 'hidden';
 
         // Handle PDF Preview logic
-        const rawUrl = "{{ surat_tugas.file_path }}";
+        const rawUrl = "{{ surat_tugas.file_path.url }}";
         if (rawUrl) {
             const iframe = document.getElementById('st-pdf-iframe');
             const errorDiv = document.getElementById('preview-error');

@@ -1,10 +1,19 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from master_data.models import Pegawai, Provinsi, StandarBiaya, Anggaran, JenisBerkas
 from decimal import Decimal
 from datetime import timedelta
 
 import uuid
+import os
+import re
+
+def upload_surat_tugas_path(instance, filename):
+    year = instance.tgl_surat.year if instance.tgl_surat else 2026
+    # Replace '/' with '-' to avoid creating nested subdirectories in the filesystem
+    cleaned_nomor = instance.nomor_surat.replace('/', '-') if instance.nomor_surat else 'temp'
+    return f"surat_tugas/{year}/{cleaned_nomor}.pdf"
 
 class SuratTugas(models.Model):
     class Status(models.TextChoices):
@@ -16,7 +25,11 @@ class SuratTugas(models.Model):
     nomor_surat = models.CharField(max_length=100, unique=True, verbose_name="Nomor Surat")
     perihal = models.TextField(verbose_name="Perihal")
     tgl_surat = models.DateField(verbose_name="Tanggal Surat")
-    file_path = models.URLField(blank=True, null=True, verbose_name="Link File (Drive)")
+    file_path = models.FileField(
+        upload_to=upload_surat_tugas_path,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])],
+        verbose_name="File Surat Tugas (PDF)"
+    )
     pegawai = models.ManyToManyField(Pegawai, related_name='surat_tugas_set', verbose_name="Pegawai Terdaftar")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE, verbose_name="Status")
 
@@ -62,6 +75,13 @@ class SuratTugas(models.Model):
         if self.tanggal_berangkat and self.tanggal_kembali:
             if self.tanggal_berangkat > self.tanggal_kembali:
                 raise ValidationError("Tanggal berangkat tidak boleh setelah tanggal kembali.")
+        
+        # Enforce that nomor_surat and tgl_surat must be present if a file is being uploaded
+        if self.file_path:
+            if not self.nomor_surat:
+                raise ValidationError({'nomor_surat': 'Nomor surat harus diisi terlebih dahulu sebelum mengunggah file.'})
+            if not self.tgl_surat:
+                raise ValidationError({'tgl_surat': 'Tanggal surat harus diisi terlebih dahulu sebelum mengunggah file.'})
 
     def __str__(self):
         return f"{self.nomor_surat} - {self.perihal[:30]}..."

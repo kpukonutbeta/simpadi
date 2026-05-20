@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db import models
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.contrib.admin.widgets import AdminFileWidget
@@ -22,6 +23,7 @@ class SuratTugasAdmin(admin.ModelAdmin):
     search_fields = ('nomor_surat', 'perihal', 'tempat_tujuan')
     filter_horizontal = ('pegawai',)
     actions = ['terbitkan_spd_action']
+    
     fieldsets = (
         (None, {
             'fields': ('nomor_surat', 'perihal', 'tgl_surat', 'file_path', 'pegawai', 'status')
@@ -34,6 +36,12 @@ class SuratTugasAdmin(admin.ModelAdmin):
             )
         }),
     )
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if isinstance(db_field, models.FileField) and formfield:
+            formfield.widget = AdminFileWidgetNewTab(attrs=formfield.widget.attrs)
+        return formfield
 
     def terbitkan_spd_action(self, request, queryset):
         # Store selected IDs in session and redirect to custom view
