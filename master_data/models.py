@@ -53,8 +53,8 @@ class StandarBiaya(models.Model):
 
     class Meta:
         unique_together = ('provinsi', 'golongan', 'tahun')
-        verbose_name = "Standar Biaya (SBM)"
-        verbose_name_plural = "Standar Biaya (SBM)"
+        verbose_name = "Standar Biaya Masukan (SBM) / Provinsi"
+        verbose_name_plural = "Standar Biaya Masukan (SBM) / Provinsi"
 
 class Anggaran(models.Model):
     kode_dipa = models.CharField(max_length=50, unique=True, verbose_name="Kode DIPA")
