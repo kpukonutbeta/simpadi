@@ -18,10 +18,22 @@ class AdminFileWidgetNewTab(AdminFileWidget):
 
 @admin.register(SuratTugas)
 class SuratTugasAdmin(admin.ModelAdmin):
-    list_display = ('nomor_surat', 'tgl_surat', 'perihal')
-    search_fields = ('nomor_surat', 'perihal')
+    list_display = ('nomor_surat', 'tgl_surat', 'perihal', 'tanggal_berangkat', 'tanggal_kembali', 'tempat_tujuan')
+    search_fields = ('nomor_surat', 'perihal', 'tempat_tujuan')
     filter_horizontal = ('pegawai',)
     actions = ['terbitkan_spd_action']
+    fieldsets = (
+        (None, {
+            'fields': ('nomor_surat', 'perihal', 'tgl_surat', 'file_path', 'pegawai', 'status')
+        }),
+        ('Pengaturan Perjalanan Dinas dari Surat Tugas', {
+            'fields': (
+                'tanggal_berangkat', 'tanggal_kembali', 'tempat_berangkat', 'tempat_tujuan',
+                'tujuan_provinsi', 'tahun_sbm', 'maksud_perjalanan', 'anggaran',
+                'jenis_perjalanan', 'jenis_transportasi'
+            )
+        }),
+    )
 
     def terbitkan_spd_action(self, request, queryset):
         # Store selected IDs in session and redirect to custom view
@@ -209,17 +221,98 @@ class PengaturanNomorSPDAdmin(admin.ModelAdmin):
 @admin.register(PerjalananDinas)
 class PerjalananDinasAdmin(admin.ModelAdmin):
     list_display = ('nomor_spd', 'surat_tugas', 'pegawai', 'jenis_perjalanan', 'jenis_transportasi', 'status', 'tanggal_berangkat', 'durasi_hari')
-    list_filter = ('surat_tugas', 'jenis_perjalanan', 'jenis_transportasi', 'tujuan_provinsi', 'status', 'tahun_sbm', 'tanggal_berangkat')
+    list_filter = ('surat_tugas', 'surat_tugas__jenis_perjalanan', 'surat_tugas__jenis_transportasi', 'surat_tugas__tujuan_provinsi', 'status', 'surat_tugas__tahun_sbm', 'surat_tugas__tanggal_berangkat')
     search_fields = ('nomor_spd', 'pegawai__nama', 'pegawai__nip', 'surat_tugas__nomor_surat')
-    readonly_fields = ('nomor_spd',) # Nomor SPD otomatis, tidak bisa diedit manual
-    fields = (
-        'nomor_spd', 'surat_tugas', 'pegawai', 'status',
-        'tanggal_berangkat', 'tanggal_kembali',
-        'tempat_berangkat', 'tempat_tujuan', 'tujuan_provinsi', 'tahun_sbm',
-        'maksud_perjalanan',
-        'anggaran', 'jenis_perjalanan', 'jenis_transportasi'
-    )
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('nomor_spd', 'surat_tugas', 'pegawai', 'get_detail_perjalanan_table')
+        return ('nomor_spd',)
+    
+    def get_fieldsets(self, request, obj=None):
+        if obj:
+            return (
+                ('Informasi Utama SPD', {
+                    'fields': ('nomor_spd', 'surat_tugas', 'pegawai', 'status')
+                }),
+                ('Rincian Perjalanan Dinas', {
+                    'fields': ('get_detail_perjalanan_table',),
+                }),
+            )
+        return (
+            (None, {
+                'fields': ('nomor_spd', 'surat_tugas', 'pegawai', 'status')
+            }),
+        )
+    
     inlines = [BerkasPerjalananPenginapanInline, BerkasPerjalananTransportasiInline, BerkasPerjalananNonNominalInline, BiayaPerjalananInline]
+
+    def get_detail_perjalanan_table(self, obj):
+        if not obj or not obj.surat_tugas:
+            return "-"
+        
+        st = obj.surat_tugas
+        tgl_berangkat = st.tanggal_berangkat.strftime('%d-%m-%Y') if st.tanggal_berangkat else '-'
+        tgl_kembali = st.tanggal_kembali.strftime('%d-%m-%Y') if st.tanggal_kembali else '-'
+        prov_nama = st.tujuan_provinsi.nama if st.tujuan_provinsi else '-'
+        jenis_perjadin = st.get_jenis_perjalanan_display() if st.jenis_perjalanan else '-'
+        jenis_trans = st.get_jenis_transportasi_display() if st.jenis_transportasi else '-'
+        maksud_perjadin = st.maksud_perjalanan or '-'
+        kode_dipa = st.anggaran.kode_dipa if st.anggaran else '-'
+        nama_kegiatan = st.anggaran.nama_kegiatan if st.anggaran else '-'
+        
+        html = f"""
+        <style>
+            .field-get_detail_perjalanan_table label {{
+                display: none !important;
+            }}
+            .field-get_detail_perjalanan_table .readonly {{
+                display: block !important;
+                margin-left: 0 !important;
+                float: none !important;
+                width: 100% !important;
+                padding-left: 0 !important;
+            }}
+        </style>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; width: 20%; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tanggal Berangkat</td>
+                <td style="padding: 10px 14px; color: #1e293b; width: 30%; border-right: 1px solid #e2e8f0;">{tgl_berangkat}</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; width: 20%; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tanggal Kembali</td>
+                <td style="padding: 10px 14px; color: #1e293b; width: 30%;">{tgl_kembali}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tempat Berangkat</td>
+                <td style="padding: 10px 14px; color: #1e293b; border-right: 1px solid #e2e8f0;">{st.tempat_berangkat or '-'}</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tempat Tujuan</td>
+                <td style="padding: 10px 14px; color: #1e293b;">{st.tempat_tujuan or '-'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Provinsi (SBM)</td>
+                <td style="padding: 10px 14px; color: #1e293b; border-right: 1px solid #e2e8f0;">{prov_nama}</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tahun SBM</td>
+                <td style="padding: 10px 14px; color: #1e293b;">{st.tahun_sbm or '-'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Jenis Perjalanan Dinas</td>
+                <td style="padding: 10px 14px; color: #1e293b; border-right: 1px solid #e2e8f0;">{jenis_perjadin}</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Jenis Transportasi</td>
+                <td style="padding: 10px 14px; color: #1e293b;">{jenis_trans}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Maksud Perjalanan</td>
+                <td colspan="3" style="padding: 10px 14px; color: #1e293b;">{maksud_perjadin}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Sumber Anggaran</td>
+                <td colspan="3" style="padding: 10px 14px; color: #1e293b;">
+                    <strong>{kode_dipa}</strong> - {nama_kegiatan}
+                </td>
+            </tr>
+        </table>
+        """
+        return mark_safe(html)
+    get_detail_perjalanan_table.short_description = "Rincian Perjalanan Dinas"
 
     class Media:
         js = ('js/admin_filter.js',)

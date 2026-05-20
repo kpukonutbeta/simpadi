@@ -20,6 +20,49 @@ class SuratTugas(models.Model):
     pegawai = models.ManyToManyField(Pegawai, related_name='surat_tugas_set', verbose_name="Pegawai Terdaftar")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE, verbose_name="Status")
 
+    # Detail Perjalanan (Relocated from PerjalananDinas)
+    tanggal_berangkat = models.DateField(verbose_name="Tanggal Berangkat", null=True, blank=True)
+    tanggal_kembali = models.DateField(verbose_name="Tanggal Kembali", null=True, blank=True)
+    tempat_berangkat = models.CharField(max_length=255, verbose_name="Tempat Berangkat", default="KPU Kab. Konawe Utara")
+    tempat_tujuan = models.CharField(max_length=255, verbose_name="Tempat Tujuan", blank=True, null=True)
+    tujuan_provinsi = models.ForeignKey(Provinsi, on_delete=models.PROTECT, verbose_name="Provinsi (SBM)", null=True, blank=True)
+    tahun_sbm = models.IntegerField(
+        choices=[(2023, '2023 (Tahun Lalu)'), (2024, '2024 (Tahun Ini)')],
+        default=2024, 
+        verbose_name="Tahun SBM"
+    )
+    maksud_perjalanan = models.TextField(verbose_name="Maksud Perjalanan", blank=True, null=True)
+    anggaran = models.ForeignKey(Anggaran, on_delete=models.PROTECT, verbose_name="Sumber Anggaran", null=True, blank=True)
+    
+    class JenisPerjalanan(models.TextChoices):
+        LUAR_KOTA = 'luar_kota', 'Luar Kota'
+        DALAM_KOTA = 'dalam_kota', 'Dalam Kota (> 8 Jam)'
+        DIKLAT = 'diklat', 'Diklat'
+        
+    jenis_perjalanan = models.CharField(
+        max_length=20,
+        choices=JenisPerjalanan.choices,
+        default=JenisPerjalanan.LUAR_KOTA,
+        verbose_name="Jenis Perjalanan Dinas"
+    )
+    
+    class JenisTransportasi(models.TextChoices):
+        MOBIL_DINAS = 'mobil_dinas', 'Mobil Dinas'
+        UMUM = 'umum', 'Transportasi Umum'
+        
+    jenis_transportasi = models.CharField(
+        max_length=20,
+        choices=JenisTransportasi.choices,
+        default=JenisTransportasi.UMUM,
+        verbose_name="Jenis Transportasi"
+    )
+
+    def clean(self):
+        super().clean()
+        if self.tanggal_berangkat and self.tanggal_kembali:
+            if self.tanggal_berangkat > self.tanggal_kembali:
+                raise ValidationError("Tanggal berangkat tidak boleh setelah tanggal kembali.")
+
     def __str__(self):
         return f"{self.nomor_surat} - {self.perihal[:30]}..."
 
@@ -55,48 +98,48 @@ class PerjalananDinas(models.Model):
     nomor_spd = models.CharField(max_length=100, unique=True, verbose_name="Nomor SPD", null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT, verbose_name="Status")
     
-    class JenisPerjalanan(models.TextChoices):
-        LUAR_KOTA = 'luar_kota', 'Luar Kota'
-        DALAM_KOTA = 'dalam_kota', 'Dalam Kota (> 8 Jam)'
-        DIKLAT = 'diklat', 'Diklat'
-        
-    jenis_perjalanan = models.CharField(
-        max_length=20,
-        choices=JenisPerjalanan.choices,
-        default=JenisPerjalanan.LUAR_KOTA,
-        verbose_name="Jenis Perjalanan Dinas"
-    )
-    
-    class JenisTransportasi(models.TextChoices):
-        MOBIL_DINAS = 'mobil_dinas', 'Mobil Dinas'
-        UMUM = 'umum', 'Transportasi Umum'
-        
-    jenis_transportasi = models.CharField(
-        max_length=20,
-        choices=JenisTransportasi.choices,
-        default=JenisTransportasi.UMUM,
-        verbose_name="Jenis Transportasi"
-    )
-    
-    
-    
-    # Detail Perjalanan (Akan dilengkapi pegawai/admin)
-    tempat_berangkat = models.CharField(max_length=255, verbose_name="Tempat Berangkat", default="KPU Kab. Konawe Utara")
-    tempat_tujuan = models.CharField(max_length=255, verbose_name="Tempat Tujuan")
-    tujuan_provinsi = models.ForeignKey(Provinsi, on_delete=models.PROTECT, verbose_name="Provinsi (SBM)")
-    maksud_perjalanan = models.TextField(verbose_name="Maksud Perjalanan")
-    tanggal_berangkat = models.DateField(verbose_name="Tanggal Berangkat", null=True, blank=True)
-    tanggal_kembali = models.DateField(verbose_name="Tanggal Kembali", null=True, blank=True)
-    
-    anggaran = models.ForeignKey(Anggaran, on_delete=models.PROTECT, verbose_name="Sumber Anggaran")
-    tahun_sbm = models.IntegerField(
-        choices=[(2023, '2023 (Tahun Lalu)'), (2024, '2024 (Tahun Ini)')],
-        default=2024, 
-        verbose_name="Tahun SBM"
-    )
-    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def jenis_perjalanan(self):
+        return self.surat_tugas.jenis_perjalanan
+
+    @property
+    def jenis_transportasi(self):
+        return self.surat_tugas.jenis_transportasi
+
+    @property
+    def tempat_berangkat(self):
+        return self.surat_tugas.tempat_berangkat
+
+    @property
+    def tempat_tujuan(self):
+        return self.surat_tugas.tempat_tujuan
+
+    @property
+    def tujuan_provinsi(self):
+        return self.surat_tugas.tujuan_provinsi
+
+    @property
+    def maksud_perjalanan(self):
+        return self.surat_tugas.maksud_perjalanan or self.surat_tugas.perihal
+
+    @property
+    def tanggal_berangkat(self):
+        return self.surat_tugas.tanggal_berangkat
+
+    @property
+    def tanggal_kembali(self):
+        return self.surat_tugas.tanggal_kembali
+
+    @property
+    def anggaran(self):
+        return self.surat_tugas.anggaran
+
+    @property
+    def tahun_sbm(self):
+        return self.surat_tugas.tahun_sbm
 
     def save(self, *args, **kwargs):
         # 1. Otomatisasi Nomor SPD jika belum ada
@@ -108,12 +151,6 @@ class PerjalananDinas(models.Model):
                 config.save()
                 
                 self.nomor_spd = f"{config.prefix_terakhir}{config.suffix_format}"
-
-        # 2. Auto-fill tempat_tujuan & maksud from SuratTugas if not set
-        if not self.tempat_tujuan:
-            self.tempat_tujuan = "Lihat Surat Tugas" 
-        if not self.maksud_perjalanan:
-            self.maksud_perjalanan = self.surat_tugas.perihal
             
         super().save(*args, **kwargs)
         if hasattr(self, 'biaya'):
@@ -142,8 +179,8 @@ class PerjalananDinas(models.Model):
         if hasattr(self, 'pegawai') and self.pegawai and self.tanggal_berangkat and self.tanggal_kembali:
             overlapping = PerjalananDinas.objects.filter(
                 pegawai=self.pegawai,
-                tanggal_berangkat__lte=self.tanggal_kembali,
-                tanggal_kembali__gte=self.tanggal_berangkat
+                surat_tugas__tanggal_berangkat__lte=self.tanggal_kembali,
+                surat_tugas__tanggal_kembali__gte=self.tanggal_berangkat
             ).exclude(pk=self.pk)
             
             if overlapping.exists():
@@ -227,7 +264,7 @@ class BiayaPerjalanan(models.Model):
                 
                 # Check for transportasi category
                 elif kategori == 'transportasi':
-                    if self.perjalanan.jenis_transportasi != PerjalananDinas.JenisTransportasi.MOBIL_DINAS:
+                    if self.perjalanan.jenis_transportasi != SuratTugas.JenisTransportasi.MOBIL_DINAS:
                         if b.nominal:
                             total_transport_input += b.nominal
 

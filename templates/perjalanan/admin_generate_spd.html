@@ -31,24 +31,7 @@
             </small>
         </div>
 
-        <div class="grid-2" style="margin-bottom: 2rem;">
-            <div class="form-group">
-                <label class="form-label">Tujuan Provinsi (Default SBM)</label>
-                <select name="provinsi" class="form-control" required>
-                    {% for p in provinsi_list %}
-                    <option value="{{ p.id }}">{{ p.nama }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Sumber Anggaran</label>
-                <select name="anggaran" class="form-control" required>
-                    {% for a in anggaran_list %}
-                    <option value="{{ a.id }}">{{ a.kode_dipa }} - {{ a.nama_kegiatan }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
+
 
         <div style="margin-bottom: 2rem;">
             <h4 style="font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem;">Surat Tugas Terpilih ({{ surat_tugas_list|length }})</h4>

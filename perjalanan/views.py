@@ -142,12 +142,6 @@ def generate_spd_bulk(request):
     default_suffix = config.suffix_format
 
     if request.method == 'POST':
-        provinsi_id = request.POST.get('provinsi')
-        anggaran_id = request.POST.get('anggaran')
-        
-        provinsi = get_object_or_404(Provinsi, id=provinsi_id)
-        anggaran = get_object_or_404(Anggaran, id=anggaran_id)
-        
         count_created = 0
         try:
             with transaction.atomic():
@@ -160,10 +154,6 @@ def generate_spd_bulk(request):
                                 surat_tugas=st,
                                 pegawai=pgw,
                                 status=PerjalananDinas.Status.DRAFT,
-                                tujuan_provinsi=provinsi,
-                                anggaran=anggaran,
-                                maksud_perjalanan=st.perihal,
-                                tempat_tujuan="Konawe Utara" # Default
                             )
                             count_created += 1
                             
@@ -176,8 +166,6 @@ def generate_spd_bulk(request):
     context = {
         'surat_tugas_list': surat_tugas_list,
         'default_suffix': default_suffix,
-        'provinsi_list': Provinsi.objects.all(),
-        'anggaran_list': Anggaran.objects.all(),
     }
     return render(request, 'perjalanan/admin_generate_spd.html', context)
 
@@ -190,7 +178,7 @@ def riwayat_perjadin(request):
     pegawai = request.user.pegawai_profile
     # Filter only those that are NOT in DRAFT (or include DRAFT if you want full history)
     # Usually history includes everything the user has done.
-    history = PerjalananDinas.objects.filter(pegawai=pegawai).order_by('-tanggal_berangkat', '-created_at')
+    history = PerjalananDinas.objects.filter(pegawai=pegawai).order_by('-surat_tugas__tanggal_berangkat', '-created_at')
     
     return render(request, 'perjalanan/riwayat_list.html', {'history': history})
 

@@ -87,82 +87,106 @@
         </div>
         {% endif %}
         
-        <!-- Section 1: Data Umum -->
-        <div class="card form-section">
-            <div class="form-section-title">
-                <i class="fas fa-info-circle"></i> Informasi Utama
+        <!-- Section 1: Informasi Perjalanan Dinas (Read-Only) -->
+        <div class="card form-section" style="border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; background: white;">
+            <div class="form-section-title" style="padding: 1.25rem 1.5rem; background: linear-gradient(to right, #f8fafc, #ffffff); border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <span style="display: flex; align-items: center; gap: 0.75rem; font-weight: 800; color: var(--primary);">
+                    <i class="fas fa-info-circle"></i> DETAIL PERJALANAN DINAS
+                </span>
+                <span class="badge" style="background: #e2e8f0; color: #475569; font-size: 0.75rem; font-weight: 600;">
+                    <i class="fas fa-lock"></i> Terkunci (Sesuai Surat Tugas)
+                </span>
             </div>
             
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Tanggal Berangkat</label>
-                    {{ form.tanggal_berangkat }}
-                    {% if form.tanggal_berangkat.errors %}<div class="error-msg">{{ form.tanggal_berangkat.errors.0 }}</div>{% endif %}
+            <div style="padding: 0 1.5rem 1.5rem 1.5rem;">
+                <!-- Maksud Perjalanan Banner -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 0.25rem; letter-spacing: 0.05em;">Maksud Perjalanan / Perihal</div>
+                    <div style="font-size: 1rem; font-weight: 700; color: #1e293b; line-height: 1.5;">{{ surat_tugas.maksud_perjalanan|default:surat_tugas.perihal }}</div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Tanggal Kembali</label>
-                    {{ form.tanggal_kembali }}
-                    {% if form.tanggal_kembali.errors %}<div class="error-msg">{{ form.tanggal_kembali.errors.0 }}</div>{% endif %}
-                </div>
-            </div>
 
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Tempat Berangkat</label>
-                    {{ form.tempat_berangkat }}
-                    {% if form.tempat_berangkat.errors %}<div class="error-msg">{{ form.tempat_berangkat.errors.0 }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tempat Tujuan</label>
-                    {{ form.tempat_tujuan }}
-                    {% if form.tempat_tujuan.errors %}<div class="error-msg">{{ form.tempat_tujuan.errors.0 }}</div>{% endif %}
-                </div>
-            </div>
-
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Provinsi Tujuan (Untuk SBM)</label>
-                    {{ form.tujuan_provinsi }}
-                    {% if form.tujuan_provinsi.errors %}<div class="error-msg">{{ form.tujuan_provinsi.errors.0 }}</div>{% endif %}
-                    <small style="color: var(--text-muted);">Digunakan untuk tarif harian & hotel.</small>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tahun SBM</label>
-                    {{ form.tahun_sbm }}
-                    {% if form.tahun_sbm.errors %}<div class="error-msg">{{ form.tahun_sbm.errors.0 }}</div>{% endif %}
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Maksud Perjalanan</label>
-                {{ form.maksud_perjalanan }}
-                {% if form.maksud_perjalanan.errors %}<div class="error-msg">{{ form.maksud_perjalanan.errors.0 }}</div>{% endif %}
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-                <div class="form-group">
-                    <label class="form-label">Sumber Anggaran</label>
-                    {{ form.anggaran }}
-                    {% if form.anggaran.errors %}<div class="error-msg">{{ form.anggaran.errors.0 }}</div>{% endif %}
-                    {% if not request.user.is_staff %}
-                    <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: #64748b; font-size: 0.75rem;">
-                        <i class="fas fa-lock" style="color: #fbbf24;"></i>
-                        <span>Sumber anggaran telah ditentukan oleh Admin dan tidak dapat diubah oleh Pegawai.</span>
+                <!-- Info Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                    
+                    <!-- Waktu & Durasi -->
+                    <div style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
+                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #fef2f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-calendar-alt" style="color: var(--primary); font-size: 1.2rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Waktu Perjalanan</div>
+                            <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
+                                {{ surat_tugas.tanggal_berangkat|date:"d M Y" }} s/d {{ surat_tugas.tanggal_kembali|date:"d M Y" }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #0284c7; font-weight: 700; margin-top: 0.15rem;">
+                                <i class="fas fa-clock"></i> {{ perjadin.durasi_hari|default:"-" }} Hari Perjalanan
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Jenis Perjalanan Dinas</label>
-                    {{ form.jenis_perjalanan }}
-                    {% if form.jenis_perjalanan.errors %}<div class="error-msg">{{ form.jenis_perjalanan.errors.0 }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Jenis Transportasi</label>
-                    {{ form.jenis_transportasi }}
-                    {% if form.jenis_transportasi.errors %}<div class="error-msg">{{ form.jenis_transportasi.errors.0 }}</div>{% endif %}
+
+                    <!-- Rute / Tempat -->
+                    <div style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
+                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-map-marked-alt" style="color: #15803d; font-size: 1.2rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Rute / Tujuan</div>
+                            <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
+                                {{ surat_tugas.tempat_berangkat }} <i class="fas fa-arrow-right" style="font-size: 0.75rem; color: #94a3b8; margin: 0 0.25rem;"></i> {{ surat_tugas.tempat_tujuan }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #64748b;">
+                                Provinsi SBM: <strong>{{ surat_tugas.tujuan_provinsi.nama }}</strong> (SBM {{ surat_tugas.tahun_sbm }})
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sumber Anggaran -->
+                    <div style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
+                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-wallet" style="color: #1d4ed8; font-size: 1.2rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Sumber Anggaran</div>
+                            <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem; word-break: break-all;">
+                                {{ surat_tugas.anggaran.kode_dipa|default:"-" }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">
+                                {{ surat_tugas.anggaran.nama_kegiatan }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ketentuan Perjalanan -->
+                    <div style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
+                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #faf5ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-exchange-alt" style="color: #6b21a8; font-size: 1.2rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Ketentuan Perjalanan</div>
+                            <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
+                                {{ surat_tugas.get_jenis_perjalanan_display }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #64748b;">
+                                Transportasi: <strong>{{ surat_tugas.get_jenis_transportasi_display }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
+
+        <!-- Hidden Inputs for JS/Backend calculations compatibility -->
+        <input type="hidden" id="id_tanggal_berangkat" name="tanggal_berangkat" value="{{ surat_tugas.tanggal_berangkat|date:'Y-m-d' }}">
+        <input type="hidden" id="id_tanggal_kembali" name="tanggal_kembali" value="{{ surat_tugas.tanggal_kembali|date:'Y-m-d' }}">
+        <input type="hidden" id="id_tempat_berangkat" name="tempat_berangkat" value="{{ surat_tugas.tempat_berangkat }}">
+        <input type="hidden" id="id_tempat_tujuan" name="tempat_tujuan" value="{{ surat_tugas.tempat_tujuan }}">
+        <input type="hidden" id="id_tujuan_provinsi" name="tujuan_provinsi" value="{{ surat_tugas.tujuan_provinsi.id }}">
+        <input type="hidden" id="id_tahun_sbm" name="tahun_sbm" value="{{ surat_tugas.tahun_sbm }}">
+        <input type="hidden" id="id_maksud_perjalanan" name="maksud_perjalanan" value="{{ surat_tugas.maksud_perjalanan|default:surat_tugas.perihal }}">
+        <input type="hidden" id="id_anggaran" name="anggaran" value="{{ surat_tugas.anggaran.id }}">
+        <input type="hidden" id="id_jenis_perjalanan" name="jenis_perjalanan" value="{{ surat_tugas.jenis_perjalanan }}">
+        <input type="hidden" id="id_jenis_transportasi" name="jenis_transportasi" value="{{ surat_tugas.jenis_transportasi }}">
 
         <!-- Hidden Biaya Formset fields -->
         {{ biaya_formset.management_form }}
