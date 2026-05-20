@@ -69,12 +69,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        const jenisPerjalanan = document.querySelector('#id_jenis_perjalanan')?.value;
         const payload = {
             tanggal_berangkat: tanggalBerangkat,
             tanggal_kembali: tanggalKembali,
             tujuan_provinsi: tujuanProvinsi,
             tidak_menginap: tidakMenginap,
             jenis_transportasi: jenisTransportasi,
+            jenis_perjalanan: jenisPerjalanan,
             tahun_sbm: tahunSbm,
             pegawai_id: pegawaiId,
             berkas: berkas
@@ -124,6 +126,43 @@ document.addEventListener('DOMContentLoaded', function() {
                     tidakDibayarkanEl.textContent = "-";
                 }
             }
+            // Populate lumpsum nominal inputs dynamically for Admin
+            const plafonHotel = parseFloat(data.plafon_hotel) || 0;
+            const lumpsumNominal = 0.30 * plafonHotel;
+            
+            const rows = document.querySelectorAll('.inline-related tr.form-row:not(.empty-form)');
+            rows.forEach(row => {
+                const select = row.querySelector('select[name$="-jenis_berkas"]');
+                const nominalInput = row.querySelector('input[name$="-nominal"]');
+                if (select && nominalInput) {
+                    const selectText = select.options[select.selectedIndex]?.text || '';
+                    if (selectText === 'TIDAK MENGINAP') {
+                        nominalInput.readOnly = true;
+                        nominalInput.style.backgroundColor = '#f1f5f9';
+                        nominalInput.style.cursor = 'not-allowed';
+                        
+                        const malamInput = row.querySelector('input[name$="-malam_menginap"]');
+                        const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
+                        const calculatedValue = lumpsumNominal * malamVal;
+                        nominalInput.value = calculatedValue.toLocaleString('id-ID', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        });
+                    } else if (selectText.includes('FULLBOARD')) {
+                        nominalInput.readOnly = true;
+                        nominalInput.style.backgroundColor = '#f1f5f9';
+                        nominalInput.style.cursor = 'not-allowed';
+                        nominalInput.value = '0';
+                    } else {
+                        if (nominalInput.readOnly) {
+                            nominalInput.readOnly = false;
+                            nominalInput.style.backgroundColor = '';
+                            nominalInput.style.cursor = '';
+                            nominalInput.value = '';
+                        }
+                    }
+                }
+            });
         })
         .catch(err => console.error('Admin estimation error:', err));
     }
@@ -135,6 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '#id_tujuan_provinsi',
         '#id_tidak_menginap',
         '#id_jenis_transportasi',
+        '#id_jenis_perjalanan',
         '#id_tahun_sbm',
         '#id_pegawai'
     ];
@@ -146,14 +186,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    const jenisPerjalananSelect = document.querySelector('#id_jenis_perjalanan');
+    const groupPenginapan = document.querySelector('#berkasperjalananpenginapan_set-group');
+
+    function checkAdminFullboard() {
+        if (!jenisPerjalananSelect) return;
+        const val = jenisPerjalananSelect.value;
+        if (val === 'fullboard_luar' || val === 'fullboard_dalam') {
+            if (groupPenginapan) {
+                groupPenginapan.style.display = 'none';
+                const rows = groupPenginapan.querySelectorAll('tr.form-row:not(.empty-form)');
+                rows.forEach(row => {
+                    const deleteInput = row.querySelector('input[name$="-DELETE"]');
+                    if (deleteInput) {
+                        deleteInput.checked = true;
+                    }
+                });
+            }
+        } else {
+            if (groupPenginapan) {
+                groupPenginapan.style.display = 'block';
+            }
+        }
+    }
+
+    if (jenisPerjalananSelect) {
+        jenisPerjalananSelect.addEventListener('change', () => {
+            checkAdminFullboard();
+        });
+        checkAdminFullboard();
+    }
+
     // Delegate listener to capture edits/additions/deletions in the inline berkas rows in Admin
     document.addEventListener('change', function(e) {
-        if (e.target.matches('input[name$="-nominal"]') || e.target.matches('select[name$="-jenis_berkas"]') || e.target.matches('input[name$="-DELETE"]')) {
+        if (e.target.matches('input[name$="-nominal"]') || e.target.matches('select[name$="-jenis_berkas"]') || e.target.matches('input[name$="-DELETE"]') || e.target.matches('input[name$="-malam_menginap"]')) {
             updateAdminEstimasi();
         }
     });
     document.addEventListener('input', function(e) {
-        if (e.target.matches('input[name$="-nominal"]')) {
+        if (e.target.matches('input[name$="-nominal"]') || e.target.matches('input[name$="-malam_menginap"]')) {
             updateAdminEstimasi();
         }
     });

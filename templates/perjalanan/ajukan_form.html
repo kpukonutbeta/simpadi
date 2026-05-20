@@ -160,6 +160,7 @@
                     <label class="form-label">Jenis Transportasi</label>
                     {{ form.jenis_transportasi }}
                     {% if form.jenis_transportasi.errors %}<div class="error-msg">{{ form.jenis_transportasi.errors.0 }}</div>{% endif %}
+                </div>
             </div>
         </div>
 
@@ -215,7 +216,7 @@
         </div>
 
         <!-- Section 3A: Berkas Pendukung Penginapan -->
-        <div class="card form-section">
+        <div class="card form-section" id="section-berkas-penginapan">
             <div class="form-section-title">
                 <i class="fas fa-bed"></i> Berkas Pendukung untuk Penginapan
             </div>
@@ -487,6 +488,8 @@
     const nominalRequiredIds = {{ jenis_berkas_nominal|safe }};
     const wajibRequiredIds = {{ jenis_berkas_wajib|safe }};
     const penginapanRequiredIds = {{ jenis_berkas_penginapan|safe }};
+    const fbLuarIds = {{ jenis_berkas_fb_luar|safe }};
+    const fbDalamIds = {{ jenis_berkas_fb_dalam|safe }};
     let originalOptions = [];
 
     function toggleFieldsBasedOnJenis(row, sectionType) {
@@ -671,6 +674,7 @@
             tanggal_kembali: tanggalKembali,
             tujuan_provinsi: tujuanProvinsi,
             jenis_transportasi: jenisTransportasi,
+            jenis_perjalanan: document.querySelector('#id_jenis_perjalanan')?.value,
             tahun_sbm: tahunSbm,
             pegawai_id: pegawaiId,
             berkas: berkas
@@ -757,11 +761,15 @@
                             const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
                             const nominalInput = row.querySelector('input[name$="-nominal"]');
                             if (nominalInput) {
-                                const calculatedValue = lumpsumNominal * malamVal;
-                                nominalInput.value = calculatedValue.toLocaleString('id-ID', {
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0
-                                });
+                                if (fbLuarIds.includes(val) || fbDalamIds.includes(val)) {
+                                    nominalInput.value = '0';
+                                } else {
+                                    const calculatedValue = lumpsumNominal * malamVal;
+                                    nominalInput.value = calculatedValue.toLocaleString('id-ID', {
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                    });
+                                }
                             }
                         }
                     }
@@ -880,6 +888,7 @@
             '#id_tanggal_kembali',
             '#id_tujuan_provinsi',
             '#id_jenis_transportasi',
+            '#id_jenis_perjalanan',
             '#id_tahun_sbm'
         ];
         inputsToListen.forEach(sel => {
@@ -889,6 +898,61 @@
                 el.addEventListener('input', updateEstimasi);
             }
         });
+
+        const jenisPerjalananSelect = document.querySelector('#id_jenis_perjalanan');
+        const sectionPenginapan = document.querySelector('#section-berkas-penginapan');
+        
+        function checkFullboard() {
+            if (!jenisPerjalananSelect) return;
+            const val = jenisPerjalananSelect.value;
+            if (val === 'fullboard_luar' || val === 'fullboard_dalam') {
+                if (sectionPenginapan) {
+                    sectionPenginapan.style.display = 'none';
+                    const rows = sectionPenginapan.querySelectorAll('.formset-row');
+                    rows.forEach(row => {
+                        const deleteInput = row.querySelector('input[name$="-DELETE"]');
+                        if (deleteInput) {
+                            deleteInput.checked = true;
+                        }
+                    });
+                }
+                
+                let notice = document.querySelector('#fullboard-notice');
+                if (!notice) {
+                    notice = document.createElement('div');
+                    notice.id = 'fullboard-notice';
+                    notice.className = 'alert alert-info card';
+                    notice.style.background = 'rgba(52, 152, 219, 0.15)';
+                    notice.style.border = '1px solid rgba(52, 152, 219, 0.3)';
+                    notice.style.color = '#3498db';
+                    notice.style.padding = '1rem';
+                    notice.style.marginBottom = '1.5rem';
+                    notice.style.borderRadius = '8px';
+                    notice.style.fontSize = '0.9rem';
+                    notice.innerHTML = '<strong>Informasi Fullboard:</strong> Akomodasi (Penginapan/Hotel) telah ditanggung penuh oleh penyelenggara. Anda tidak diperkenankan mengklaim penginapan.';
+                    if (sectionPenginapan) {
+                        sectionPenginapan.parentNode.insertBefore(notice, sectionPenginapan);
+                    }
+                } else {
+                    notice.style.display = 'block';
+                }
+            } else {
+                if (sectionPenginapan) {
+                    sectionPenginapan.style.display = 'block';
+                }
+                const notice = document.querySelector('#fullboard-notice');
+                if (notice) {
+                    notice.style.display = 'none';
+                }
+            }
+        }
+        
+        if (jenisPerjalananSelect) {
+            jenisPerjalananSelect.addEventListener('change', () => {
+                checkFullboard();
+            });
+            checkFullboard();
+        }
 
         // Delegate listener for nominal inputs & jenis berkas selects inside containers
         ['#berkas-penginapan-container', '#berkas-nominal-container', '#berkas-non-nominal-container'].forEach(contSel => {

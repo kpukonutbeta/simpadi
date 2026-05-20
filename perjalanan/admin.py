@@ -56,9 +56,56 @@ class BiayaPerjalananInline(admin.StackedInline):
     get_total_tidak_dibayarkan.short_description = "Total Tidak Dibayarkan"
 
 from django.db.models import Q
+from django.forms.models import BaseInlineFormSet
+from django.core.exceptions import ValidationError
+
+class BerkasPenginapanInlineFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        
+        total_malam_hotel = 0
+        total_malam_lumpsum = 0
+        total_malam_fb_luar = 0
+        total_malam_fb_dalam = 0
+        
+        parent = self.instance
+        durasi = parent.durasi_hari
+        if parent.jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
+            total_malam_perjalanan = 0
+        else:
+            total_malam_perjalanan = max(0, durasi - 1)
+        
+        for form in self.forms:
+            if self.can_delete and self._should_delete_form(form):
+                continue
+            if not form.is_valid():
+                continue
+                
+            jenis_berkas = form.cleaned_data.get('jenis_berkas')
+            if jenis_berkas:
+                kategori = jenis_berkas.kategori_biaya
+                if kategori in ['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']:
+                    malam = form.cleaned_data.get('malam_menginap') or 1
+                    if kategori == 'penginapan' and jenis_berkas.nominal_biaya:
+                        total_malam_hotel += malam
+                    elif kategori == 'penginapan_30':
+                        total_malam_lumpsum += malam
+                    elif kategori == 'penginapan_fb_luar':
+                        total_malam_fb_luar += malam
+                    elif kategori == 'penginapan_fb_dalam':
+                        total_malam_fb_dalam += malam
+                        
+        total_malam_claimed = total_malam_hotel + total_malam_lumpsum + total_malam_fb_luar + total_malam_fb_dalam
+        if total_malam_claimed > total_malam_perjalanan:
+            raise ValidationError(
+                f"Total klaim penginapan ({total_malam_hotel} malam hotel + {total_malam_lumpsum} malam lumpsum + "
+                f"{total_malam_fb_luar} malam FB luar + {total_malam_fb_dalam} malam FB dalam = {total_malam_claimed} malam) "
+                f"melebihi batas malam perjalanan ({total_malam_perjalanan} malam)."
+            )
 
 class BerkasPerjalananPenginapanInline(admin.TabularInline):
     model = BerkasPerjalananPenginapan
+    formset = BerkasPenginapanInlineFormSet
     fields = ('jenis_berkas', 'nominal', 'malam_menginap', 'keterangan', 'file', 'is_verified')
     extra = 1
     can_delete = True
@@ -67,13 +114,13 @@ class BerkasPerjalananPenginapanInline(admin.TabularInline):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(
-            jenis_berkas__kategori_biaya='penginapan'
+            jenis_berkas__kategori_biaya__in=['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "jenis_berkas":
             kwargs["queryset"] = JenisBerkas.objects.filter(
-                kategori_biaya='penginapan'
+                kategori_biaya__in=['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -129,7 +176,7 @@ class BerkasPerjalananNonNominalInline(admin.TabularInline):
         return super().get_queryset(request).filter(
             jenis_berkas__nominal_biaya=False
         ).exclude(
-            jenis_berkas__kategori_biaya='penginapan'
+            jenis_berkas__kategori_biaya__in=['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -137,7 +184,7 @@ class BerkasPerjalananNonNominalInline(admin.TabularInline):
             kwargs["queryset"] = JenisBerkas.objects.filter(
                 nominal_biaya=False
             ).exclude(
-                kategori_biaya='penginapan'
+                kategori_biaya__in=['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 

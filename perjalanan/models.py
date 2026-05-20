@@ -183,7 +183,12 @@ class BiayaPerjalanan(models.Model):
                 golongan=self.perjalanan.pegawai.golongan,
                 tahun=self.perjalanan.tahun_sbm
             )
-            tarif_harian = sbm.uang_harian
+            if self.perjalanan.jenis_perjalanan == 'fullboard_luar':
+                tarif_harian = getattr(sbm, 'uang_harian_fullboard_luar', 0)
+            elif self.perjalanan.jenis_perjalanan == 'fullboard_dalam':
+                tarif_harian = getattr(sbm, 'uang_harian_fullboard_dalam', 0)
+            else:
+                tarif_harian = sbm.uang_harian
             plafon_hotel = sbm.plafon_penginapan
             tarif_representasi = sbm.uang_representasi
             plafon_transport = getattr(sbm, 'plafon_transportasi', 0)
@@ -197,7 +202,10 @@ class BiayaPerjalanan(models.Model):
         total_hotel_input = 0
         total_malam_hotel = 0
         total_malam_lumpsum = 0
+        total_malam_fb_luar = 0
+        total_malam_fb_dalam = 0
         total_transport_input = 0
+        
         if self.perjalanan_id:
             for b in BerkasPerjalanan.objects.filter(perjalanan_id=self.perjalanan_id):
                 jenis = b.jenis_berkas
@@ -205,14 +213,17 @@ class BiayaPerjalanan(models.Model):
                     continue
                 kategori = jenis.kategori_biaya
                 
-                # Check for penginapan category
+                # Check for penginapan categories
                 if kategori == 'penginapan':
-                    if jenis.nominal_biaya: # Hotel bill
-                        if b.nominal:
-                            total_hotel_input += b.nominal
-                            total_malam_hotel += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
-                    else: # Lumpsum claim
-                        total_malam_lumpsum += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
+                    if jenis.nominal_biaya and b.nominal: # Hotel bill
+                        total_hotel_input += b.nominal
+                        total_malam_hotel += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
+                elif kategori == 'penginapan_30':
+                    total_malam_lumpsum += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
+                elif kategori == 'penginapan_fb_luar':
+                    total_malam_fb_luar += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
+                elif kategori == 'penginapan_fb_dalam':
+                    total_malam_fb_dalam += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
                 
                 # Check for transportasi category
                 elif kategori == 'transportasi':
@@ -222,16 +233,33 @@ class BiayaPerjalanan(models.Model):
 
         # Logic 1: Lumpsum Harian & Representasi (taken from SBM automatically)
         durasi = self.perjalanan.durasi_hari
-        self.uang_harian_riil = durasi * tarif_harian
-        self.uang_representasi_riil = durasi * tarif_representasi
+        
+        # Calculate mixed fullboard days
+        fb_luar_days = min(total_malam_fb_luar, durasi)
+        fb_dalam_days = min(total_malam_fb_dalam, durasi - fb_luar_days)
+        normal_days = max(0, durasi - (fb_luar_days + fb_dalam_days))
+        
+        uang_harian_fb_luar = getattr(sbm, 'uang_harian_fullboard_luar', 0)
+        uang_harian_fb_dalam = getattr(sbm, 'uang_harian_fullboard_dalam', 0)
+        
+        self.uang_harian_riil = (fb_luar_days * uang_harian_fb_luar) + \
+                                (fb_dalam_days * uang_harian_fb_dalam) + \
+                                (normal_days * tarif_harian)
+                                
+        if self.perjalanan.jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
+            self.uang_representasi_riil = 0
+        else:
+            self.uang_representasi_riil = normal_days * tarif_representasi
 
         # Logic 2: Capping Hotel/Penginapan (Partial 30%)
         total_malam_perjalanan = max(0, durasi - 1)
         
-        # Validation: total malam claimed (hotel + lumpsum) cannot exceed total malam perjalanan
-        if total_malam_hotel + total_malam_lumpsum > total_malam_perjalanan:
+        # Validation: total malam claimed (hotel + lumpsum + fullboard) cannot exceed total malam perjalanan
+        total_malam_claimed = total_malam_hotel + total_malam_lumpsum + total_malam_fb_luar + total_malam_fb_dalam
+        if total_malam_claimed > total_malam_perjalanan:
             raise ValidationError(
-                f"Total klaim penginapan ({total_malam_hotel} malam hotel + {total_malam_lumpsum} malam lumpsum = {total_malam_hotel + total_malam_lumpsum} malam) "
+                f"Total klaim penginapan ({total_malam_hotel} malam hotel + {total_malam_lumpsum} malam lumpsum + "
+                f"{total_malam_fb_luar} malam FB luar + {total_malam_fb_dalam} malam FB dalam = {total_malam_claimed} malam) "
                 f"melebihi batas malam perjalanan ({total_malam_perjalanan} malam)."
             )
             
@@ -292,6 +320,8 @@ class BerkasPerjalanan(models.Model):
                 })
 
     def save(self, *args, **kwargs):
+        if self.jenis_berkas and self.jenis_berkas.kategori_biaya in ['penginapan_fb_luar', 'penginapan_fb_dalam']:
+            self.nominal = 0
         self.full_clean()
         super().save(*args, **kwargs)
         if hasattr(self.perjalanan, 'biaya'):

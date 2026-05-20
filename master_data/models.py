@@ -37,6 +37,8 @@ class StandarBiaya(models.Model):
     provinsi = models.ForeignKey(Provinsi, on_delete=models.CASCADE)
     golongan = models.CharField(max_length=5, choices=Golongan.choices)
     uang_harian = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Uang Harian")
+    uang_harian_fullboard_luar = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Harian Fullboard Luar Kota")
+    uang_harian_fullboard_dalam = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Harian Fullboard Dalam Kota")
     plafon_penginapan = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Plafon Penginapan")
     uang_representasi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Representasi")
     plafon_transportasi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Plafon Transportasi")
@@ -74,11 +76,14 @@ class JenisBerkas(models.Model):
     
     class KategoriBiaya(models.TextChoices):
         PENGINAPAN = 'penginapan', 'Biaya Penginapan'
+        PENGINAPAN_30 = 'penginapan_30', 'Biaya Penginapan 30%'
+        PENGINAPAN_FB_LUAR = 'penginapan_fb_luar', 'Biaya Penginapan Fullboard Luar Kota'
+        PENGINAPAN_FB_DALAM = 'penginapan_fb_dalam', 'Biaya Penginapan Fullboard Dalam Kota'
         TRANSPORTASI = 'transportasi', 'Biaya Transportasi'
         NONE = 'none', 'Bukan Biaya (Lain-lain)'
 
     kategori_biaya = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=KategoriBiaya.choices,
         default=KategoriBiaya.NONE,
         verbose_name="Kategori Biaya"

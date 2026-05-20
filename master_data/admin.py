@@ -92,7 +92,7 @@ class ProvinsiAdmin(admin.ModelAdmin):
 
 @admin.register(StandarBiaya)
 class StandarBiayaAdmin(admin.ModelAdmin):
-    list_display = ('provinsi', 'golongan', 'tahun', 'uang_harian', 'plafon_penginapan', 'plafon_transportasi', 'uang_representasi')
+    list_display = ('provinsi', 'golongan', 'tahun', 'uang_harian', 'uang_harian_fullboard_luar', 'uang_harian_fullboard_dalam', 'plafon_penginapan', 'plafon_transportasi', 'uang_representasi')
     list_filter = ('provinsi', 'golongan', 'tahun')
 
 @admin.register(Anggaran)

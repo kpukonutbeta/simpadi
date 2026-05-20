@@ -101,7 +101,15 @@ def ajukan_perjadin(request, surat_tugas_id):
     
     from django.db.models import Q
     jenis_berkas_penginapan = list(JenisBerkas.objects.filter(
-        kategori_biaya='penginapan'
+        kategori_biaya__in=['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']
+    ).values_list('id', flat=True))
+    
+    jenis_berkas_fb_luar = list(JenisBerkas.objects.filter(
+        kategori_biaya='penginapan_fb_luar'
+    ).values_list('id', flat=True))
+    
+    jenis_berkas_fb_dalam = list(JenisBerkas.objects.filter(
+        kategori_biaya='penginapan_fb_dalam'
     ).values_list('id', flat=True))
 
     context = {
@@ -113,7 +121,9 @@ def ajukan_perjadin(request, surat_tugas_id):
         'is_edit': perjadin_instance is not None,
         'jenis_berkas_nominal': jenis_berkas_nominal,
         'jenis_berkas_wajib': jenis_berkas_wajib,
-        'jenis_berkas_penginapan': jenis_berkas_penginapan
+        'jenis_berkas_penginapan': jenis_berkas_penginapan,
+        'jenis_berkas_fb_luar': jenis_berkas_fb_luar,
+        'jenis_berkas_fb_dalam': jenis_berkas_fb_dalam
     }
     return render(request, 'perjalanan/ajukan_form.html', context)
 
@@ -215,6 +225,7 @@ def hitung_estimasi_ajax(request):
     tanggal_kembali_str = data.get('tanggal_kembali')
     tujuan_provinsi_id = data.get('tujuan_provinsi')
     jenis_transportasi = data.get('jenis_transportasi')
+    jenis_perjalanan = data.get('jenis_perjalanan')
     tahun_sbm = data.get('tahun_sbm')
     pegawai_id = data.get('pegawai_id')
     
@@ -252,9 +263,16 @@ def hitung_estimasi_ajax(request):
                 golongan=pegawai_obj.golongan,
                 tahun=tahun_sbm
             )
-            tarif_harian = float(sbm.uang_harian)
+            if jenis_perjalanan == 'fullboard_luar':
+                tarif_harian = float(getattr(sbm, 'uang_harian_fullboard_luar', 0))
+                tarif_representasi = 0.0
+            elif jenis_perjalanan == 'fullboard_dalam':
+                tarif_harian = float(getattr(sbm, 'uang_harian_fullboard_dalam', 0))
+                tarif_representasi = 0.0
+            else:
+                tarif_harian = float(sbm.uang_harian)
+                tarif_representasi = float(sbm.uang_representasi)
             plafon_hotel = float(sbm.plafon_penginapan)
-            tarif_representasi = float(sbm.uang_representasi)
             plafon_transport = float(getattr(sbm, 'plafon_transportasi', 0))
         except StandarBiaya.DoesNotExist:
             pass
@@ -263,6 +281,8 @@ def hitung_estimasi_ajax(request):
     total_hotel_input = 0.0
     total_malam_hotel = 0
     total_malam_lumpsum = 0
+    total_malam_fb_luar = 0
+    total_malam_fb_dalam = 0
     total_transport_input = 0.0
     
     berkas_list = data.get('berkas', [])
@@ -284,14 +304,17 @@ def hitung_estimasi_ajax(request):
                 jb = JenisBerkas.objects.get(id=jb_id)
                 kategori = jb.kategori_biaya if hasattr(jb, 'kategori_biaya') else 'none'
                 
-                # Check for penginapan category
+                # Check for penginapan categories
                 if kategori == 'penginapan':
-                    if jb.nominal_biaya: # Hotel bill
-                        if nominal > 0:
-                            total_hotel_input += nominal
-                            total_malam_hotel += malam_menginap if malam_menginap > 0 else 1
-                    else: # Lumpsum claim
-                        total_malam_lumpsum += malam_menginap if malam_menginap > 0 else 1
+                    if jb.nominal_biaya and nominal > 0: # Hotel bill
+                        total_hotel_input += nominal
+                        total_malam_hotel += malam_menginap if malam_menginap > 0 else 1
+                elif kategori == 'penginapan_30':
+                    total_malam_lumpsum += malam_menginap if malam_menginap > 0 else 1
+                elif kategori == 'penginapan_fb_luar':
+                    total_malam_fb_luar += malam_menginap if malam_menginap > 0 else 1
+                elif kategori == 'penginapan_fb_dalam':
+                    total_malam_fb_dalam += malam_menginap if malam_menginap > 0 else 1
                 
                 # Check for transportasi category
                 elif kategori == 'transportasi':
@@ -302,14 +325,30 @@ def hitung_estimasi_ajax(request):
                 pass
 
     # Calculation
-    uang_harian_riil = float(durasi * tarif_harian)
-    uang_representasi_riil = float(durasi * tarif_representasi)
+    fb_luar_days = min(total_malam_fb_luar, durasi)
+    fb_dalam_days = min(total_malam_fb_dalam, durasi - fb_luar_days)
+    normal_days = max(0, durasi - (fb_luar_days + fb_dalam_days))
+    
+    uang_harian_fb_luar = float(getattr(sbm, 'uang_harian_fullboard_luar', 0)) if sbm else 0.0
+    uang_harian_fb_dalam = float(getattr(sbm, 'uang_harian_fullboard_dalam', 0)) if sbm else 0.0
+    
+    uang_harian_riil = float(
+        (fb_luar_days * uang_harian_fb_luar) +
+        (fb_dalam_days * uang_harian_fb_dalam) +
+        (normal_days * tarif_harian)
+    )
+    
+    if jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
+        uang_representasi_riil = 0.0
+    else:
+        uang_representasi_riil = float(normal_days * tarif_representasi)
 
     total_malam_perjalanan = max(0, durasi - 1)
     
     # Boundary validation
     over_limit = False
-    if total_malam_hotel + total_malam_lumpsum > total_malam_perjalanan:
+    total_malam_claimed = total_malam_hotel + total_malam_lumpsum + total_malam_fb_luar + total_malam_fb_dalam
+    if total_malam_claimed > total_malam_perjalanan:
         over_limit = True
         
     plafon_hotel_limit = plafon_hotel * total_malam_hotel
