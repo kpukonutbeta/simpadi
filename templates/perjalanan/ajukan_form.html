@@ -207,6 +207,14 @@
                 <div class="berkas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
                     <div class="form-group">
                         <label class="form-label">Jenis Berkas</label>
+                        <!-- Badge for plane ticket route -->
+                        <div class="ticket-route-badge-container" style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
+                            <span class="ticket-route-text" style="font-size: 0.75rem; color: #1d4ed8; font-weight: 600;"></span>
+                            <button type="button" class="edit-ticket-route-btn" style="background: none; border: none; color: #2563eb; cursor: pointer; padding: 0; font-size: 0.75rem;" title="Ubah Rute">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" class="ticket-tag-hidden" value="">
                         {{ br_form.jenis_berkas }}
                     </div>
                     <div class="form-group nominal-wrapper" style="transition: all 0.3s ease;">
@@ -288,6 +296,14 @@
                 <div class="berkas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
                     <div class="form-group">
                         <label class="form-label">Jenis Berkas</label>
+                        <!-- Badge for plane ticket route -->
+                        <div class="ticket-route-badge-container" style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
+                            <span class="ticket-route-text" style="font-size: 0.75rem; color: #1d4ed8; font-weight: 600;"></span>
+                            <button type="button" class="edit-ticket-route-btn" style="background: none; border: none; color: #2563eb; cursor: pointer; padding: 0; font-size: 0.75rem;" title="Ubah Rute">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" class="ticket-tag-hidden" value="">
                         {{ berkas_formset.empty_form.jenis_berkas }}
                     </div>
                     <div class="form-group nominal-wrapper" style="transition: all 0.3s ease;">
@@ -455,6 +471,46 @@
     </div>
 </div>
 
+<!-- Modal Tiket Pesawat -->
+<div id="ticketModal" class="modal">
+    <div class="modal-content" style="max-width: 500px; margin: 10% auto;">
+        <div class="modal-header">
+            <h2>Pilih Rute & Kelas Penerbangan</h2>
+            <span class="close" onclick="closeTicketModal()">&times;</span>
+        </div>
+        <div class="modal-body" style="padding: 1.5rem;">
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 600;">Kota Asal</label>
+                <select id="ticket-asal-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                    <option value="">-- Pilih Kota Asal --</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 600;">Kota Tujuan</label>
+                <select id="ticket-tujuan-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);" disabled>
+                    <option value="">-- Pilih Kota Tujuan --</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 600;">Kelas Tiket</label>
+                <select id="ticket-kelas-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);" disabled>
+                    <option value="">-- Pilih Kelas --</option>
+                </select>
+            </div>
+            
+            <div id="ticket-sbm-preview" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.875rem; color: #065f46; font-weight: 600;">Plafon SBM (Tiket PP):</span>
+                <span id="ticket-sbm-amount" style="font-size: 1.125rem; color: #059669; font-weight: 700;">Rp 0</span>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="button" id="btn-save-ticket" class="btn btn-primary" style="flex: 1; padding: 0.625rem;" disabled>Simpan Rute</button>
+                <button type="button" class="btn" style="background: #e2e8f0; color: #475569; padding: 0.625rem;" onclick="closeTicketModal()">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .st-preview-card:hover {
         transform: translateY(-5px);
@@ -514,7 +570,203 @@
     const penginapanRequiredIds = {{ jenis_berkas_penginapan|safe }};
     const fbLuarIds = {{ jenis_berkas_fb_luar|safe }};
     const fbDalamIds = {{ jenis_berkas_fb_dalam|safe }};
+    const ticketPesawatIds = {{ jenis_berkas_tiket_pesawat|default:"[]"|safe }};
     let originalOptions = [];
+    let ticketRoutes = [];
+    let activeTicketRow = null;
+
+    function isTicketPesawat(selectElement) {
+        if (!selectElement) return false;
+        const val = parseInt(selectElement.value, 10);
+        return ticketPesawatIds.includes(val);
+    }
+
+    function parseTicketKeterangan(keteranganVal) {
+        if (!keteranganVal) return null;
+        const match = keteranganVal.match(/^\[SBM-TIKET:(\d+)-(\d+)-(\w+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$/);
+        if (match) {
+            return {
+                asalId: match[1],
+                tujuanId: match[2],
+                kelas: match[3],
+                namaAsal: match[4],
+                namaTujuan: match[5],
+                userDesc: match[6] || ""
+            };
+        }
+        return null;
+    }
+
+    function handleJenisBerkasChange(row) {
+        const select = row.querySelector('select[name$="-jenis_berkas"]');
+        if (!select) return;
+
+        const badgeContainer = row.querySelector('.ticket-route-badge-container');
+        const tagHidden = row.querySelector('.ticket-tag-hidden');
+
+        if (isTicketPesawat(select)) {
+            if (tagHidden && tagHidden.value) {
+                if (badgeContainer) badgeContainer.style.display = 'flex';
+            } else {
+                openTicketModal(row);
+            }
+        } else {
+            if (badgeContainer) badgeContainer.style.display = 'none';
+            if (tagHidden) tagHidden.value = '';
+        }
+    }
+
+    function openTicketModal(row) {
+        activeTicketRow = row;
+        const tagHidden = row.querySelector('.ticket-tag-hidden');
+        const tagVal = tagHidden ? tagHidden.value : '';
+        const parsed = parseTicketKeterangan(tagVal);
+
+        const asalSelect = document.getElementById('ticket-asal-select');
+        const tujuanSelect = document.getElementById('ticket-tujuan-select');
+        const kelasSelect = document.getElementById('ticket-kelas-select');
+        const sbmPreview = document.getElementById('ticket-sbm-preview');
+        const saveBtn = document.getElementById('btn-save-ticket');
+
+        const originMap = new Map();
+        ticketRoutes.forEach(r => {
+            originMap.set(r.kota_asal_id, r.kota_asal_nama);
+        });
+
+        asalSelect.innerHTML = '<option value="">-- Pilih Kota Asal --</option>';
+        originMap.forEach((nama, id) => {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = nama;
+            asalSelect.appendChild(opt);
+        });
+
+        tujuanSelect.innerHTML = '<option value="">-- Pilih Kota Tujuan --</option>';
+        tujuanSelect.disabled = true;
+        kelasSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+        kelasSelect.disabled = true;
+        sbmPreview.style.display = 'none';
+        saveBtn.disabled = true;
+
+        if (parsed) {
+            asalSelect.value = parsed.asalId;
+            populateDestinations(parsed.asalId);
+            tujuanSelect.value = parsed.tujuanId;
+            populateClasses(parsed.asalId, parsed.tujuanId);
+            kelasSelect.value = parsed.kelas;
+            updateSBMPrice();
+        }
+
+        document.getElementById('ticketModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeTicketModal() {
+        document.getElementById('ticketModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        
+        if (activeTicketRow) {
+            const tagHidden = activeTicketRow.querySelector('.ticket-tag-hidden');
+            const select = activeTicketRow.querySelector('select[name$="-jenis_berkas"]');
+            if (select && isTicketPesawat(select) && (!tagHidden || !tagHidden.value)) {
+                select.value = "";
+                const newSectionType = getSectionType(null);
+                toggleFieldsBasedOnJenis(activeTicketRow, newSectionType);
+                updateEstimasi();
+            }
+        }
+        activeTicketRow = null;
+    }
+
+    function populateDestinations(originId) {
+        const destSelect = document.getElementById('ticket-tujuan-select');
+        const kelasSelect = document.getElementById('ticket-kelas-select');
+        const sbmPreview = document.getElementById('ticket-sbm-preview');
+        const saveBtn = document.getElementById('btn-save-ticket');
+
+        destSelect.innerHTML = '<option value="">-- Pilih Kota Tujuan --</option>';
+        kelasSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+        kelasSelect.disabled = true;
+        sbmPreview.style.display = 'none';
+        saveBtn.disabled = true;
+
+        if (!originId) {
+            destSelect.disabled = true;
+            return;
+        }
+
+        const destMap = new Map();
+        ticketRoutes.forEach(r => {
+            if (r.kota_asal_id == originId) {
+                destMap.set(r.kota_tujuan_id, r.kota_tujuan_nama);
+            }
+        });
+
+        destMap.forEach((nama, id) => {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = nama;
+            destSelect.appendChild(opt);
+        });
+
+        destSelect.disabled = false;
+    }
+
+    function populateClasses(originId, destId) {
+        const kelasSelect = document.getElementById('ticket-kelas-select');
+        const sbmPreview = document.getElementById('ticket-sbm-preview');
+        const saveBtn = document.getElementById('btn-save-ticket');
+
+        kelasSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+        sbmPreview.style.display = 'none';
+        saveBtn.disabled = true;
+
+        if (!originId || !destId) {
+            kelasSelect.disabled = true;
+            return;
+        }
+
+        const classes = [];
+        ticketRoutes.forEach(r => {
+            if (r.kota_asal_id == originId && r.kota_tujuan_id == destId) {
+                classes.push({ value: r.kelas, text: r.kelas_display });
+            }
+        });
+
+        classes.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.value;
+            opt.textContent = c.text;
+            kelasSelect.appendChild(opt);
+        });
+
+        kelasSelect.disabled = false;
+    }
+
+    function updateSBMPrice() {
+        const originId = document.getElementById('ticket-asal-select').value;
+        const destId = document.getElementById('ticket-tujuan-select').value;
+        const kelas = document.getElementById('ticket-kelas-select').value;
+        const sbmPreview = document.getElementById('ticket-sbm-preview');
+        const sbmAmount = document.getElementById('ticket-sbm-amount');
+        const saveBtn = document.getElementById('btn-save-ticket');
+
+        if (!originId || !destId || !kelas) {
+            sbmPreview.style.display = 'none';
+            saveBtn.disabled = true;
+            return;
+        }
+
+        const route = ticketRoutes.find(r => r.kota_asal_id == originId && r.kota_tujuan_id == destId && r.kelas == kelas);
+        if (route) {
+            sbmAmount.textContent = 'Rp ' + route.nominal.toLocaleString('id-ID');
+            sbmPreview.style.display = 'flex';
+            saveBtn.disabled = false;
+        } else {
+            sbmPreview.style.display = 'none';
+            saveBtn.disabled = true;
+        }
+    }
 
     function toggleFieldsBasedOnJenis(row, sectionType) {
         const select = row.querySelector('select[name$="-jenis_berkas"]');
@@ -680,14 +932,26 @@
 
                 if (select) {
                     const jbId = select.value;
-                    const nominalVal = nominalInput ? nominalInput.value.replace(/\./g, '') : 0;
-                    const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
-                    if (jbId) {
-                        berkas.push({
-                            'jenis_berkas_id': parseInt(jbId),
-                            'nominal': parseFloat(nominalVal) || 0.0,
-                            'malam_menginap': malamVal
-                        });
+                    const nominalInput = row.querySelector('.nominal-input-field');
+                    const malamInput = row.querySelector('input[name$="-malam_menginap"]');
+                    const deleteInput = row.querySelector('input[name$="-DELETE"]');
+                    
+                    if (deleteInput && deleteInput.checked) return;
+
+                    if (select) {
+                        const jbId = select.value;
+                        const nominalVal = nominalInput ? nominalInput.value.replace(/\./g, '') : 0;
+                        const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
+                        const tagHidden = row.querySelector('.ticket-tag-hidden');
+                        const keteranganVal = (tagHidden && isTicketPesawat(select)) ? tagHidden.value : '';
+                        if (jbId) {
+                            berkas.push({
+                                'jenis_berkas_id': parseInt(jbId),
+                                'nominal': parseFloat(nominalVal) || 0.0,
+                                'malam_menginap': malamVal,
+                                'keterangan': keteranganVal
+                            });
+                        }
                     }
                 }
             }
@@ -853,10 +1117,58 @@
                         const newVal = select.value ? parseInt(select.value) : null;
                         const newSectionType = getSectionType(newVal);
                         toggleFieldsBasedOnJenis(row, newSectionType);
+                        handleJenisBerkasChange(row);
                         updateEstimasi();
                     });
                 }
             });
+        }
+
+        // Fetch ticket routes and initialize tags/badges
+        fetch("{% url 'perjalanan:get_standar_biaya_tiket_ajax' %}")
+            .then(res => res.json())
+            .then(data => {
+                ticketRoutes = data.routes || [];
+                initializeExistingTicketRows();
+            })
+            .catch(err => console.error("Error fetching ticket routes:", err));
+
+        function initializeExistingTicketRows() {
+            const rows = document.querySelectorAll('.formset-row');
+            rows.forEach(row => {
+                const select = row.querySelector('select[name$="-jenis_berkas"]');
+                if (select) {
+                    const descInput = row.querySelector('input[name$="-keterangan"]');
+                    const tagHidden = row.querySelector('.ticket-tag-hidden');
+                    
+                    if (descInput) {
+                        const parsed = parseTicketKeterangan(descInput.value);
+                        if (parsed) {
+                            const tagVal = `[SBM-TIKET:${parsed.asalId}-${parsed.tujuanId}-${parsed.kelas}:${parsed.namaAsal}:${parsed.namaTujuan}]`;
+                            if (tagHidden) tagHidden.value = tagVal;
+                            descInput.value = parsed.userDesc;
+
+                            const badgeContainer = row.querySelector('.ticket-route-badge-container');
+                            const badgeText = row.querySelector('.ticket-route-text');
+                            if (badgeText) {
+                                const kelasText = parsed.kelas === 'ekonomi' ? 'Ekonomi' : 'Bisnis';
+                                badgeText.textContent = `✈️ ${parsed.namaAsal} → ${parsed.namaTujuan} (${kelasText})`;
+                            }
+                            if (badgeContainer) badgeContainer.style.display = 'flex';
+                        }
+                    }
+
+                    const editBtn = row.querySelector('.edit-ticket-route-btn');
+                    if (editBtn) {
+                        editBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openTicketModal(row);
+                        });
+                    }
+                }
+            });
+            updateEstimasi();
         }
 
         // Helper to add a new form row
@@ -887,7 +1199,17 @@
                     const newVal = select.value ? parseInt(select.value) : null;
                     const newSectionType = getSectionType(newVal);
                     toggleFieldsBasedOnJenis(newRow, newSectionType);
+                    handleJenisBerkasChange(newRow);
                     updateEstimasi();
+                });
+            }
+
+            const editBtn = newRow.querySelector('.edit-ticket-route-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openTicketModal(newRow);
                 });
             }
 
@@ -1031,13 +1353,100 @@
             }
         });
 
-        // Strip dots before form submit in Employee page
+        // Strip dots and concat ticket tags before form submit in Employee page
         const employeeForm = document.querySelector('form');
         if (employeeForm) {
-            employeeForm.addEventListener('submit', function() {
+            employeeForm.addEventListener('submit', function(e) {
+                const rows = document.querySelectorAll('.formset-row');
+                rows.forEach(row => {
+                    const deleteInput = row.querySelector('input[name$="-DELETE"]');
+                    if (deleteInput && deleteInput.checked) return;
+
+                    const select = row.querySelector('select[name$="-jenis_berkas"]');
+                    if (select && isTicketPesawat(select)) {
+                        const tagHidden = row.querySelector('.ticket-tag-hidden');
+                        const descInput = row.querySelector('input[name$="-keterangan"]');
+                        if (tagHidden && descInput) {
+                            const tagVal = tagHidden.value;
+                            const descVal = descInput.value.trim();
+                            if (tagVal) {
+                                if (descVal) {
+                                    descInput.value = `${tagVal} | ${descVal}`;
+                                } else {
+                                    descInput.value = tagVal;
+                                }
+                            }
+                        }
+                    }
+                });
+
                 employeeForm.querySelectorAll('input.nominal-input-field').forEach(input => {
                     input.value = input.value.replace(/\./g, '');
                 });
+            });
+        }
+
+        // Modal inputs change triggers SBM price recalculation
+        const asalSelect = document.getElementById('ticket-asal-select');
+        const tujuanSelect = document.getElementById('ticket-tujuan-select');
+        const kelasSelect = document.getElementById('ticket-kelas-select');
+
+        if (asalSelect) {
+            asalSelect.addEventListener('change', function() {
+                populateDestinations(this.value);
+            });
+        }
+        if (tujuanSelect) {
+            tujuanSelect.addEventListener('change', function() {
+                populateClasses(asalSelect.value, this.value);
+            });
+        }
+        if (kelasSelect) {
+            kelasSelect.addEventListener('change', function() {
+                updateSBMPrice();
+            });
+        }
+
+        // Save ticket route selection
+        const btnSaveTicket = document.getElementById('btn-save-ticket');
+        if (btnSaveTicket) {
+            btnSaveTicket.addEventListener('click', function() {
+                if (!activeTicketRow) return;
+
+                const originId = asalSelect.value;
+                const destId = tujuanSelect.value;
+                const kelas = kelasSelect.value;
+
+                const originName = asalSelect.options[asalSelect.selectedIndex].text;
+                const destName = tujuanSelect.options[tujuanSelect.selectedIndex].text;
+                const kelasName = kelasSelect.options[kelasSelect.selectedIndex].text;
+
+                const route = ticketRoutes.find(r => r.kota_asal_id == originId && r.kota_tujuan_id == destId && r.kelas == kelas);
+                if (!route) return;
+
+                const tagVal = `[SBM-TIKET:${originId}-${destId}-${kelas}:${originName}:${destName}]`;
+                const tagHidden = activeTicketRow.querySelector('.ticket-tag-hidden');
+                if (tagHidden) tagHidden.value = tagVal;
+
+                const badgeContainer = activeTicketRow.querySelector('.ticket-route-badge-container');
+                const badgeText = activeTicketRow.querySelector('.ticket-route-text');
+                if (badgeText) {
+                    badgeText.textContent = `✈️ ${originName} → ${destName} (${kelasName})`;
+                }
+                if (badgeContainer) {
+                    badgeContainer.style.display = 'flex';
+                }
+
+                const nominalInput = activeTicketRow.querySelector('input[name$="-nominal"]');
+                if (nominalInput) {
+                    nominalInput.value = route.nominal.toLocaleString('id-ID');
+                }
+
+                document.getElementById('ticketModal').style.display = 'none';
+                document.body.style.overflow = 'auto';
+                activeTicketRow = null;
+
+                updateEstimasi();
             });
         }
 

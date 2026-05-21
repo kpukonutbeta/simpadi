@@ -1,13 +1,29 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from master_data.models import Pegawai, Provinsi, StandarBiaya, Anggaran, JenisBerkas
+from master_data.models import Pegawai, Provinsi, StandarBiaya, Anggaran, JenisBerkas, StandarBiayaTiket
 from decimal import Decimal
 from datetime import timedelta
 
 import uuid
 import os
 import re
+
+def parse_tiket_keterangan(keterangan_val):
+    if not keterangan_val:
+        return None, None, None, None, None, ""
+    # Matches with or without user description
+    match = re.match(r"^\[SBM-TIKET:(\d+)-(\d+)-(\w+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$", keterangan_val)
+    if match:
+        return (
+            int(match.group(1)),
+            int(match.group(2)),
+            match.group(3),
+            match.group(4),
+            match.group(5),
+            match.group(6) or ""
+        )
+    return None, None, None, None, None, keterangan_val
 
 def upload_surat_tugas_path(instance, filename):
     year = instance.tgl_surat.year if instance.tgl_surat else 2026
@@ -261,7 +277,11 @@ class BiayaPerjalanan(models.Model):
         total_malam_lumpsum = 0
         total_malam_fb_luar = 0
         total_malam_fb_dalam = 0
-        total_transport_input = 0
+        
+        # Penjumlahan biaya transportasi terpisah
+        total_transport_non_pesawat_input = 0
+        total_tiket_pesawat_riil = 0
+        tiket_pesawat_dana_pribadi = 0
         
         if self.perjalanan_id:
             for b in BerkasPerjalanan.objects.filter(perjalanan_id=self.perjalanan_id):
@@ -283,10 +303,34 @@ class BiayaPerjalanan(models.Model):
                     total_malam_fb_dalam += b.malam_menginap if (b.malam_menginap is not None and b.malam_menginap > 0) else 1
                 
                 # Check for transportasi category
-                elif kategori == 'transportasi':
+                elif kategori in ['transportasi', 'transportasi_pesawat']:
                     if self.perjalanan.jenis_transportasi != SuratTugas.JenisTransportasi.MOBIL_DINAS:
                         if b.nominal:
-                            total_transport_input += b.nominal
+                            # Detect if it has the [SBM-TIKET:...] tag in keterangan
+                            asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(b.keterangan)
+                            if asal_id and tujuan_id and kelas:
+                                # It's a plane ticket!
+                                try:
+                                    sbm_tiket = StandarBiayaTiket.objects.get(
+                                        kota_asal_id=asal_id,
+                                        kota_tujuan_id=tujuan_id,
+                                        kelas=kelas
+                                    )
+                                    plafon_tiket = sbm_tiket.nominal
+                                except StandarBiayaTiket.DoesNotExist:
+                                    plafon_tiket = None
+                                
+                                if plafon_tiket is not None:
+                                    approved_tiket = min(b.nominal, plafon_tiket)
+                                    excess_tiket = max(0, b.nominal - plafon_tiket)
+                                    total_tiket_pesawat_riil += approved_tiket
+                                    tiket_pesawat_dana_pribadi += excess_tiket
+                                else:
+                                    # Fallback if no matching SBM ticket is configured
+                                    total_tiket_pesawat_riil += b.nominal
+                            else:
+                                # Normal transport document
+                                total_transport_non_pesawat_input += b.nominal
 
         # Logic 1: Lumpsum Harian & Representasi (taken from SBM automatically)
         durasi = self.perjalanan.durasi_hari
@@ -334,12 +378,19 @@ class BiayaPerjalanan(models.Model):
             self.penginapan_dana_pribadi = 0
 
         # Logic 3: Capping Transportasi (At-Cost)
-        if plafon_transport > 0 and total_transport_input > plafon_transport:
-            self.biaya_transportasi_riil = plafon_transport
-            self.transportasi_dana_pribadi = total_transport_input - plafon_transport
-        else:
-            self.biaya_transportasi_riil = total_transport_input
+        if self.perjalanan.jenis_transportasi == SuratTugas.JenisTransportasi.MOBIL_DINAS:
+            self.biaya_transportasi_riil = 0
             self.transportasi_dana_pribadi = 0
+        else:
+            if plafon_transport > 0 and total_transport_non_pesawat_input > plafon_transport:
+                biaya_non_pesawat_riil = plafon_transport
+                non_pesawat_dana_pribadi = total_transport_non_pesawat_input - plafon_transport
+            else:
+                biaya_non_pesawat_riil = total_transport_non_pesawat_input
+                non_pesawat_dana_pribadi = 0
+
+            self.biaya_transportasi_riil = biaya_non_pesawat_riil + total_tiket_pesawat_riil
+            self.transportasi_dana_pribadi = non_pesawat_dana_pribadi + tiket_pesawat_dana_pribadi
 
         self.total_dana_pribadi = self.penginapan_dana_pribadi + self.transportasi_dana_pribadi
         self.total_dibayarkan = self.uang_harian_riil + self.uang_representasi_riil + self.biaya_penginapan_riil + self.biaya_transportasi_riil

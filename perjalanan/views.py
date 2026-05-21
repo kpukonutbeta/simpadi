@@ -112,6 +112,10 @@ def ajukan_perjadin(request, surat_tugas_id):
         kategori_biaya='penginapan_fb_dalam'
     ).values_list('id', flat=True))
 
+    jenis_berkas_tiket_pesawat = list(JenisBerkas.objects.filter(
+        kategori_biaya='transportasi_pesawat'
+    ).values_list('id', flat=True))
+
     context = {
         'surat_tugas': surat_tugas,
         'perjadin': perjadin_instance,
@@ -123,7 +127,8 @@ def ajukan_perjadin(request, surat_tugas_id):
         'jenis_berkas_wajib': jenis_berkas_wajib,
         'jenis_berkas_penginapan': jenis_berkas_penginapan,
         'jenis_berkas_fb_luar': jenis_berkas_fb_luar,
-        'jenis_berkas_fb_dalam': jenis_berkas_fb_dalam
+        'jenis_berkas_fb_dalam': jenis_berkas_fb_dalam,
+        'jenis_berkas_tiket_pesawat': jenis_berkas_tiket_pesawat
     }
     return render(request, 'perjalanan/ajukan_form.html', context)
 
@@ -271,8 +276,14 @@ def hitung_estimasi_ajax(request):
     total_malam_lumpsum = 0
     total_malam_fb_luar = 0
     total_malam_fb_dalam = 0
-    total_transport_input = 0.0
     
+    total_transport_non_pesawat_input = 0.0
+    total_tiket_pesawat_riil = 0.0
+    tiket_pesawat_dana_pribadi = 0.0
+    
+    from .models import parse_tiket_keterangan
+    from master_data.models import StandarBiayaTiket
+
     berkas_list = data.get('berkas', [])
     for b in berkas_list:
         try:
@@ -305,10 +316,35 @@ def hitung_estimasi_ajax(request):
                     total_malam_fb_dalam += malam_menginap if malam_menginap > 0 else 1
                 
                 # Check for transportasi category
-                elif kategori == 'transportasi':
+                elif kategori in ['transportasi', 'transportasi_pesawat']:
                     if jenis_transportasi != 'mobil_dinas':
                         if nominal > 0:
-                            total_transport_input += nominal
+                            # Detect if it has the [SBM-TIKET:...] tag in keterangan
+                            ket_val = b.get('keterangan', '')
+                            asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(ket_val)
+                            if asal_id and tujuan_id and kelas:
+                                # It's a plane ticket
+                                try:
+                                    sbm_tiket = StandarBiayaTiket.objects.get(
+                                        kota_asal_id=asal_id,
+                                        kota_tujuan_id=tujuan_id,
+                                        kelas=kelas
+                                    )
+                                    plafon_tiket = float(sbm_tiket.nominal)
+                                except StandarBiayaTiket.DoesNotExist:
+                                    plafon_tiket = None
+                                
+                                if plafon_tiket is not None:
+                                    approved_tiket = min(nominal, plafon_tiket)
+                                    excess_tiket = max(0.0, nominal - plafon_tiket)
+                                    total_tiket_pesawat_riil += approved_tiket
+                                    tiket_pesawat_dana_pribadi += excess_tiket
+                                else:
+                                    # Fallback if no matching SBM ticket is configured
+                                    total_tiket_pesawat_riil += nominal
+                            else:
+                                # Normal transport document
+                                total_transport_non_pesawat_input += nominal
             except JenisBerkas.DoesNotExist:
                 pass
 
@@ -346,11 +382,17 @@ def hitung_estimasi_ajax(request):
 
     if jenis_transportasi == 'mobil_dinas':
         biaya_transportasi_riil = 0.0
+        transportasi_dana_pribadi = 0.0
     else:
-        if plafon_transport > 0:
-            biaya_transportasi_riil = min(total_transport_input, plafon_transport)
+        if plafon_transport > 0 and total_transport_non_pesawat_input > plafon_transport:
+            biaya_non_pesawat_riil = plafon_transport
+            non_pesawat_dana_pribadi = total_transport_non_pesawat_input - plafon_transport
         else:
-            biaya_transportasi_riil = total_transport_input
+            biaya_non_pesawat_riil = total_transport_non_pesawat_input
+            non_pesawat_dana_pribadi = 0.0
+
+        biaya_transportasi_riil = biaya_non_pesawat_riil + total_tiket_pesawat_riil
+        transportasi_dana_pribadi = non_pesawat_dana_pribadi + tiket_pesawat_dana_pribadi
 
     total_dibayarkan = uang_harian_riil + uang_representasi_riil + biaya_penginapan_riil + biaya_transportasi_riil
 
@@ -358,10 +400,6 @@ def hitung_estimasi_ajax(request):
     penginapan_dana_pribadi = 0.0
     if total_hotel_input > plafon_hotel_limit:
         penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
-
-    transportasi_dana_pribadi = 0.0
-    if plafon_transport > 0 and total_transport_input > plafon_transport:
-        transportasi_dana_pribadi = total_transport_input - plafon_transport
 
     total_tidak_dibayarkan = penginapan_dana_pribadi + transportasi_dana_pribadi
 
@@ -375,4 +413,28 @@ def hitung_estimasi_ajax(request):
         'durasi_hari': durasi,
         'over_limit': over_limit,
         'plafon_hotel': float(plafon_hotel)
+    })
+
+@login_required
+def get_standar_biaya_tiket_ajax(request):
+    from master_data.models import StandarBiayaTiket, JenisBerkas
+    tiket_qs = StandarBiayaTiket.objects.select_related('kota_asal', 'kota_tujuan').all()
+    data = []
+    for t in tiket_qs:
+        data.append({
+            'id': t.id,
+            'kota_asal_id': t.kota_asal.id,
+            'kota_asal_nama': t.kota_asal.nama,
+            'kota_tujuan_id': t.kota_tujuan.id,
+            'kota_tujuan_nama': t.kota_tujuan.nama,
+            'kelas': t.kelas,
+            'kelas_display': t.get_kelas_display(),
+            'nominal': float(t.nominal)
+        })
+    jenis_berkas_tiket_pesawat = list(JenisBerkas.objects.filter(
+        kategori_biaya='transportasi_pesawat'
+    ).values_list('id', flat=True))
+    return JsonResponse({
+        'routes': data,
+        'ticket_pesawat_ids': jenis_berkas_tiket_pesawat
     })

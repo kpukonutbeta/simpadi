@@ -163,14 +163,14 @@ class BerkasPerjalananTransportasiInline(admin.TabularInline):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(
-            jenis_berkas__kategori_biaya='transportasi',
+            jenis_berkas__kategori_biaya__in=['transportasi', 'transportasi_pesawat'],
             jenis_berkas__nominal_biaya=True
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "jenis_berkas":
             kwargs["queryset"] = JenisBerkas.objects.filter(
-                kategori_biaya='transportasi',
+                kategori_biaya__in=['transportasi', 'transportasi_pesawat'],
                 nominal_biaya=True
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)

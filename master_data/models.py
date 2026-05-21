@@ -93,6 +93,7 @@ class JenisBerkas(models.Model):
         PENGINAPAN_FB_LUAR = 'penginapan_fb_luar', 'Biaya Penginapan Fullboard Luar Kota'
         PENGINAPAN_FB_DALAM = 'penginapan_fb_dalam', 'Biaya Penginapan Fullboard Dalam Kota'
         TRANSPORTASI = 'transportasi', 'Biaya Transportasi'
+        TRANSPORTASI_PESAWAT = 'transportasi_pesawat', 'Biaya Transportasi Tiket Pesawat'
         NONE = 'none', 'Bukan Biaya (Lain-lain)'
 
     kategori_biaya = models.CharField(
