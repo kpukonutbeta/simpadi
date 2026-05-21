@@ -1,9 +1,9 @@
-document.addEventListener('DOMContentLoaded', function() {
+function initAdminFilter() {
     const suratTugasSelect = document.querySelector('#id_surat_tugas');
     const pegawaiSelect = document.querySelector('#id_pegawai');
 
     if (suratTugasSelect && pegawaiSelect) {
-        suratTugasSelect.addEventListener('change', function() {
+        suratTugasSelect.addEventListener('change', function () {
             const suratTugasId = this.value;
             if (!suratTugasId) return;
 
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     const currentPegawaiId = pegawaiSelect.value;
                     pegawaiSelect.innerHTML = '<option value="">---------</option>';
-                    
+
                     data.pegawai.forEach(p => {
                         const option = document.createElement('option');
                         option.value = p.id;
@@ -97,77 +97,77 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) return;
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) return;
 
-            const formatRupiah = (val) => {
-                return 'Rp ' + parseFloat(val).toLocaleString('id-ID', {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                });
-            };
+                const formatRupiah = (val) => {
+                    return 'Rp ' + parseFloat(val).toLocaleString('id-ID', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    });
+                };
 
-            // Update DOM readonly elements in BiayaPerjalananInline
-            const harianEl = document.querySelector('.field-uang_harian_riil div.readonly');
-            const reprEl = document.querySelector('.field-uang_representasi_riil div.readonly');
-            const hotelEl = document.querySelector('.field-biaya_penginapan_riil div.readonly');
-            const transportEl = document.querySelector('.field-biaya_transportasi_riil div.readonly');
-            const totalEl = document.querySelector('.field-get_total_dibayarkan div.readonly');
-            const tidakDibayarkanEl = document.querySelector('.field-get_total_tidak_dibayarkan div.readonly');
+                // Update DOM readonly elements in BiayaPerjalananInline
+                const harianEl = document.querySelector('.field-uang_harian_riil div.readonly');
+                const reprEl = document.querySelector('.field-uang_representasi_riil div.readonly');
+                const hotelEl = document.querySelector('.field-biaya_penginapan_riil div.readonly');
+                const transportEl = document.querySelector('.field-biaya_transportasi_riil div.readonly');
+                const totalEl = document.querySelector('.field-get_total_dibayarkan div.readonly');
+                const tidakDibayarkanEl = document.querySelector('.field-get_total_tidak_dibayarkan div.readonly');
 
-            if (harianEl) harianEl.textContent = formatRupiah(data.uang_harian_riil);
-            if (reprEl) reprEl.textContent = formatRupiah(data.uang_representasi_riil);
-            if (hotelEl) hotelEl.textContent = formatRupiah(data.biaya_penginapan_riil);
-            if (transportEl) transportEl.textContent = formatRupiah(data.biaya_transportasi_riil);
-            if (totalEl) totalEl.innerHTML = `<strong style="color: #0f172a; font-size: 1.1em;">${formatRupiah(data.total_dibayarkan)}</strong>`;
-            if (tidakDibayarkanEl) {
-                const unpaidVal = parseFloat(data.total_tidak_dibayarkan) || 0.0;
-                if (unpaidVal > 0) {
-                    tidakDibayarkanEl.innerHTML = `<strong style="color: #dc2626; font-size: 1.1em;">${formatRupiah(unpaidVal)}</strong>`;
-                } else {
-                    tidakDibayarkanEl.textContent = "-";
-                }
-            }
-            // Populate lumpsum nominal inputs dynamically for Admin
-            const plafonHotel = parseFloat(data.plafon_hotel) || 0;
-            const lumpsumNominal = 0.30 * plafonHotel;
-            
-            const rows = document.querySelectorAll('.inline-related tr.form-row:not(.empty-form)');
-            rows.forEach(row => {
-                const select = row.querySelector('select[name$="-jenis_berkas"]');
-                const nominalInput = row.querySelector('input[name$="-nominal"]');
-                if (select && nominalInput) {
-                    const selectText = select.options[select.selectedIndex]?.text || '';
-                    if (selectText === 'TIDAK MENGINAP') {
-                        nominalInput.readOnly = true;
-                        nominalInput.style.backgroundColor = '#f1f5f9';
-                        nominalInput.style.cursor = 'not-allowed';
-                        
-                        const malamInput = row.querySelector('input[name$="-malam_menginap"]');
-                        const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
-                        const calculatedValue = lumpsumNominal * malamVal;
-                        nominalInput.value = calculatedValue.toLocaleString('id-ID', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0
-                        });
-                    } else if (selectText.includes('FULLBOARD')) {
-                        nominalInput.readOnly = true;
-                        nominalInput.style.backgroundColor = '#f1f5f9';
-                        nominalInput.style.cursor = 'not-allowed';
-                        nominalInput.value = '0';
+                if (harianEl) harianEl.textContent = formatRupiah(data.uang_harian_riil);
+                if (reprEl) reprEl.textContent = formatRupiah(data.uang_representasi_riil);
+                if (hotelEl) hotelEl.textContent = formatRupiah(data.biaya_penginapan_riil);
+                if (transportEl) transportEl.textContent = formatRupiah(data.biaya_transportasi_riil);
+                if (totalEl) totalEl.innerHTML = `<strong style="color: #0f172a; font-size: 1.1em;">${formatRupiah(data.total_dibayarkan)}</strong>`;
+                if (tidakDibayarkanEl) {
+                    const unpaidVal = parseFloat(data.total_tidak_dibayarkan) || 0.0;
+                    if (unpaidVal > 0) {
+                        tidakDibayarkanEl.innerHTML = `<strong style="color: #dc2626; font-size: 1.1em;">${formatRupiah(unpaidVal)}</strong>`;
                     } else {
-                        if (nominalInput.readOnly) {
-                            nominalInput.readOnly = false;
-                            nominalInput.style.backgroundColor = '';
-                            nominalInput.style.cursor = '';
-                            nominalInput.value = '';
-                        }
+                        tidakDibayarkanEl.textContent = "-";
                     }
                 }
-            });
-        })
-        .catch(err => console.error('Admin estimation error:', err));
+                // Populate lumpsum nominal inputs dynamically for Admin
+                const plafonHotel = parseFloat(data.plafon_hotel) || 0;
+                const lumpsumNominal = 0.30 * plafonHotel;
+
+                const rows = document.querySelectorAll('.inline-related tr.form-row:not(.empty-form)');
+                rows.forEach(row => {
+                    const select = row.querySelector('select[name$="-jenis_berkas"]');
+                    const nominalInput = row.querySelector('input[name$="-nominal"]');
+                    if (select && nominalInput) {
+                        const selectText = select.options[select.selectedIndex]?.text || '';
+                        if (selectText === 'TIDAK MENGINAP') {
+                            nominalInput.readOnly = true;
+                            nominalInput.style.backgroundColor = '#f1f5f9';
+                            nominalInput.style.cursor = 'not-allowed';
+
+                            const malamInput = row.querySelector('input[name$="-malam_menginap"]');
+                            const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
+                            const calculatedValue = lumpsumNominal * malamVal;
+                            nominalInput.value = calculatedValue.toLocaleString('id-ID', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            });
+                        } else if (selectText.includes('FULLBOARD')) {
+                            nominalInput.readOnly = true;
+                            nominalInput.style.backgroundColor = '#f1f5f9';
+                            nominalInput.style.cursor = 'not-allowed';
+                            nominalInput.value = '0';
+                        } else {
+                            if (nominalInput.readOnly) {
+                                nominalInput.readOnly = false;
+                                nominalInput.style.backgroundColor = '';
+                                nominalInput.style.cursor = '';
+                                nominalInput.value = '';
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error('Admin estimation error:', err));
     }
 
     // Bind change/input events to main form inputs for real-time preview in Admin
@@ -221,12 +221,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Delegate listener to capture edits/additions/deletions in the inline berkas rows in Admin
-    document.addEventListener('change', function(e) {
+    document.addEventListener('change', function (e) {
         if (e.target.matches('input[name$="-nominal"]') || e.target.matches('select[name$="-jenis_berkas"]') || e.target.matches('input[name$="-DELETE"]') || e.target.matches('input[name$="-malam_menginap"]')) {
             updateAdminEstimasi();
         }
     });
-    document.addEventListener('input', function(e) {
+    document.addEventListener('input', function (e) {
         if (e.target.matches('input[name$="-nominal"]') || e.target.matches('input[name$="-malam_menginap"]')) {
             updateAdminEstimasi();
         }
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseInt(digits, 10).toLocaleString('id-ID');
     }
 
-    document.addEventListener('input', function(e) {
+    document.addEventListener('input', function (e) {
         if (e.target.matches('input[name$="-nominal"]')) {
             let input = e.target;
             if (input.type === 'number') {
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             let cursorPosition = input.selectionStart;
             let originalLength = input.value.length;
-            
+
             let formatted = formatRupiahInput(input.value);
             if (input.value !== formatted) {
                 input.value = formatted;
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Strip dots and concat ticket tags before form submit in Admin
     const form = document.getElementById('perjalanandinas_form') || document.querySelector('form');
     if (form) {
-        form.addEventListener('submit', function() {
+        form.addEventListener('submit', function () {
             const rows = document.querySelectorAll('.inline-related tr.form-row:not(.empty-form)');
             rows.forEach(row => {
                 const deleteInput = row.querySelector('input[name$="-DELETE"]');
@@ -362,10 +362,12 @@ document.addEventListener('DOMContentLoaded', function() {
             margin-bottom: 0.375rem;
             color: #334155;
         }
+
         .admin-ticket-form-group select {
             width: 100% !important;
             height: 2.2rem !important;
-            padding: 0 2.5rem 0 0.75rem !important;
+            min-height: 2.2rem !important;
+            padding: 0.375rem 2.5rem 0.375rem 0.75rem !important;
             font-size: 0.9rem !important;
             border-radius: 0.375rem !important;
             border: 1px solid #cbd5e1 !important;
@@ -376,10 +378,13 @@ document.addEventListener('DOMContentLoaded', function() {
             -webkit-appearance: none !important;
             -moz-appearance: none !important;
             appearance: none !important;
-            line-height: normal !important;
+            line-height: 1.5 !important;
             transition: border-color 0.2s, box-shadow 0.2s !important;
         }
-        .admin-ticket-form-group select:focus {
+        
+        #admin-ticket-asal-select:focus,
+        #admin-ticket-tujuan-select:focus,
+        #admin-ticket-kelas-select:focus {
             outline: none !important;
             border-color: #2563eb !important;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
@@ -448,6 +453,51 @@ document.addEventListener('DOMContentLoaded', function() {
             padding: 0;
             font-size: 0.75rem;
         }
+
+        /* Adjust padding to prevent overlapping with badge */
+        .inline-related tr.form-row.has-ticket-route td {
+            padding-top: 2.2rem !important;
+            position: relative !important;
+        }
+
+        /* Styled badge for active ticket route */
+        .admin-ticket-route-badge-active {
+            position: absolute !important;
+            top: 0.4rem !important;
+            left: 10px !important;
+            margin: 0 !important;
+            padding: 2px 6px !important;
+            background-color: #eff6ff !important;
+            border: 1px solid #bfdbfe !important;
+            border-radius: 4px !important;
+            color: #1e40af !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            z-index: 10 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            line-height: 1.2 !important;
+            height: auto !important;
+        }
+
+        /* Edit button styled inside the badge */
+        .admin-ticket-route-edit-btn {
+            background: none !important;
+            border: none !important;
+            cursor: pointer !important;
+            padding: 2px !important;
+            margin-left: 4px !important;
+            font-size: 11px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: transform 0.2s !important;
+        }
+        .admin-ticket-route-edit-btn:hover {
+            transform: scale(1.25) !important;
+        }
     `;
 
     let ticketRoutes = [];
@@ -495,19 +545,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="admin-ticket-modal-body">
                         <div class="admin-ticket-form-group">
                             <label>Kota Asal</label>
-                            <select id="admin-ticket-asal-select">
+                            <select id="admin-ticket-asal-select" style="width: 100% !important; height: 2.2rem !important; min-height: 2.2rem !important; padding: 0.375rem 2.5rem 0.375rem 0.75rem !important; font-size: 0.9rem !important; border-radius: 0.375rem !important; border: 1px solid #cbd5e1 !important; background: #f8fafc url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E&quot;) no-repeat right 0.75rem center !important; background-size: 1rem !important; color: #0f172a !important; box-sizing: border-box !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; line-height: 1.5 !important; transition: border-color 0.2s, box-shadow 0.2s !important;">
                                 <option value="">-- Pilih Kota Asal --</option>
                             </select>
                         </div>
                         <div class="admin-ticket-form-group">
                             <label>Kota Tujuan</label>
-                            <select id="admin-ticket-tujuan-select" disabled>
+                            <select id="admin-ticket-tujuan-select" style="width: 100% !important; height: 2.2rem !important; min-height: 2.2rem !important; padding: 0.375rem 2.5rem 0.375rem 0.75rem !important; font-size: 0.9rem !important; border-radius: 0.375rem !important; border: 1px solid #cbd5e1 !important; background: #f8fafc url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E&quot;) no-repeat right 0.75rem center !important; background-size: 1rem !important; color: #0f172a !important; box-sizing: border-box !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; line-height: 1.5 !important; transition: border-color 0.2s, box-shadow 0.2s !important;" disabled>
                                 <option value="">-- Pilih Kota Tujuan --</option>
                             </select>
                         </div>
                         <div class="admin-ticket-form-group">
                             <label>Kelas Tiket</label>
-                            <select id="admin-ticket-kelas-select" disabled>
+                            <select id="admin-ticket-kelas-select" style="width: 100% !important; height: 2.2rem !important; min-height: 2.2rem !important; padding: 0.375rem 2.5rem 0.375rem 0.75rem !important; font-size: 0.9rem !important; border-radius: 0.375rem !important; border: 1px solid #cbd5e1 !important; background: #f8fafc url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E&quot;) no-repeat right 0.75rem center !important; background-size: 1rem !important; color: #0f172a !important; box-sizing: border-box !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; line-height: 1.5 !important; transition: border-color 0.2s, box-shadow 0.2s !important;" disabled>
                                 <option value="">-- Pilih Kelas --</option>
                             </select>
                         </div>
@@ -535,13 +585,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const tujuanSelect = document.getElementById('admin-ticket-tujuan-select');
         const kelasSelect = document.getElementById('admin-ticket-kelas-select');
 
-        asalSelect.addEventListener('change', function() {
+        asalSelect.addEventListener('change', function () {
             populateAdminDestinations(this.value);
         });
-        tujuanSelect.addEventListener('change', function() {
+        tujuanSelect.addEventListener('change', function () {
             populateAdminClasses(asalSelect.value, this.value);
         });
-        kelasSelect.addEventListener('change', function() {
+        kelasSelect.addEventListener('change', function () {
             updateAdminSBMPrice();
         });
 
@@ -704,6 +754,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function updateAdminRowRouteLayout(row, isActive, originName, destName, kelasName) {
+        const originalCell = row.querySelector('td.original');
+        if (!originalCell) return;
+        let pElement = originalCell.querySelector('p');
+        if (!pElement) {
+            pElement = document.createElement('p');
+            originalCell.appendChild(pElement);
+        }
+
+        if (typeof pElement.dataset.originalText === 'undefined') {
+            pElement.dataset.originalText = pElement.textContent.trim();
+        }
+
+        if (isActive && originName && destName && kelasName) {
+            row.classList.add('has-ticket-route');
+            pElement.className = 'admin-ticket-route-badge-active';
+            pElement.innerHTML = `✈️ ${originName} → ${destName} (${kelasName}) <button type="button" class="admin-ticket-route-edit admin-ticket-route-edit-btn" style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;" title="Ubah Rute">✏️</button>`;
+        } else {
+            row.classList.remove('has-ticket-route');
+            pElement.className = '';
+            pElement.innerHTML = pElement.dataset.originalText || '';
+        }
+    }
+
     function saveAdminTicketRoute() {
         if (!activeTicketRow) return;
 
@@ -726,11 +800,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tagHidden = activeTicketRow.querySelector('.admin-ticket-tag-hidden');
         if (tagHidden) tagHidden.value = tagVal;
 
-        const originalCell = activeTicketRow.querySelector('td.original');
-        const pElement = originalCell ? originalCell.querySelector('p') : null;
-        if (pElement) {
-            pElement.innerHTML = `✈️ ${originName} → ${destName} (${kelasName}) <button type="button" class="admin-ticket-route-edit" style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;" title="Ubah Rute">✏️</button>`;
-        }
+        updateAdminRowRouteLayout(activeTicketRow, true, originName, destName, kelasName);
 
         const nominalInput = activeTicketRow.querySelector('input[name$="-nominal"]');
         if (nominalInput) {
@@ -748,24 +818,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!select) return;
 
         const tagHidden = row.querySelector('.admin-ticket-tag-hidden');
-        const originalCell = row.querySelector('td.original');
-        const pElement = originalCell ? originalCell.querySelector('p') : null;
 
         if (isTicketPesawat(select)) {
             if (tagHidden && tagHidden.value) {
                 const parsed = parseTicketKeterangan(tagHidden.value);
-                if (parsed && pElement) {
+                if (parsed) {
                     const kelasDisplay = parsed.kelas === 'ekonomi' ? 'Ekonomi' : 'Bisnis';
-                    pElement.innerHTML = `✈️ ${parsed.namaAsal} → ${parsed.namaTujuan} (${kelasDisplay}) <button type="button" class="admin-ticket-route-edit" style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;" title="Ubah Rute">✏️</button>`;
+                    updateAdminRowRouteLayout(row, true, parsed.namaAsal, parsed.namaTujuan, kelasDisplay);
                 }
             } else {
                 openAdminTicketModal(row);
             }
         } else {
             if (tagHidden) tagHidden.value = '';
-            if (pElement) {
-                pElement.innerHTML = pElement.dataset.originalText || '';
-            }
+            updateAdminRowRouteLayout(row, false);
             updateAdminEstimasi();
         }
     }
@@ -811,8 +877,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 descInput.value = parsed.userDesc;
 
                 const kelasDisplay = parsed.kelas === 'ekonomi' ? 'Ekonomi' : 'Bisnis';
-                pElement.innerHTML = `✈️ ${parsed.namaAsal} → ${parsed.namaTujuan} (${kelasDisplay}) <button type="button" class="admin-ticket-route-edit" style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;" title="Ubah Rute">✏️</button>`;
+                updateAdminRowRouteLayout(row, true, parsed.namaAsal, parsed.namaTujuan, kelasDisplay);
+            } else {
+                updateAdminRowRouteLayout(row, false);
             }
+        } else {
+            updateAdminRowRouteLayout(row, false);
         }
     }
 
@@ -839,7 +909,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchTicketRoutes();
 
     // Document-level event delegation for select changes & edit button clicks
-    document.addEventListener('change', function(e) {
+    document.addEventListener('change', function (e) {
         if (e.target.matches('select[name$="-jenis_berkas"]')) {
             const select = e.target;
             const row = select.closest('tr.form-row');
@@ -850,7 +920,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         const editBtn = e.target.closest('.admin-ticket-route-edit');
         if (editBtn) {
             e.preventDefault();
@@ -863,7 +933,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     if (window.django && django.jQuery) {
-        django.jQuery(document).on('formset:added', function(event, $row, formsetName) {
+        django.jQuery(document).on('formset:added', function (event, $row, formsetName) {
             let row = null;
             if ($row) {
                 if ($row.length) {
@@ -880,4 +950,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Run initial estimation on load in Admin
     setTimeout(updateAdminEstimasi, 500);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminFilter);
+} else {
+    initAdminFilter();
+}
