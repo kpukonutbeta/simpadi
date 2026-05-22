@@ -280,6 +280,7 @@ def hitung_estimasi_ajax(request):
     total_transport_non_pesawat_input = 0.0
     total_tiket_pesawat_riil = 0.0
     tiket_pesawat_dana_pribadi = 0.0
+    flight_tickets = []
     
     from .models import parse_tiket_keterangan
     from master_data.models import StandarBiayaTiket
@@ -333,20 +334,23 @@ def hitung_estimasi_ajax(request):
                                     plafon_tiket = float(sbm_tiket.nominal)
                                 except StandarBiayaTiket.DoesNotExist:
                                     plafon_tiket = None
-                                
-                                if plafon_tiket is not None:
-                                    approved_tiket = min(nominal, plafon_tiket)
-                                    excess_tiket = max(0.0, nominal - plafon_tiket)
-                                    total_tiket_pesawat_riil += approved_tiket
-                                    tiket_pesawat_dana_pribadi += excess_tiket
-                                else:
-                                    # Fallback if no matching SBM ticket is configured
-                                    total_tiket_pesawat_riil += nominal
+                                flight_tickets.append((nominal, plafon_tiket))
                             else:
                                 # Normal transport document
                                 total_transport_non_pesawat_input += nominal
             except JenisBerkas.DoesNotExist:
                 pass
+
+    if flight_tickets:
+        total_tiket_pesawat_nominal = sum(nominal for nominal, _ in flight_tickets)
+        plafon_list = [p for _, p in flight_tickets if p is not None]
+        if plafon_list:
+            max_plafon_tiket = max(plafon_list)
+            total_tiket_pesawat_riil = min(total_tiket_pesawat_nominal, max_plafon_tiket)
+            tiket_pesawat_dana_pribadi = max(0.0, total_tiket_pesawat_nominal - max_plafon_tiket)
+        else:
+            total_tiket_pesawat_riil = total_tiket_pesawat_nominal
+            tiket_pesawat_dana_pribadi = 0.0
 
     # Calculation
     fb_luar_days = min(total_malam_fb_luar, durasi)

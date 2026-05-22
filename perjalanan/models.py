@@ -282,6 +282,7 @@ class BiayaPerjalanan(models.Model):
         total_transport_non_pesawat_input = 0
         total_tiket_pesawat_riil = 0
         tiket_pesawat_dana_pribadi = 0
+        flight_tickets = []
         
         if self.perjalanan_id:
             for b in BerkasPerjalanan.objects.filter(perjalanan_id=self.perjalanan_id):
@@ -319,18 +320,21 @@ class BiayaPerjalanan(models.Model):
                                     plafon_tiket = sbm_tiket.nominal
                                 except StandarBiayaTiket.DoesNotExist:
                                     plafon_tiket = None
-                                
-                                if plafon_tiket is not None:
-                                    approved_tiket = min(b.nominal, plafon_tiket)
-                                    excess_tiket = max(0, b.nominal - plafon_tiket)
-                                    total_tiket_pesawat_riil += approved_tiket
-                                    tiket_pesawat_dana_pribadi += excess_tiket
-                                else:
-                                    # Fallback if no matching SBM ticket is configured
-                                    total_tiket_pesawat_riil += b.nominal
+                                flight_tickets.append((b.nominal, plafon_tiket))
                             else:
                                 # Normal transport document
                                 total_transport_non_pesawat_input += b.nominal
+
+        if flight_tickets:
+            total_tiket_pesawat_nominal = sum(nominal for nominal, _ in flight_tickets)
+            plafon_list = [p for _, p in flight_tickets if p is not None]
+            if plafon_list:
+                max_plafon_tiket = max(plafon_list)
+                total_tiket_pesawat_riil = min(total_tiket_pesawat_nominal, max_plafon_tiket)
+                tiket_pesawat_dana_pribadi = max(0, total_tiket_pesawat_nominal - max_plafon_tiket)
+            else:
+                total_tiket_pesawat_riil = total_tiket_pesawat_nominal
+                tiket_pesawat_dana_pribadi = 0
 
         # Logic 1: Lumpsum Harian & Representasi (taken from SBM automatically)
         durasi = self.perjalanan.durasi_hari
@@ -426,6 +430,38 @@ class BerkasPerjalanan(models.Model):
                 raise ValidationError({
                     'nominal': f"Nominal biaya wajib diisi untuk berkas jenis {self.jenis_berkas.nama}."
                 })
+
+        # 3. Tiket pesawat hanya boleh diinput maksimal 2 kali
+        is_flight_ticket = False
+        if self.jenis_berkas:
+            if self.jenis_berkas.kategori_biaya == 'transportasi_pesawat':
+                is_flight_ticket = True
+            elif self.jenis_berkas.kategori_biaya == 'transportasi' and self.keterangan:
+                asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(self.keterangan)
+                if asal_id and tujuan_id and kelas:
+                    is_flight_ticket = True
+
+        if is_flight_ticket:
+            other_tickets = BerkasPerjalanan.objects.filter(
+                perjalanan=self.perjalanan
+            )
+            if self.pk:
+                other_tickets = other_tickets.exclude(pk=self.pk)
+            
+            flight_ticket_count = 0
+            for ot in other_tickets:
+                if ot.jenis_berkas:
+                    if ot.jenis_berkas.kategori_biaya == 'transportasi_pesawat':
+                        flight_ticket_count += 1
+                    elif ot.jenis_berkas.kategori_biaya == 'transportasi' and ot.keterangan:
+                        o_asal_id, o_tujuan_id, o_kelas, o_nama_asal, o_nama_tujuan, o_user_desc = parse_tiket_keterangan(ot.keterangan)
+                        if o_asal_id and o_tujuan_id and o_kelas:
+                            flight_ticket_count += 1
+            
+            if flight_ticket_count >= 2:
+                raise ValidationError(
+                    "Tiket pesawat hanya dapat diinput maksimal 2 kali (untuk pergi dan pulang) sesuai aturan SBM."
+                )
 
     def save(self, *args, **kwargs):
         if self.jenis_berkas and self.jenis_berkas.kategori_biaya in ['penginapan_fb_luar', 'penginapan_fb_dalam']:

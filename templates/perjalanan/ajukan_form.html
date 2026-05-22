@@ -581,6 +581,23 @@
         return ticketPesawatIds.includes(val);
     }
 
+    function countEmployeeFlightTickets(currentRow = null) {
+        let count = 0;
+        const rows = document.querySelectorAll('.formset-row');
+        rows.forEach(r => {
+            if (r === currentRow) return;
+            if (r.style.display === 'none') return;
+            const deleteInput = r.querySelector('input[name$="-DELETE"]');
+            if (deleteInput && deleteInput.checked) return;
+
+            const select = r.querySelector('select[name$="-jenis_berkas"]');
+            if (select && isTicketPesawat(select)) {
+                count++;
+            }
+        });
+        return count;
+    }
+
     function parseTicketKeterangan(keteranganVal) {
         if (!keteranganVal) return null;
         const match = keteranganVal.match(/^\[SBM-TIKET:(\d+)-(\d+)-(\w+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$/);
@@ -605,6 +622,16 @@
         const tagHidden = row.querySelector('.ticket-tag-hidden');
 
         if (isTicketPesawat(select)) {
+            if (countEmployeeFlightTickets(row) >= 2) {
+                alert("Tiket pesawat hanya dapat diinput maksimal 2 kali (untuk pergi dan pulang) sesuai aturan SBM.");
+                select.value = "";
+                if (badgeContainer) badgeContainer.style.display = 'none';
+                if (tagHidden) tagHidden.value = '';
+                const newSectionType = getSectionType(null);
+                toggleFieldsBasedOnJenis(row, newSectionType);
+                updateEstimasi();
+                return;
+            }
             if (tagHidden && tagHidden.value) {
                 if (badgeContainer) badgeContainer.style.display = 'flex';
             } else {
@@ -1357,8 +1384,27 @@
         const employeeForm = document.querySelector('form');
         if (employeeForm) {
             employeeForm.addEventListener('submit', function(e) {
+                let flightCount = 0;
                 const rows = document.querySelectorAll('.formset-row');
                 rows.forEach(row => {
+                    if (row.style.display === 'none') return;
+                    const deleteInput = row.querySelector('input[name$="-DELETE"]');
+                    if (deleteInput && deleteInput.checked) return;
+
+                    const select = row.querySelector('select[name$="-jenis_berkas"]');
+                    if (select && isTicketPesawat(select)) {
+                        flightCount++;
+                    }
+                });
+
+                if (flightCount > 2) {
+                    e.preventDefault();
+                    alert("Tiket pesawat hanya dapat diinput maksimal 2 kali (untuk pergi dan pulang) sesuai aturan SBM.");
+                    return false;
+                }
+
+                rows.forEach(row => {
+                    if (row.style.display === 'none') return;
                     const deleteInput = row.querySelector('input[name$="-DELETE"]');
                     if (deleteInput && deleteInput.checked) return;
 

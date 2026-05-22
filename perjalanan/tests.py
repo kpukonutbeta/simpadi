@@ -215,3 +215,61 @@ class TiketPesawatTestCase(TestCase):
         self.assertEqual(data["biaya_transportasi_riil"], 3000000.0)
         self.assertEqual(data["total_tidak_dibayarkan"], 500000.0)
         self.assertEqual(data["total_dibayarkan"], 5080000.0)
+
+    def test_biaya_perjalanan_two_tickets_capped(self):
+        # Ticket 1 cost: 3,500,000
+        # Ticket 2 cost: 3,500,000
+        # SBM limit is 3,000,000
+        # Total cost is 7,000,000. The approved amount should be capped at 3,000,000 (the max SBM rate of the route).
+        # The remaining 4,000,000 should go to dana pribadi.
+        tag = f"[SBM-TIKET:{self.kota_asal.id}-{self.kota_tujuan.id}-ekonomi:KENDARI:JAKARTA] | Pergi"
+        BerkasPerjalanan.objects.create(
+            perjalanan=self.perjadin,
+            jenis_berkas=self.jenis_tiket,
+            nominal=Decimal("3500000"),
+            keterangan=tag
+        )
+
+        tag2 = f"[SBM-TIKET:{self.kota_asal.id}-{self.kota_tujuan.id}-ekonomi:KENDARI:JAKARTA] | Pulang"
+        BerkasPerjalanan.objects.create(
+            perjalanan=self.perjadin,
+            jenis_berkas=self.jenis_tiket,
+            nominal=Decimal("3500000"),
+            keterangan=tag2
+        )
+
+        self.perjadin.biaya.refresh_from_db()
+        self.assertEqual(self.perjadin.biaya.biaya_transportasi_riil, Decimal("3000000"))
+        self.assertEqual(self.perjadin.biaya.transportasi_dana_pribadi, Decimal("4000000"))
+
+    def test_validation_limit_max_two_flight_tickets(self):
+        # We can add 2 flight tickets
+        tag1 = f"[SBM-TIKET:{self.kota_asal.id}-{self.kota_tujuan.id}-ekonomi:KENDARI:JAKARTA] | Pergi"
+        BerkasPerjalanan.objects.create(
+            perjalanan=self.perjadin,
+            jenis_berkas=self.jenis_tiket,
+            nominal=Decimal("3000000"),
+            keterangan=tag1
+        )
+
+        tag2 = f"[SBM-TIKET:{self.kota_asal.id}-{self.kota_tujuan.id}-ekonomi:KENDARI:JAKARTA] | Pulang"
+        BerkasPerjalanan.objects.create(
+            perjalanan=self.perjadin,
+            jenis_berkas=self.jenis_tiket,
+            nominal=Decimal("3000000"),
+            keterangan=tag2
+        )
+
+        # Attempting to add a 3rd flight ticket should raise a ValidationError in clean()
+        tag3 = f"[SBM-TIKET:{self.kota_asal.id}-{self.kota_tujuan.id}-ekonomi:KENDARI:JAKARTA] | Pergi Lagi"
+        third_ticket = BerkasPerjalanan(
+            perjalanan=self.perjadin,
+            jenis_berkas=self.jenis_tiket,
+            nominal=Decimal("3000000"),
+            keterangan=tag3
+        )
+        
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError):
+            third_ticket.clean()
+
