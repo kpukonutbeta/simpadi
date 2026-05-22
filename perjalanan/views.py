@@ -116,6 +116,13 @@ def ajukan_perjadin(request, surat_tugas_id):
         kategori_biaya='transportasi_pesawat'
     ).values_list('id', flat=True))
 
+    breakdown_initial = None
+    if perjadin_instance and hasattr(perjadin_instance, 'biaya') and perjadin_instance.biaya:
+        try:
+            breakdown_initial = perjadin_instance.biaya.calculate_breakdown()
+        except Exception:
+            pass
+
     context = {
         'surat_tugas': surat_tugas,
         'perjadin': perjadin_instance,
@@ -128,7 +135,8 @@ def ajukan_perjadin(request, surat_tugas_id):
         'jenis_berkas_penginapan': jenis_berkas_penginapan,
         'jenis_berkas_fb_luar': jenis_berkas_fb_luar,
         'jenis_berkas_fb_dalam': jenis_berkas_fb_dalam,
-        'jenis_berkas_tiket_pesawat': jenis_berkas_tiket_pesawat
+        'jenis_berkas_tiket_pesawat': jenis_berkas_tiket_pesawat,
+        'breakdown_initial': breakdown_initial
     }
     return render(request, 'perjalanan/ajukan_form.html', context)
 
@@ -233,190 +241,74 @@ def hitung_estimasi_ajax(request):
     else:
         pegawai_obj = None
 
-    # Parse dates to calculate duration using our robust parser
-    durasi = 0
-    if tanggal_berangkat_str and tanggal_kembali_str:
-        tb = parse_date(tanggal_berangkat_str)
-        tk = parse_date(tanggal_kembali_str)
-        if tb and tk:
-            durasi = (tk - tb).days + 1
-            if durasi < 0:
-                durasi = 0
-
-    # Fetch StandarBiaya
-    tarif_harian = 0.0
-    plafon_hotel = 0.0
-    tarif_representasi = 0.0
-    plafon_transport = 0.0
-
-    if tujuan_provinsi_id and pegawai_obj and tahun_sbm:
+    tb = parse_date(tanggal_berangkat_str) if tanggal_berangkat_str else None
+    tk = parse_date(tanggal_kembali_str) if tanggal_kembali_str else None
+    prov = None
+    if tujuan_provinsi_id:
         try:
-            sbm = StandarBiaya.objects.get(
-                provinsi_id=tujuan_provinsi_id,
-                golongan=pegawai_obj.golongan,
-                tahun=tahun_sbm
-            )
-            if jenis_perjalanan == 'fullboard_luar':
-                tarif_harian = float(getattr(sbm, 'uang_harian_fullboard_luar', 0))
-                tarif_representasi = 0.0
-            elif jenis_perjalanan == 'fullboard_dalam':
-                tarif_harian = float(getattr(sbm, 'uang_harian_fullboard_dalam', 0))
-                tarif_representasi = 0.0
-            else:
-                tarif_harian = float(sbm.uang_harian)
-                tarif_representasi = float(sbm.uang_representasi)
-            plafon_hotel = float(sbm.plafon_penginapan)
-            plafon_transport = float(getattr(sbm, 'plafon_transportasi', 0))
-        except StandarBiaya.DoesNotExist:
+            prov = Provinsi.objects.get(id=tujuan_provinsi_id)
+        except Provinsi.DoesNotExist:
             pass
 
-    # Sum berkas nominals
-    total_hotel_input = 0.0
-    total_malam_hotel = 0
-    total_malam_lumpsum = 0
-    total_malam_fb_luar = 0
-    total_malam_fb_dalam = 0
-    
-    total_transport_non_pesawat_input = 0.0
-    total_tiket_pesawat_riil = 0.0
-    tiket_pesawat_dana_pribadi = 0.0
-    flight_tickets = []
-    
-    from .models import parse_tiket_keterangan
-    from master_data.models import StandarBiayaTiket
+    from .models import PerjalananDinas, SuratTugas, BiayaPerjalanan
 
-    berkas_list = data.get('berkas', [])
-    for b in berkas_list:
-        try:
-            val_str = str(b.get('nominal') or 0).replace('.', '')
-            nominal = float(val_str)
-        except (ValueError, TypeError):
-            nominal = 0.0
-            
-        try:
-            malam_menginap = int(b.get('malam_menginap') or 0)
-        except (ValueError, TypeError):
-            malam_menginap = 0
-            
-        jb_id = b.get('jenis_berkas_id')
-        if jb_id:
-            try:
-                jb = JenisBerkas.objects.get(id=jb_id)
-                kategori = jb.kategori_biaya if hasattr(jb, 'kategori_biaya') else 'none'
-                
-                # Check for penginapan categories
-                if kategori == 'penginapan':
-                    if jb.nominal_biaya and nominal > 0: # Hotel bill
-                        total_hotel_input += nominal
-                        total_malam_hotel += malam_menginap if malam_menginap > 0 else 1
-                elif kategori == 'penginapan_30':
-                    total_malam_lumpsum += malam_menginap if malam_menginap > 0 else 1
-                elif kategori == 'penginapan_fb_luar':
-                    total_malam_fb_luar += malam_menginap if malam_menginap > 0 else 1
-                elif kategori == 'penginapan_fb_dalam':
-                    total_malam_fb_dalam += malam_menginap if malam_menginap > 0 else 1
-                
-                # Check for transportasi category
-                elif kategori in ['transportasi', 'transportasi_pesawat']:
-                    if jenis_transportasi != 'mobil_dinas':
-                        if nominal > 0:
-                            # Detect if it has the [SBM-TIKET:...] tag in keterangan
-                            ket_val = b.get('keterangan', '')
-                            asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(ket_val)
-                            if asal_id and tujuan_id and kelas:
-                                # It's a plane ticket
-                                try:
-                                    sbm_tiket = StandarBiayaTiket.objects.get(
-                                        kota_asal_id=asal_id,
-                                        kota_tujuan_id=tujuan_id,
-                                        kelas=kelas
-                                    )
-                                    plafon_tiket = float(sbm_tiket.nominal)
-                                except StandarBiayaTiket.DoesNotExist:
-                                    plafon_tiket = None
-                                flight_tickets.append((nominal, plafon_tiket))
-                            else:
-                                # Normal transport document
-                                total_transport_non_pesawat_input += nominal
-            except JenisBerkas.DoesNotExist:
-                pass
-
-    if flight_tickets:
-        total_tiket_pesawat_nominal = sum(nominal for nominal, _ in flight_tickets)
-        plafon_list = [p for _, p in flight_tickets if p is not None]
-        if plafon_list:
-            max_plafon_tiket = max(plafon_list)
-            total_tiket_pesawat_riil = min(total_tiket_pesawat_nominal, max_plafon_tiket)
-            tiket_pesawat_dana_pribadi = max(0.0, total_tiket_pesawat_nominal - max_plafon_tiket)
-        else:
-            total_tiket_pesawat_riil = total_tiket_pesawat_nominal
-            tiket_pesawat_dana_pribadi = 0.0
-
-    # Calculation
-    fb_luar_days = min(total_malam_fb_luar, durasi)
-    fb_dalam_days = min(total_malam_fb_dalam, durasi - fb_luar_days)
-    normal_days = max(0, durasi - (fb_luar_days + fb_dalam_days))
-    
-    uang_harian_fb_luar = float(getattr(sbm, 'uang_harian_fullboard_luar', 0)) if sbm else 0.0
-    uang_harian_fb_dalam = float(getattr(sbm, 'uang_harian_fullboard_dalam', 0)) if sbm else 0.0
-    
-    uang_harian_riil = float(
-        (fb_luar_days * uang_harian_fb_luar) +
-        (fb_dalam_days * uang_harian_fb_dalam) +
-        (normal_days * tarif_harian)
+    # Construct mock SuratTugas and PerjalananDinas
+    st = SuratTugas(
+        tanggal_berangkat=tb,
+        tanggal_kembali=tk,
+        tujuan_provinsi=prov,
+        jenis_perjalanan=jenis_perjalanan,
+        jenis_transportasi=jenis_transportasi,
+        tahun_sbm=int(tahun_sbm) if tahun_sbm else 2024
     )
-    
-    if jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
-        uang_representasi_riil = 0.0
-    else:
-        uang_representasi_riil = float(normal_days * tarif_representasi)
+    p = PerjalananDinas(
+        surat_tugas=st,
+        pegawai=pegawai_obj
+    )
+    b_obj = BiayaPerjalanan(
+        perjalanan=p
+    )
 
-    total_malam_perjalanan = max(0, durasi - 1)
-    
-    # Boundary validation
-    over_limit = False
-    total_malam_claimed = total_malam_hotel + total_malam_lumpsum + total_malam_fb_luar + total_malam_fb_dalam
-    if total_malam_claimed > total_malam_perjalanan:
-        over_limit = True
-        
-    plafon_hotel_limit = plafon_hotel * total_malam_hotel
-    biaya_hotel_riil = min(total_hotel_input, plafon_hotel_limit)
-    biaya_hotel_lumpsum = 0.30 * plafon_hotel * total_malam_lumpsum
-    biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
+    berkas_payload = data.get('berkas', [])
+    breakdown = b_obj.calculate_breakdown(mock_berkas=berkas_payload)
 
-    if jenis_transportasi == 'mobil_dinas':
-        biaya_transportasi_riil = 0.0
-        transportasi_dana_pribadi = 0.0
-    else:
-        if plafon_transport > 0 and total_transport_non_pesawat_input > plafon_transport:
-            biaya_non_pesawat_riil = plafon_transport
-            non_pesawat_dana_pribadi = total_transport_non_pesawat_input - plafon_transport
-        else:
-            biaya_non_pesawat_riil = total_transport_non_pesawat_input
-            non_pesawat_dana_pribadi = 0.0
+    # Serialize breakdown_categories for AJAX
+    serialized_categories = {}
+    for key, category in breakdown['breakdown_categories'].items():
+        serialized_items = []
+        for item in category['items']:
+            serialized_items.append({
+                'perihal': item['perihal'],
+                'no': item['no'],
+                'keterangan': item['keterangan'],
+                'harga': float(item['harga']),
+                'kuantitas': item['kuantitas'],
+                'total': float(item['total']),
+                'file_url': item['file_url'],
+                'file_name': item['file_name'],
+            })
+        serialized_categories[key] = {
+            'title': category['title'],
+            'items': serialized_items,
+            'subtotal': float(category['subtotal']),
+        }
 
-        biaya_transportasi_riil = biaya_non_pesawat_riil + total_tiket_pesawat_riil
-        transportasi_dana_pribadi = non_pesawat_dana_pribadi + tiket_pesawat_dana_pribadi
-
-    total_dibayarkan = uang_harian_riil + uang_representasi_riil + biaya_penginapan_riil + biaya_transportasi_riil
-
-    # Compute unpaid/unreimbursed amount (total_tidak_dibayarkan)
-    penginapan_dana_pribadi = 0.0
-    if total_hotel_input > plafon_hotel_limit:
-        penginapan_dana_pribadi = total_hotel_input - plafon_hotel_limit
-
-    total_tidak_dibayarkan = penginapan_dana_pribadi + transportasi_dana_pribadi
-
+    # Return JSON with all float/int format for numeric items
     return JsonResponse({
-        'uang_harian_riil': uang_harian_riil,
-        'uang_representasi_riil': uang_representasi_riil,
-        'biaya_penginapan_riil': biaya_penginapan_riil,
-        'biaya_transportasi_riil': biaya_transportasi_riil,
-        'total_dibayarkan': total_dibayarkan,
-        'total_tidak_dibayarkan': total_tidak_dibayarkan,
-        'durasi_hari': durasi,
-        'over_limit': over_limit,
-        'plafon_hotel': float(plafon_hotel)
+        'uang_harian_riil': float(breakdown['uang_harian_riil']),
+        'uang_representasi_riil': float(breakdown['uang_representasi_riil']),
+        'biaya_penginapan_riil': float(breakdown['biaya_penginapan_riil']),
+        'biaya_transportasi_riil': float(breakdown['biaya_transportasi_riil']),
+        'total_dibayarkan': float(breakdown['total_dibayarkan']),
+        'total_tidak_dibayarkan': float(breakdown['total_dana_pribadi']),
+        'durasi_hari': breakdown['durasi_hari'],
+        'over_limit': breakdown['over_limit'],
+        'plafon_hotel': float(breakdown['sbm_plafon_hotel']),
+        'harian_formula': breakdown['harian_formula'],
+        'representasi_formula': breakdown['representasi_formula'],
+        'penginapan_formula': breakdown['penginapan_formula'],
+        'transport_formula': breakdown['transport_formula'],
+        'breakdown_categories': serialized_categories,
     })
 
 @login_required

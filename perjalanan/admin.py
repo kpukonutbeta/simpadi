@@ -55,11 +55,151 @@ class SuratTugasAdmin(admin.ModelAdmin):
 
 class BiayaPerjalananInline(admin.StackedInline):
     model = BiayaPerjalanan
-    readonly_fields = ('uang_harian_riil', 'uang_representasi_riil', 'biaya_penginapan_riil', 'biaya_transportasi_riil', 'get_total_dibayarkan', 'get_total_tidak_dibayarkan')
-    fields = ('uang_harian_riil', 'uang_representasi_riil', 'biaya_penginapan_riil', 'biaya_transportasi_riil', 'get_total_dibayarkan', 'get_total_tidak_dibayarkan')
+    template = 'admin/perjalanan/biaya_inline.html'
+    readonly_fields = ('get_rincian_detail',)
+    fields = ('get_rincian_detail',)
     extra = 1
     max_num = 1
     can_delete = False
+
+    def get_rincian_detail(self, obj):
+        if not obj or not hasattr(obj, 'perjalanan') or not obj.perjalanan:
+            return "-"
+        try:
+            bd = obj.calculate_breakdown()
+        except Exception as e:
+            return f"Gagal menghitung rincian: {e}"
+
+        def fmt_rp(val):
+            return f"Rp {val:,.0f}".replace(",", ".")
+
+        categories = ['uang_harian', 'uang_representasi', 'biaya_penginapan', 'biaya_perjalanan']
+        rows_html = []
+        for cat_key in categories:
+            cat_data = bd['breakdown_categories'].get(cat_key)
+            if not cat_data:
+                continue
+            
+            title = cat_data['title']
+            items = cat_data.get('items', [])
+            subtotal = cat_data.get('subtotal', 0)
+            N = len(items)
+            
+            if N == 0:
+                # Placeholder row
+                rows_html.append(f"""
+                <tr style="border-bottom: 1px solid #cbd5e1;">
+                    <td rowspan="2" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; font-weight: 700; color: #334155; background: #f8fafc; vertical-align: top;">
+                        {title}
+                    </td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; color: #94a3b8;">-</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; color: #94a3b8; font-style: italic;">Tidak ada</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; color: #94a3b8;">Rp 0</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; color: #94a3b8;">0</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; color: #94a3b8;">Rp 0</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">-</td>
+                </tr>
+                """)
+            else:
+                for idx, item in enumerate(items):
+                    rowspan_td = ""
+                    if idx == 0:
+                        rowspan_td = f"""
+                        <td rowspan="{N + 1}" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; font-weight: 700; color: #334155; background: #f8fafc; vertical-align: top;">
+                            {title}
+                        </td>
+                        """
+                    
+                    file_td = "-"
+                    if item.get('file_url'):
+                        file_td = f"""
+                        <a href="{item['file_url']}" target="_blank" style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #0369a1; border: 1px solid #7dd3fc; border-radius: 0.375rem; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                            Berkas
+                        </a>
+                        """
+                    
+                    rows_html.append(f"""
+                    <tr style="border-bottom: 1px solid #cbd5e1;">
+                        {rowspan_td}
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">{item['no']}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem;">{item['keterangan']}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">{fmt_rp(item['harga'])}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">{item['kuantitas']}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">{fmt_rp(item['total'])}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">{file_td}</td>
+                    </tr>
+                    """)
+            
+            # Subtotal row
+            rows_html.append(f"""
+            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+                <td colspan="4" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
+                    Subtotal {title}
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    {fmt_rp(subtotal)}
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+            </tr>
+            """)
+
+        total_dibayarkan = bd.get('total_dibayarkan', 0)
+        total_tidak_dibayarkan = bd.get('total_dana_pribadi', 0)
+
+        # Append Grand Totals directly inside tbody
+        rows_html.append(f"""
+        <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+            <td colspan="5" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
+                TOTAL DIBAYARKAN
+            </td>
+            <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                {fmt_rp(total_dibayarkan)}
+            </td>
+            <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+        </tr>
+        """)
+
+        unpaid_str = fmt_rp(total_tidak_dibayarkan) if total_tidak_dibayarkan > 0 else "-"
+        unpaid_style = "color: red;" if total_tidak_dibayarkan > 0 else ""
+        unpaid_label_color = "#dc2626" if total_tidak_dibayarkan > 0 else "#475569"
+        unpaid_val_color = "#dc2626" if total_tidak_dibayarkan > 0 else "#0f172a"
+
+        rows_html.append(f"""
+        <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; {unpaid_style}">
+            <td colspan="5" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: {unpaid_label_color};">
+                TIDAK DIBAYARKAN
+            </td>
+            <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: {unpaid_val_color};">
+                {unpaid_str}
+            </td>
+            <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+        </tr>
+        """)
+
+        rows_str = "".join(rows_html)
+
+        html = f"""
+        <div style="overflow-x: auto; margin-bottom: 1rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <table class="spreadsheet-table" style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #cbd5e1;">
+                <thead>
+                    <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: #334155; width: 20%;">Perihal</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; font-weight: 700; color: #334155; width: 5%;">No</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: #334155; width: 35%;">Keterangan</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #334155; width: 12%;">Harga</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; font-weight: 700; color: #334155; width: 8%;">Banyak</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #334155; width: 12%;">Total</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: center; font-weight: 700; color: #334155; width: 8%;">Berkas Pendukung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_str}
+                </tbody>
+            </table>
+        </div>
+        """
+        return mark_safe(html)
+    get_rincian_detail.short_description = "Rincian Detail SBM"
 
     def get_total_dibayarkan(self, obj):
         val = obj.total_dibayarkan if obj else 0
@@ -74,6 +214,7 @@ class BiayaPerjalananInline(admin.StackedInline):
             return mark_safe(f'<strong style="color: #dc2626; font-size: 1.1em;">{formatted_val}</strong>')
         return "-"
     get_total_tidak_dibayarkan.short_description = "Total Tidak Dibayarkan"
+
 
 from django.db.models import Q
 from django.forms.models import BaseInlineFormSet
