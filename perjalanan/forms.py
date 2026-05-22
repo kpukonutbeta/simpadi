@@ -46,6 +46,9 @@ from django.forms.models import BaseInlineFormSet
 from django.core.exceptions import ValidationError
 
 class BaseBerkasPerjalananFormSet(BaseInlineFormSet):
+    def get_queryset(self):
+        return super().get_queryset().filter(jenis_berkas__isnull=False)
+
     def clean(self):
         super().clean()
         
@@ -69,7 +72,7 @@ class BaseBerkasPerjalananFormSet(BaseInlineFormSet):
                 kategori = jenis_berkas.kategori_biaya
                 if kategori in ['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']:
                     malam = form.cleaned_data.get('malam_menginap') or 1
-                    if kategori == 'penginapan' and jenis_berkas.nominal_biaya:
+                    if kategori == 'penginapan':
                         total_malam_hotel += malam
                     elif kategori == 'penginapan_30':
                         total_malam_lumpsum += malam

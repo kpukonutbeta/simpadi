@@ -321,7 +321,7 @@ class BiayaPerjalanan(models.Model):
                 file_url, file_name = get_file_info(db_id=b_id)
 
                 if kategori == 'penginapan':
-                    if jenis.nominal_biaya and nominal:
+                    if nominal:
                         m = malam_menginap if malam_menginap > 0 else 1
                         total_hotel_input += nominal
                         total_malam_hotel += m
@@ -375,7 +375,7 @@ class BiayaPerjalanan(models.Model):
                     file_url, file_name = get_file_info(db_file=b.file)
 
                     if kategori == 'penginapan':
-                        if jenis.nominal_biaya and nominal:
+                        if nominal:
                             m = malam_menginap if (malam_menginap is not None and malam_menginap > 0) else 1
                             total_hotel_input += nominal
                             total_malam_hotel += m
@@ -809,6 +809,12 @@ class BerkasPerjalanan(models.Model):
     
     def clean(self):
         super().clean()
+        # 0. Pastikan jenis berkas dipilih
+        if not self.jenis_berkas:
+            raise ValidationError({
+                'jenis_berkas': "Jenis berkas wajib dipilih."
+            })
+            
         # 1. Pastikan file terisi jika jenis berkas wajib diunggah
         if self.jenis_berkas and self.jenis_berkas.wajib:
             if not self.file:

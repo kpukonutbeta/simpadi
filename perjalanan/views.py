@@ -68,10 +68,6 @@ def ajukan_perjadin(request, surat_tugas_id):
                     perjadin.surat_tugas = surat_tugas
                     perjadin.pegawai = pegawai
                     
-                    # Backend Protection: Jangan biarkan pegawai mengubah anggaran jika sudah ada
-                    if not request.user.is_staff and perjadin_instance:
-                        perjadin.anggaran = perjadin_instance.anggaran
-                        
                     # Keep status as DRAFT if it was new, or keep existing status if it was REJECTED
                     if not perjadin.status:
                         perjadin.status = PerjalananDinas.Status.DRAFT

@@ -292,4 +292,47 @@ class TiketPesawatTestCase(TestCase):
         except ValidationError as e:
             self.fail(f"ValidationError raised unexpectedly for non-nominal transport document: {e}")
 
+    def test_jenis_berkas_required(self):
+        # Try to clean/save a supporting document with jenis_berkas = None
+        invalid_berkas = BerkasPerjalanan(
+            perjalanan=self.perjadin,
+            jenis_berkas=None,
+            nominal=Decimal("100000"),
+            keterangan="Orphaned supporting document test"
+        )
+        
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError) as ctx:
+            invalid_berkas.clean()
+        
+        self.assertIn('jenis_berkas', ctx.exception.message_dict)
+
+    def test_optional_nominal_hotel_calculated(self):
+        # Create a JenisBerkas with nominal_biaya = False, kategori_biaya = penginapan
+        jenis_hotel_optional = JenisBerkas.objects.create(
+            nama="HOTEL OPSIONAL",
+            wajib=False,
+            nominal_biaya=False,
+            kategori_biaya=JenisBerkas.KategoriBiaya.PENGINAPAN
+        )
+        
+        # Create BerkasPerjalanan with nominal and 2 nights
+        BerkasPerjalanan.objects.create(
+            perjalanan=self.perjadin,
+            jenis_berkas=jenis_hotel_optional,
+            nominal=Decimal("250000"),
+            malam_menginap=2,
+            keterangan="Hotel Bonte Test"
+        )
+        
+        # Calculate breakdown
+        self.perjadin.biaya.refresh_from_db()
+        breakdown = self.perjadin.biaya.calculate_breakdown()
+        
+        # The nominal cost should be calculated even though nominal_biaya is False
+        self.assertEqual(self.perjadin.biaya.biaya_penginapan_riil, Decimal("250000"))
+        self.assertEqual(breakdown['biaya_penginapan_riil'], Decimal("250000"))
+
+
+
 
