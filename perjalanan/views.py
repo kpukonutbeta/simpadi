@@ -116,6 +116,10 @@ def ajukan_perjadin(request, surat_tugas_id):
         kategori_biaya='transportasi_pesawat'
     ).values_list('id', flat=True))
 
+    jenis_berkas_transportasi = list(JenisBerkas.objects.filter(
+        kategori_biaya__in=['transportasi', 'transportasi_pesawat']
+    ).values_list('id', flat=True))
+
     breakdown_initial = None
     if perjadin_instance and hasattr(perjadin_instance, 'biaya') and perjadin_instance.biaya:
         try:
@@ -136,6 +140,7 @@ def ajukan_perjadin(request, surat_tugas_id):
         'jenis_berkas_fb_luar': jenis_berkas_fb_luar,
         'jenis_berkas_fb_dalam': jenis_berkas_fb_dalam,
         'jenis_berkas_tiket_pesawat': jenis_berkas_tiket_pesawat,
+        'jenis_berkas_transportasi': jenis_berkas_transportasi,
         'breakdown_initial': breakdown_initial
     }
     return render(request, 'perjalanan/ajukan_form.html', context)

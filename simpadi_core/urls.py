@@ -38,6 +38,10 @@ _original_get_app_list = admin.site.__class__.get_app_list
 
 def _ordered_get_app_list(self, request, app_label=None):
     app_list = _original_get_app_list(self, request, app_label)
+    for app in app_list:
+        for model in app.get('models', []):
+            if model.get('object_name') == 'PerjalananDinas':
+                model['name'] = 'Manajemen SPD'
     def sort_key(app):
         label = app.get('app_label', '').lower()
         try:

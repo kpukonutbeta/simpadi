@@ -304,15 +304,13 @@ class BerkasPerjalananTransportasiInline(admin.TabularInline):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(
-            jenis_berkas__kategori_biaya__in=['transportasi', 'transportasi_pesawat'],
-            jenis_berkas__nominal_biaya=True
+            jenis_berkas__kategori_biaya__in=['transportasi', 'transportasi_pesawat']
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "jenis_berkas":
             kwargs["queryset"] = JenisBerkas.objects.filter(
-                kategori_biaya__in=['transportasi', 'transportasi_pesawat'],
-                nominal_biaya=True
+                kategori_biaya__in=['transportasi', 'transportasi_pesawat']
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -337,7 +335,10 @@ class BerkasPerjalananNonNominalInline(admin.TabularInline):
         return super().get_queryset(request).filter(
             jenis_berkas__nominal_biaya=False
         ).exclude(
-            jenis_berkas__kategori_biaya__in=['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']
+            jenis_berkas__kategori_biaya__in=[
+                'penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam',
+                'transportasi', 'transportasi_pesawat'
+            ]
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -345,7 +346,10 @@ class BerkasPerjalananNonNominalInline(admin.TabularInline):
             kwargs["queryset"] = JenisBerkas.objects.filter(
                 nominal_biaya=False
             ).exclude(
-                kategori_biaya__in=['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']
+                kategori_biaya__in=[
+                    'penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam',
+                    'transportasi', 'transportasi_pesawat'
+                ]
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 

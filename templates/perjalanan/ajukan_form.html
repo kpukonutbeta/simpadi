@@ -326,105 +326,7 @@
             </div>
         </div>
 
-        <!-- Section: Rincian Biaya Spreadsheet Layout -->
-        <div class="card" style="margin-bottom: 2rem; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white; padding: 1.5rem;">
-            <div style="font-weight: 800; color: var(--primary); font-size: 1.15rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-file-invoice-dollar"></i> PRATINJAU RINCIAN BIAYA PERJALANAN DINAS (ESTIMASI SBM)
-            </div>
-            
-            <div style="overflow-x: auto; margin-bottom: 1rem;">
-                <table class="spreadsheet-table" style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.85rem; border: 1px solid #cbd5e1;">
-                    <thead>
-                        <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                            <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: #334155; width: 20%;">Perihal</th>
-                            <th style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; font-weight: 700; color: #334155; width: 5%;">No</th>
-                            <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: #334155; width: 35%;">Keterangan</th>
-                            <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #334155; width: 12%;">Harga</th>
-                            <th style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; font-weight: 700; color: #334155; width: 8%;">Banyak</th>
-                            <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #334155; width: 12%;">Total</th>
-                            <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: center; font-weight: 700; color: #334155; width: 8%;">Berkas Pendukung</th>
-                        </tr>
-                    </thead>
-                    <tbody id="spreadsheet-tbody">
-                        {% if breakdown_initial %}
-                            {% for cat_key, category in breakdown_initial.breakdown_categories.items %}
-                                {% if category.items %}
-                                    {% for item in category.items %}
-                                        <tr style="border-bottom: 1px solid #cbd5e1;">
-                                            {% if forloop.first %}
-                                                <td rowspan="{{ category.items|length|add:1 }}" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; font-weight: 700; color: #334155; background: #f8fafc; vertical-align: top;">
-                                                    {{ category.title }}
-                                                </td>
-                                            {% endif %}
-                                            <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">{{ item.no }}</td>
-                                            <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem;">{{ item.keterangan }}</td>
-                                            <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp {{ item.harga|floatformat:0 }}</td>
-                                            <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">{{ item.kuantitas }}</td>
-                                            <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp {{ item.total|floatformat:0 }}</td>
-                                            <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">
-                                                {% if item.file_url %}
-                                                    <a href="{{ item.file_url }}" target="_blank" class="btn btn-xs" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; border-radius: 0.25rem; text-decoration: none;">
-                                                        <i class="fas fa-file-alt"></i> Berkas
-                                                    </a>
-                                                {% else %}
-                                                    -
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr style="border-bottom: 1px solid #cbd5e1;">
-                                        <td rowspan="2" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; font-weight: 700; color: #334155; background: #f8fafc; vertical-align: top;">
-                                            {{ category.title }}
-                                        </td>
-                                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; color: #94a3b8;">-</td>
-                                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; color: #94a3b8; font-style: italic;">Tidak ada</td>
-                                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; color: #94a3b8;">Rp 0</td>
-                                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; color: #94a3b8;">0</td>
-                                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; color: #94a3b8;">Rp 0</td>
-                                        <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">-</td>
-                                    </tr>
-                                {% endif %}
-                                <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
-                                    <td colspan="4" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
-                                        Subtotal {{ category.title }}
-                                    </td>
-                                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
-                                        Rp {{ category.subtotal|floatformat:0 }}
-                                    </td>
-                                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
-                                </tr>
-                            {% endfor %}
-                            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
-                                <td colspan="5" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
-                                    TOTAL DIBAYARKAN
-                                </td>
-                                <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
-                                    Rp {{ breakdown_initial.total_dibayarkan|floatformat:0 }}
-                                </td>
-                                <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
-                            </tr>
-                            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; {% if breakdown_initial.total_tidak_dibayarkan > 0 %}color: red;{% endif %}">
-                                <td colspan="5" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: {% if breakdown_initial.total_tidak_dibayarkan > 0 %}#dc2626{% else %}#475569{% endif %};">
-                                    TIDAK DIBAYARKAN
-                                </td>
-                                <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: {% if breakdown_initial.total_tidak_dibayarkan > 0 %}#dc2626{% else %}#0f172a{% endif %};">
-                                    {% if breakdown_initial.total_tidak_dibayarkan > 0 %}Rp {{ breakdown_initial.total_tidak_dibayarkan|floatformat:0 }}{% else %}-{% endif %}
-                                </td>
-                                <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
-                            </tr>
-                        {% else %}
-                            <tr id="initial-placeholder-row">
-                                <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b;">
-                                    Memuat estimasi rincian biaya...
-                                </td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
+        <!-- Main submit buttons at bottom of form -->
         <div style="display: flex; gap: 1rem; margin-bottom: 3rem;">
             <button type="submit" class="btn btn-primary" style="flex: 1;">
                 <i class="fas fa-paper-plane"></i> Simpan Sebagai Draft
@@ -486,10 +388,34 @@
                         <span id="preview-uang-harian" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_harian_riil|default:0|floatformat:0 }}</span>
                     </div>
                     <div id="detail-harian" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
-                        {% if breakdown_initial %}
-                            {{ breakdown_initial.harian_formula }}
+                        {% if breakdown_initial and breakdown_initial.breakdown_categories.uang_harian.items %}
+                            <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                        <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                                        <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
+                                        <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in breakdown_initial.breakdown_categories.uang_harian.items %}
+                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                                {{ item.keterangan }}
+                                                {% if item.file_url %}
+                                                    <a href="{{ item.file_url }}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
+                                                        <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
+                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|floatformat:0 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% else %}
-                            -
+                            <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
                         {% endif %}
                     </div>
                 </div>
@@ -504,10 +430,34 @@
                         <span id="preview-uang-representasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_representasi_riil|default:0|floatformat:0 }}</span>
                     </div>
                     <div id="detail-representasi" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
-                        {% if breakdown_initial %}
-                            {{ breakdown_initial.representasi_formula }}
+                        {% if breakdown_initial and breakdown_initial.breakdown_categories.uang_representasi.items %}
+                            <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                        <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                                        <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
+                                        <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in breakdown_initial.breakdown_categories.uang_representasi.items %}
+                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                                {{ item.keterangan }}
+                                                {% if item.file_url %}
+                                                    <a href="{{ item.file_url }}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
+                                                        <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
+                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|floatformat:0 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% else %}
-                            -
+                            <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
                         {% endif %}
                     </div>
                 </div>
@@ -522,10 +472,34 @@
                         <span id="preview-biaya-penginapan" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_penginapan_riil|default:0|floatformat:0 }}</span>
                     </div>
                     <div id="detail-penginapan" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
-                        {% if breakdown_initial %}
-                            {{ breakdown_initial.penginapan_formula }}
+                        {% if breakdown_initial and breakdown_initial.breakdown_categories.biaya_penginapan.items %}
+                            <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                        <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                                        <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
+                                        <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in breakdown_initial.breakdown_categories.biaya_penginapan.items %}
+                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                                {{ item.keterangan }}
+                                                {% if item.file_url %}
+                                                    <a href="{{ item.file_url }}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
+                                                        <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
+                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|floatformat:0 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% else %}
-                            -
+                            <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
                         {% endif %}
                     </div>
                 </div>
@@ -540,10 +514,34 @@
                         <span id="preview-biaya-transportasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_transportasi_riil|default:0|floatformat:0 }}</span>
                     </div>
                     <div id="detail-transportasi" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
-                        {% if breakdown_initial %}
-                            {{ breakdown_initial.transport_formula }}
+                        {% if breakdown_initial and breakdown_initial.breakdown_categories.biaya_perjalanan.items %}
+                            <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                        <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                                        <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
+                                        <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in breakdown_initial.breakdown_categories.biaya_perjalanan.items %}
+                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                                {{ item.keterangan }}
+                                                {% if item.file_url %}
+                                                    <a href="{{ item.file_url }}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
+                                                        <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
+                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|floatformat:0 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% else %}
-                            -
+                            <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
                         {% endif %}
                     </div>
                 </div>
@@ -725,6 +723,7 @@
     const fbLuarIds = {{ jenis_berkas_fb_luar|safe }};
     const fbDalamIds = {{ jenis_berkas_fb_dalam|safe }};
     const ticketPesawatIds = {{ jenis_berkas_tiket_pesawat|default:"[]"|safe }};
+    const transportasiIds = {{ jenis_berkas_transportasi|default:"[]"|safe }};
     let originalOptions = [];
     let ticketRoutes = [];
     let activeTicketRow = null;
@@ -995,7 +994,7 @@
                     nominalInput.readOnly = false;
                     nominalInput.style.backgroundColor = '';
                     nominalInput.style.cursor = '';
-                    if (val) {
+                    if (val && nominalRequiredIds.includes(val)) {
                         nominalInput.setAttribute('required', 'required');
                     } else {
                         nominalInput.removeAttribute('required');
@@ -1067,15 +1066,16 @@
             }
             const val = parseInt(opt.value);
             const optIsPenginapan = penginapanRequiredIds.includes(val);
+            const optIsTransport = transportasiIds.includes(val);
             const optIsNominal = nominalRequiredIds.includes(val);
             
             if (sectionType === 'penginapan' && optIsPenginapan) {
                 const newOpt = new Option(opt.text, opt.value);
                 selectElement.add(newOpt);
-            } else if (sectionType === 'nominal' && !optIsPenginapan && optIsNominal) {
+            } else if (sectionType === 'nominal' && !optIsPenginapan && (optIsNominal || optIsTransport)) {
                 const newOpt = new Option(opt.text, opt.value);
                 selectElement.add(newOpt);
-            } else if (sectionType === 'non-nominal' && !optIsPenginapan && !optIsNominal) {
+            } else if (sectionType === 'non-nominal' && !optIsPenginapan && !optIsTransport && !optIsNominal) {
                 const newOpt = new Option(opt.text, opt.value);
                 selectElement.add(newOpt);
             }
@@ -1196,279 +1196,53 @@
             const hotelDetailEl = document.querySelector('#detail-penginapan');
             const transportDetailEl = document.querySelector('#detail-transportasi');
 
-            if (harianDetailEl) harianDetailEl.innerHTML = data.harian_formula || '-';
-            if (reprDetailEl) reprDetailEl.innerHTML = data.representasi_formula || '-';
-            if (hotelDetailEl) hotelDetailEl.innerHTML = data.penginapan_formula || '-';
-            if (transportDetailEl) transportDetailEl.innerHTML = data.transport_formula || '-';
-            
+            const renderCompactBreakdown = (catData) => {
+                if (!catData || !catData.items || catData.items.length === 0) {
+                    return '<span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>';
+                }
+                let html = `<table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                            <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                            <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
+                            <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                catData.items.forEach(item => {
+                    let fileLink = '';
+                    if (item.file_url) {
+                        fileLink = `
+                            <a href="${item.file_url}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
+                                <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                            </a>`;
+                    }
+                    html += `
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                ${item.keterangan}${fileLink}
+                            </td>
+                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">${item.kuantitas}</td>
+                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">${formatRupiah(item.total)}</td>
+                        </tr>`;
+                });
+                html += `</tbody></table>`;
+                return html;
+            };
+
+            if (data.breakdown_categories) {
+                if (harianDetailEl) harianDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.uang_harian);
+                if (reprDetailEl) reprDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.uang_representasi);
+                if (hotelDetailEl) hotelDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.biaya_penginapan);
+                if (transportDetailEl) transportDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.biaya_perjalanan);
+            }
+
             const unpaidVal = parseFloat(data.total_tidak_dibayarkan) || 0.0;
             if (unpaidVal > 0) {
                 if (rowTidakDibayarkanEl) rowTidakDibayarkanEl.style.display = 'flex';
                 if (tidakDibayarkanEl) tidakDibayarkanEl.textContent = formatRupiah(unpaidVal);
             } else {
                 if (rowTidakDibayarkanEl) rowTidakDibayarkanEl.style.display = 'none';
-            }
-
-            // DYNAMIC SPREADSHEET TABLE RENDERING
-            const ssTbody = document.querySelector('#spreadsheet-tbody');
-            if (ssTbody && data.breakdown_categories) {
-                ssTbody.innerHTML = '';
-                
-                const categories = ['uang_harian', 'uang_representasi', 'biaya_penginapan', 'biaya_perjalanan'];
-                categories.forEach(catKey => {
-                    const catData = data.breakdown_categories[catKey];
-                    if (catData) {
-                        const title = catData.title;
-                        const items = catData.items || [];
-                        const subtotal = catData.subtotal || 0;
-                        const N = items.length;
-                        
-                        if (N === 0) {
-                            // Placeholder row
-                            const tr = document.createElement('tr');
-                            tr.style.borderBottom = '1px solid #cbd5e1';
-                            
-                            const tdPerihal = document.createElement('td');
-                            tdPerihal.rowSpan = 2;
-                            tdPerihal.style.border = '1px solid #cbd5e1';
-                            tdPerihal.style.padding = '0.75rem 1rem';
-                            tdPerihal.style.fontWeight = '700';
-                            tdPerihal.style.color = '#334155';
-                            tdPerihal.style.background = '#f8fafc';
-                            tdPerihal.style.verticalAlign = 'top';
-                            tdPerihal.textContent = title;
-                            tr.appendChild(tdPerihal);
-                            
-                            const tdNo = document.createElement('td');
-                            tdNo.style.border = '1px solid #cbd5e1';
-                            tdNo.style.padding = '0.75rem';
-                            tdNo.style.textAlign = 'center';
-                            tdNo.style.color = '#94a3b8';
-                            tdNo.textContent = '-';
-                            tr.appendChild(tdNo);
-                            
-                            const tdKet = document.createElement('td');
-                            tdKet.style.border = '1px solid #cbd5e1';
-                            tdKet.style.padding = '0.75rem 1rem';
-                            tdKet.style.color = '#94a3b8';
-                            tdKet.style.fontStyle = 'italic';
-                            tdKet.textContent = 'Tidak ada';
-                            tr.appendChild(tdKet);
-                            
-                            const tdHarga = document.createElement('td');
-                            tdHarga.style.border = '1px solid #cbd5e1';
-                            tdHarga.style.padding = '0.75rem 1rem';
-                            tdHarga.style.textAlign = 'right';
-                            tdHarga.style.color = '#94a3b8';
-                            tdHarga.textContent = 'Rp 0';
-                            tr.appendChild(tdHarga);
-                            
-                            const tdQty = document.createElement('td');
-                            tdQty.style.border = '1px solid #cbd5e1';
-                            tdQty.style.padding = '0.75rem';
-                            tdQty.style.textAlign = 'center';
-                            tdQty.style.color = '#94a3b8';
-                            tdQty.textContent = '0';
-                            tr.appendChild(tdQty);
-                            
-                            const tdTotal = document.createElement('td');
-                            tdTotal.style.border = '1px solid #cbd5e1';
-                            tdTotal.style.padding = '0.75rem 1rem';
-                            tdTotal.style.textAlign = 'right';
-                            tdTotal.style.color = '#94a3b8';
-                            tdTotal.textContent = 'Rp 0';
-                            tr.appendChild(tdTotal);
-                            
-                            const tdBerkas = document.createElement('td');
-                            tdBerkas.style.border = '1px solid #cbd5e1';
-                            tdBerkas.style.padding = '0.5rem';
-                            tdBerkas.style.textAlign = 'center';
-                            tdBerkas.textContent = '-';
-                            tr.appendChild(tdBerkas);
-                            
-                            ssTbody.appendChild(tr);
-                        } else {
-                            items.forEach((item, index) => {
-                                const tr = document.createElement('tr');
-                                tr.style.borderBottom = '1px solid #cbd5e1';
-                                
-                                if (index === 0) {
-                                    const tdPerihal = document.createElement('td');
-                                    tdPerihal.rowSpan = N + 1;
-                                    tdPerihal.style.border = '1px solid #cbd5e1';
-                                    tdPerihal.style.padding = '0.75rem 1rem';
-                                    tdPerihal.style.fontWeight = '700';
-                                    tdPerihal.style.color = '#334155';
-                                    tdPerihal.style.background = '#f8fafc';
-                                    tdPerihal.style.verticalAlign = 'top';
-                                    tdPerihal.textContent = title;
-                                    tr.appendChild(tdPerihal);
-                                }
-                                
-                                const tdNo = document.createElement('td');
-                                tdNo.style.border = '1px solid #cbd5e1';
-                                tdNo.style.padding = '0.75rem';
-                                tdNo.style.textAlign = 'center';
-                                tdNo.textContent = item.no;
-                                tr.appendChild(tdNo);
-                                
-                                const tdKet = document.createElement('td');
-                                tdKet.style.border = '1px solid #cbd5e1';
-                                tdKet.style.padding = '0.75rem 1rem';
-                                tdKet.textContent = item.keterangan;
-                                tr.appendChild(tdKet);
-                                
-                                const tdHarga = document.createElement('td');
-                                tdHarga.style.border = '1px solid #cbd5e1';
-                                tdHarga.style.padding = '0.75rem 1rem';
-                                tdHarga.style.textAlign = 'right';
-                                tdHarga.textContent = formatRupiah(item.harga);
-                                tr.appendChild(tdHarga);
-                                
-                                const tdQty = document.createElement('td');
-                                tdQty.style.border = '1px solid #cbd5e1';
-                                tdQty.style.padding = '0.75rem';
-                                tdQty.style.textAlign = 'center';
-                                tdQty.textContent = item.kuantitas;
-                                tr.appendChild(tdQty);
-                                
-                                const tdTotal = document.createElement('td');
-                                tdTotal.style.border = '1px solid #cbd5e1';
-                                tdTotal.style.padding = '0.75rem 1rem';
-                                tdTotal.style.textAlign = 'right';
-                                tdTotal.textContent = formatRupiah(item.total);
-                                tr.appendChild(tdTotal);
-                                
-                                const tdBerkas = document.createElement('td');
-                                tdBerkas.style.border = '1px solid #cbd5e1';
-                                tdBerkas.style.padding = '0.5rem';
-                                tdBerkas.style.textAlign = 'center';
-                                if (item.file_url) {
-                                    const link = document.createElement('a');
-                                    link.href = item.file_url;
-                                    link.target = '_blank';
-                                    link.style.display = 'inline-flex';
-                                    link.style.alignItems = 'center';
-                                    link.style.gap = '0.25rem';
-                                    link.style.padding = '0.35rem 0.75rem';
-                                    link.style.fontSize = '0.75rem';
-                                    link.style.fontWeight = '600';
-                                    link.style.background = 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)';
-                                    link.style.color = '#0369a1';
-                                    link.style.border = '1px solid #7dd3fc';
-                                    link.style.borderRadius = '0.375rem';
-                                    link.style.textDecoration = 'none';
-                                    link.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
-                                    link.innerHTML = '<i class="fas fa-file-alt"></i> Berkas';
-                                    tdBerkas.appendChild(link);
-                                } else {
-                                    tdBerkas.textContent = '-';
-                                }
-                                tr.appendChild(tdBerkas);
-                                
-                                ssTbody.appendChild(tr);
-                            });
-                        }
-                        
-                        // Subtotal Row
-                        const trSub = document.createElement('tr');
-                        trSub.style.background = '#f8fafc';
-                        trSub.style.borderBottom = '2px solid #cbd5e1';
-                        
-                        const tdLabel = document.createElement('td');
-                        tdLabel.colSpan = 4;
-                        tdLabel.style.border = '1px solid #cbd5e1';
-                        tdLabel.style.padding = '0.75rem 1rem';
-                        tdLabel.style.textAlign = 'right';
-                        tdLabel.style.fontWeight = '700';
-                        tdLabel.style.color = '#475569';
-                        tdLabel.textContent = 'Subtotal ' + title;
-                        trSub.appendChild(tdLabel);
-                        
-                        const tdVal = document.createElement('td');
-                        tdVal.style.border = '1px solid #cbd5e1';
-                        tdVal.style.padding = '0.75rem 1rem';
-                        tdVal.style.textAlign = 'right';
-                        tdVal.style.fontWeight = '700';
-                        tdVal.style.color = '#0f172a';
-                        tdVal.textContent = formatRupiah(subtotal);
-                        trSub.appendChild(tdVal);
-                        
-                        const tdBerkasEmpty = document.createElement('td');
-                        tdBerkasEmpty.style.border = '1px solid #cbd5e1';
-                        tdBerkasEmpty.style.padding = '0.75rem';
-                        tdBerkasEmpty.textContent = '';
-                        trSub.appendChild(tdBerkasEmpty);
-                        
-                        ssTbody.appendChild(trSub);
-                    }
-                });
-
-                // Append Grand Totals directly inside tbody
-                const trTotalDibayarkan = document.createElement('tr');
-                trTotalDibayarkan.style.background = '#f8fafc';
-                trTotalDibayarkan.style.borderBottom = '2px solid #cbd5e1';
-                
-                const tdLabelTD = document.createElement('td');
-                tdLabelTD.colSpan = 5;
-                tdLabelTD.style.border = '1px solid #cbd5e1';
-                tdLabelTD.style.padding = '0.75rem 1rem';
-                tdLabelTD.style.textAlign = 'right';
-                tdLabelTD.style.fontWeight = '700';
-                tdLabelTD.style.color = '#475569';
-                tdLabelTD.textContent = 'TOTAL DIBAYARKAN';
-                trTotalDibayarkan.appendChild(tdLabelTD);
-                
-                const tdValTD = document.createElement('td');
-                tdValTD.style.border = '1px solid #cbd5e1';
-                tdValTD.style.padding = '0.75rem 1rem';
-                tdValTD.style.textAlign = 'right';
-                tdValTD.style.fontWeight = '700';
-                tdValTD.style.color = '#0f172a';
-                tdValTD.textContent = formatRupiah(data.total_dibayarkan);
-                trTotalDibayarkan.appendChild(tdValTD);
-                
-                const tdBerkasTD = document.createElement('td');
-                tdBerkasTD.style.border = '1px solid #cbd5e1';
-                tdBerkasTD.style.padding = '0.75rem';
-                tdBerkasTD.textContent = '';
-                trTotalDibayarkan.appendChild(tdBerkasTD);
-                
-                ssTbody.appendChild(trTotalDibayarkan);
-
-                const trTotalTidakDibayarkan = document.createElement('tr');
-                trTotalTidakDibayarkan.style.background = '#f8fafc';
-                trTotalTidakDibayarkan.style.borderBottom = '2px solid #cbd5e1';
-                if (unpaidVal > 0) {
-                    trTotalTidakDibayarkan.style.color = 'red';
-                }
-                
-                const tdLabelTTD = document.createElement('td');
-                tdLabelTTD.colSpan = 5;
-                tdLabelTTD.style.border = '1px solid #cbd5e1';
-                tdLabelTTD.style.padding = '0.75rem 1rem';
-                tdLabelTTD.style.textAlign = 'right';
-                tdLabelTTD.style.fontWeight = '700';
-                tdLabelTTD.style.color = unpaidVal > 0 ? '#dc2626' : '#475569';
-                tdLabelTTD.textContent = 'TIDAK DIBAYARKAN';
-                trTotalTidakDibayarkan.appendChild(tdLabelTTD);
-                
-                const tdValTTD = document.createElement('td');
-                tdValTTD.style.border = '1px solid #cbd5e1';
-                tdValTTD.style.padding = '0.75rem 1rem';
-                tdValTTD.style.textAlign = 'right';
-                tdValTTD.style.fontWeight = '700';
-                tdValTTD.style.color = unpaidVal > 0 ? '#dc2626' : '#0f172a';
-                tdValTTD.textContent = unpaidVal > 0 ? formatRupiah(unpaidVal) : '-';
-                trTotalTidakDibayarkan.appendChild(tdValTTD);
-                
-                const tdBerkasTTD = document.createElement('td');
-                tdBerkasTTD.style.border = '1px solid #cbd5e1';
-                tdBerkasTTD.style.padding = '0.75rem';
-                tdBerkasTTD.textContent = '';
-                trTotalTidakDibayarkan.appendChild(tdBerkasTTD);
-                
-                ssTbody.appendChild(trTotalTidakDibayarkan);
             }
 
             const warningOverlimitEl = document.querySelector('#row-warning-overlimit');
@@ -1549,6 +1323,7 @@
         function getSectionType(val) {
             if (!val) return 'non-nominal';
             if (penginapanRequiredIds.includes(val)) return 'penginapan';
+            if (transportasiIds.includes(val)) return 'nominal';
             if (nominalRequiredIds.includes(val)) return 'nominal';
             return 'non-nominal';
         }

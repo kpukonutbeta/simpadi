@@ -273,3 +273,23 @@ class TiketPesawatTestCase(TestCase):
         with self.assertRaises(ValidationError):
             third_ticket.clean()
 
+    def test_transport_non_nominal_validation(self):
+        # Set nominal_biaya to False on self.jenis_taksi
+        self.jenis_taksi.nominal_biaya = False
+        self.jenis_taksi.save()
+
+        # Try to clean/save a taksi ticket without nominal
+        taksi_ticket = BerkasPerjalanan(
+            perjalanan=self.perjadin,
+            jenis_berkas=self.jenis_taksi,
+            nominal=None,
+            keterangan="Struk Taksi Draft"
+        )
+        
+        # This should NOT raise a ValidationError
+        try:
+            taksi_ticket.clean()
+        except ValidationError as e:
+            self.fail(f"ValidationError raised unexpectedly for non-nominal transport document: {e}")
+
+

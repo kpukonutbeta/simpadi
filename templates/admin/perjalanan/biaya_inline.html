@@ -1,56 +1,58 @@
 {% load i18n admin_urls %}
 <fieldset class="module">
-<h2>Rincian Biaya Perjalanan Dinas</h2>
-<div class="js-inline-admin-formset inline-group" id="{{ inline_admin_formset.formset.prefix }}-group"
-     data-inline-type="stacked"
-     data-inline-formset="{{ inline_admin_formset.inline_formset_data }}">
-<div class="module {{ inline_admin_formset.classes }}">
-  {% if inline_admin_formset.opts.title %}<h2>{{ inline_admin_formset.opts.title }}</h2>{% endif %}
-  {{ inline_admin_formset.formset.management_form }}
-  {{ inline_admin_formset.formset.non_form_errors }}
+  <h2>RINCIAN PERJALANAN DINAS</h2>
+  <div class="js-inline-admin-formset inline-group" id="{{ inline_admin_formset.formset.prefix }}-group"
+    data-inline-type="stacked" data-inline-formset="{{ inline_admin_formset.inline_formset_data }}">
+    <div class="module {{ inline_admin_formset.classes }}">
+      {% if inline_admin_formset.opts.title %}<h2>{{ inline_admin_formset.opts.title }}</h2>{% endif %}
+      {{ inline_admin_formset.formset.management_form }}
+      {{ inline_admin_formset.formset.non_form_errors }}
 
-  {% for inline_admin_formset_form in inline_admin_formset %}
-    <div class="inline-related{% if inline_admin_formset_form.original or inline_admin_formset_form.show_url %} has_original{% endif %}{% if forloop.last and inline_admin_formset.has_add_permission %} empty-form last-related{% endif %}" id="{{ inline_admin_formset.formset.prefix }}-{% if not forloop.last %}{{ forloop.counter0 }}{% else %}empty{% endif %}">
-      <h3><b>{{ inline_admin_formset.opts.verbose_name|capfirst }}:</b> <span class="inline_label">{% if inline_admin_formset_form.original %}{{ inline_admin_formset_form.original }}{% endif %}</span></h3>
-      {% if inline_admin_formset_form.show_non_field_errors %}{{ inline_admin_formset_form.multiple_non_field_errors }}{% endif %}
-      
-      <!-- Render the fields directly without any outer nested tables or fieldsets -->
-      {% for fieldset in inline_admin_formset_form %}
+      {% for inline_admin_formset_form in inline_admin_formset %}
+      <div
+        class="inline-related{% if inline_admin_formset_form.original or inline_admin_formset_form.show_url %} has_original{% endif %}{% if forloop.last and inline_admin_formset.has_add_permission %} empty-form last-related{% endif %}"
+        id="{{ inline_admin_formset.formset.prefix }}-{% if not forloop.last %}{{ forloop.counter0 }}{% else %}empty{% endif %}">
+        <h3><b>{{ inline_admin_formset.opts.verbose_name|capfirst }}:</b> <span class="inline_label">{% if inline_admin_formset_form.original %}{{ inline_admin_formset_form.original }}{% endif %}</span></h3>
+        {% if inline_admin_formset_form.show_non_field_errors %}{{ inline_admin_formset_form.multiple_non_field_errors }}{% endif %}
+
+        <!-- Render the fields directly without any outer nested tables or fieldsets -->
+        {% for fieldset in inline_admin_formset_form %}
         {% for line in fieldset %}
-          {% for field in line %}
-            {% if field.field.name == "get_rincian_detail" %}
-              <div class="rincian-biaya-wrapper" style="margin: 15px 0; background: #ffffff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                {% if field.is_readonly %}
-                  {{ field.contents }}
-                {% else %}
-                  {{ field.field }}
-                {% endif %}
-              </div>
+        {% for field in line %}
+        {% if field.field.name == "get_rincian_detail" %}
+        <div class="rincian-biaya-wrapper"
+          style="margin: 15px 0; background: #ffffff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          {% if field.is_readonly %}
+          {{ field.contents }}
+          {% else %}
+          {{ field.field }}
+          {% endif %}
+        </div>
+        {% else %}
+        <div style="margin-bottom: 15px; padding: 10px; border-bottom: 1px solid #f1f5f9;">
+          <div style="font-weight: bold; color: #475569; margin-bottom: 5px;">
+            {{ field.field.label_tag }}
+          </div>
+          <div>
+            {% if field.is_readonly %}
+            <div class="readonly">{{ field.contents }}</div>
             {% else %}
-              <div style="margin-bottom: 15px; padding: 10px; border-bottom: 1px solid #f1f5f9;">
-                <div style="font-weight: bold; color: #475569; margin-bottom: 5px;">
-                  {{ field.field.label_tag }}
-                </div>
-                <div>
-                  {% if field.is_readonly %}
-                    <div class="readonly">{{ field.contents }}</div>
-                  {% else %}
-                    {{ field.field }}
-                  {% endif %}
-                </div>
-                {% if field.field.errors %}
-                  <div style="color: #dc2626; font-size: 0.85rem; margin-top: 4px;">{{ field.field.errors }}</div>
-                {% endif %}
-              </div>
+            {{ field.field }}
             {% endif %}
-          {% endfor %}
+          </div>
+          {% if field.field.errors %}
+          <div style="color: #dc2626; font-size: 0.85rem; margin-top: 4px;">{{ field.field.errors }}</div>
+          {% endif %}
+        </div>
+        {% endif %}
         {% endfor %}
-      {% endfor %}
+        {% endfor %}
+        {% endfor %}
 
-      {% if inline_admin_formset_form.needs_explicit_pk_field %}{{ inline_admin_formset_form.pk_field.field }}{% endif %}
-      {% if inline_admin_formset_form.fk_field %}{{ inline_admin_formset_form.fk_field.field }}{% endif %}
+        {% if inline_admin_formset_form.needs_explicit_pk_field %}{{ inline_admin_formset_form.pk_field.field }}{% endif %}
+        {% if inline_admin_formset_form.fk_field %}{{ inline_admin_formset_form.fk_field.field }}{% endif %}
+      </div>
+      {% endfor %}
     </div>
-  {% endfor %}
-</div>
-</div>
+  </div>
 </fieldset>

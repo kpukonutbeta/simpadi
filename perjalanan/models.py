@@ -226,8 +226,8 @@ class PerjalananDinas(models.Model):
         return f"{self.nomor_spd or 'No SPD'} - {self.pegawai.nama}"
 
     class Meta:
-        verbose_name = "Manajemen SPD"
-        verbose_name_plural = "Manajemen SPD"
+        verbose_name = "Surat Perjalanan Dinas"
+        verbose_name_plural = "Surat Perjalanan Dinas"
 
 class BiayaPerjalanan(models.Model):
     perjalanan = models.OneToOneField(PerjalananDinas, on_delete=models.CASCADE, related_name='biaya')
