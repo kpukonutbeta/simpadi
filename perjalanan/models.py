@@ -229,10 +229,13 @@ class PerjalananDinas(models.Model):
             from django.db import transaction
             with transaction.atomic():
                 config, created = PengaturanNomorSPD.objects.get_or_create(id=1)
-                config.prefix_terakhir += 1
+                while True:
+                    config.prefix_terakhir += 1
+                    candidate = f"{config.prefix_terakhir}{config.suffix_format}"
+                    if not PerjalananDinas.objects.filter(nomor_spd=candidate).exists():
+                        self.nomor_spd = candidate
+                        break
                 config.save()
-                
-                self.nomor_spd = f"{config.prefix_terakhir}{config.suffix_format}"
             
         super().save(*args, **kwargs)
         self.sync_harian_details()

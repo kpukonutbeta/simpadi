@@ -51,6 +51,11 @@
                     <i class="fas fa-history"></i> Riwayat Perjadin
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{% url 'perjalanan:kalender_perjadin' %}" class="nav-link {% if request.resolver_match.url_name == 'kalender_perjadin' %}active{% endif %}">
+                    <i class="fas fa-calendar-alt"></i> Kalender Perjadin
+                </a>
+            </li>
             {% endif %}
             <li class="nav-item" style="margin-top: auto;">
                 <a href="{% url 'core:logout' %}" class="nav-link" style="color: #ef4444;">

@@ -10,4 +10,5 @@ urlpatterns = [
     path('ajukan/<uuid:surat_tugas_id>/', views.ajukan_perjadin, name='ajukan_perjadin'),
     path('generate-spd-bulk/', views.generate_spd_bulk, name='generate_spd_bulk'),
     path('riwayat/', views.riwayat_perjadin, name='riwayat_perjadin'),
+    path('kalender/', views.kalender_perjadin, name='kalender_perjadin'),
 ]

@@ -177,20 +177,23 @@ def generate_spd_bulk(request):
         count_created = 0
         count_skipped = 0
         try:
-            with transaction.atomic():
-                for st in surat_tugas_list:
-                    for pgw in st.pegawai.all():
-                        # Check if SPD already exists for this pair
-                        if not PerjalananDinas.objects.filter(surat_tugas=st, pegawai=pgw).exists():
-                            # Note: nomor_spd will be generated automatically in .save()
-                            PerjalananDinas.objects.create(
-                                surat_tugas=st,
-                                pegawai=pgw,
-                                status=PerjalananDinas.Status.DRAFT,
-                            )
-                            count_created += 1
-                        else:
+            for st in surat_tugas_list:
+                for pgw in st.pegawai.all():
+                    # Check if SPD already exists for this pair
+                    if not PerjalananDinas.objects.filter(surat_tugas=st, pegawai=pgw).exists():
+                        try:
+                            with transaction.atomic():
+                                # Note: nomor_spd will be generated automatically in .save()
+                                PerjalananDinas.objects.create(
+                                    surat_tugas=st,
+                                    pegawai=pgw,
+                                    status=PerjalananDinas.Status.DRAFT,
+                                )
+                                count_created += 1
+                        except Exception as e:
                             count_skipped += 1
+                    else:
+                        count_skipped += 1
                             
             if count_created > 0:
                 messages.success(request, f"Berhasil menerbitkan {count_created} SPD baru dengan nomor otomatis.")
@@ -380,4 +383,70 @@ def get_standar_biaya_tiket_ajax(request):
         'ticket_pesawat_ids': jenis_berkas_tiket_pesawat,
         'penginapan_berkas_ids': jenis_berkas_penginapan
     })
+
+
+@login_required
+def kalender_perjadin(request):
+    import json
+    if not hasattr(request.user, 'pegawai_profile'):
+        messages.error(request, "Akun Anda belum terhubung dengan data Pegawai.")
+        return redirect('core:dashboard')
+    
+    pegawai = request.user.pegawai_profile
+    perjalanan_qs = PerjalananDinas.objects.filter(pegawai=pegawai).select_related('surat_tugas__tujuan_provinsi', 'pegawai')
+    
+    trips = list(perjalanan_qs)
+    overlaps = []
+    overlapping_ids = set()
+    
+    for i in range(len(trips)):
+        for j in range(i + 1, len(trips)):
+            t1 = trips[i]
+            t2 = trips[j]
+            if t1.tanggal_berangkat <= t2.tanggal_kembali and t1.tanggal_kembali >= t2.tanggal_berangkat:
+                overlapping_ids.add(t1.id)
+                overlapping_ids.add(t2.id)
+                overlaps.append({
+                    'trip1': {
+                        'id': t1.id,
+                        'nomor_spd': t1.nomor_spd or 'Draft SPD',
+                        'nomor_surat': t1.surat_tugas.nomor_surat,
+                        'perihal': t1.surat_tugas.perihal,
+                        'maksud_perjalanan': t1.maksud_perjalanan,
+                        'tujuan': t1.tujuan_provinsi.nama,
+                        'tanggal': f"{t1.tanggal_berangkat.strftime('%d %b %Y')} - {t1.tanggal_kembali.strftime('%d %b %Y')}"
+                    },
+                    'trip2': {
+                        'id': t2.id,
+                        'nomor_spd': t2.nomor_spd or 'Draft SPD',
+                        'nomor_surat': t2.surat_tugas.nomor_surat,
+                        'perihal': t2.surat_tugas.perihal,
+                        'maksud_perjalanan': t2.maksud_perjalanan,
+                        'tujuan': t2.tujuan_provinsi.nama,
+                        'tanggal': f"{t2.tanggal_berangkat.strftime('%d %b %Y')} - {t2.tanggal_kembali.strftime('%d %b %Y')}"
+                    }
+                })
+                
+    serialized_trips = []
+    for t in trips:
+        serialized_trips.append({
+            'id': t.id,
+            'nomor_spd': t.nomor_spd or 'Draft SPD',
+            'nomor_surat': t.surat_tugas.nomor_surat,
+            'perihal': t.surat_tugas.perihal,
+            'tanggal_berangkat': t.tanggal_berangkat.isoformat(),
+            'tanggal_kembali': t.tanggal_kembali.isoformat(),
+            'tujuan': t.tujuan_provinsi.nama,
+            'status': t.status,
+            'status_display': t.get_status_display(),
+            'has_overlap': t.id in overlapping_ids
+        })
+        
+    context = {
+        'trips_json': json.dumps(serialized_trips),
+        'overlaps': overlaps,
+        'has_overlaps': len(overlaps) > 0,
+    }
+    return render(request, 'perjalanan/kalender_perjadin.html', context)
+
 

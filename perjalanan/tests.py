@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from decimal import Decimal
 import datetime
+import json
 
 from master_data.models import Pegawai, Provinsi, Kota, StandarBiaya, Anggaran, JenisBerkas, StandarBiayaTiket
 from perjalanan.models import PerjalananDinas, SuratTugas, BiayaPerjalanan, BerkasPerjalanan, parse_tiket_keterangan
@@ -749,6 +750,238 @@ class HotelSBMCappingTestCase(TestCase):
         
         self.assertEqual(self.perjadin.biaya.biaya_penginapan_riil, Decimal("2000000"))
         self.assertEqual(self.perjadin.biaya.penginapan_dana_pribadi, Decimal("500000"))
+
+
+class BulkGenerateSPDTestCase(TestCase):
+    def setUp(self):
+        # Create a user and make them a superuser so staff_member_required and admin page views are satisfied
+        self.user = User.objects.create_superuser(email="admin@kpu.go.id", username="adminuser", password="password123")
+        self.client.force_login(self.user)
+
+        # Create Pegawai
+        self.pegawai1 = Pegawai.objects.create(
+            nip="199001012015011001",
+            nama="Ahmad Yani",
+            email="test1@kpu.go.id",
+            golongan="III/a",
+            jabatan="Staf Teknis"
+        )
+        self.pegawai2 = Pegawai.objects.create(
+            nip="199001012015011002",
+            nama="Budi Santoso",
+            email="test2@kpu.go.id",
+            golongan="III/b",
+            jabatan="Fungsional"
+        )
+
+        self.provinsi = Provinsi.objects.create(nama="DKI JAKARTA")
+        self.anggaran = Anggaran.objects.create(
+            kode_dipa="076.01.2.123456/2026",
+            nama_kegiatan="Kegiatan Test",
+            pagu=Decimal("100000000"),
+            sisa_pagu=Decimal("100000000")
+        )
+
+        # Config nomor SPD
+        from perjalanan.models import PengaturanNomorSPD
+        self.config, _ = PengaturanNomorSPD.objects.get_or_create(
+            id=1,
+            defaults={'prefix_terakhir': 0, 'suffix_format': '/SPD/KPU-KU/V/2026'}
+        )
+
+        # Surat Tugas 1
+        self.st1 = SuratTugas.objects.create(
+            nomor_surat="001/ST/KPU-KU/V/2026",
+            perihal="Perjalanan Dinas A",
+            tgl_surat=datetime.date(2026, 5, 20),
+            tanggal_berangkat=datetime.date(2026, 5, 25),
+            tanggal_kembali=datetime.date(2026, 5, 28),
+            tempat_berangkat="Konawe Utara",
+            tempat_tujuan="Jakarta",
+            tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024,
+            anggaran=self.anggaran,
+            jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        self.st1.pegawai.add(self.pegawai1, self.pegawai2)
+
+        # Surat Tugas 2
+        self.st2 = SuratTugas.objects.create(
+            nomor_surat="002/ST/KPU-KU/V/2026",
+            perihal="Perjalanan Dinas B",
+            tgl_surat=datetime.date(2026, 5, 20),
+            tanggal_berangkat=datetime.date(2026, 5, 25),
+            tanggal_kembali=datetime.date(2026, 5, 28),
+            tempat_berangkat="Konawe Utara",
+            tempat_tujuan="Jakarta",
+            tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024,
+            anggaran=self.anggaran,
+            jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        self.st2.pegawai.add(self.pegawai1)
+
+    def test_generate_spd_bulk_success_and_skips_existing(self):
+        # 1. First run: generate bulk for st1 and st2 (should create 3 PerjalananDinas)
+        session = self.client.session
+        session['selected_st_ids'] = [str(self.st1.id), str(self.st2.id)]
+        session.save()
+
+        url = reverse('perjalanan:generate_spd_bulk')
+        response = self.client.post(url)
+        
+        # Verify success redirect to perjalanan admin list
+        self.assertRedirects(response, '/admin/perjalanan/perjalanandinas/')
+        
+        # Verify PerjalananDinas instances created: st1 (2 pegawais) + st2 (1 pegawai) = 3 SPDs
+        self.assertEqual(PerjalananDinas.objects.count(), 3)
+        self.assertEqual(PerjalananDinas.objects.filter(surat_tugas=self.st1).count(), 2)
+        self.assertEqual(PerjalananDinas.objects.filter(surat_tugas=self.st2).count(), 1)
+
+        # 2. Second run: try generating bulk again when they already exist
+        # It should skip gracefully without any errors
+        session = self.client.session
+        session['selected_st_ids'] = [str(self.st1.id), str(self.st2.id)]
+        session.save()
+
+        response = self.client.post(url)
+        self.assertRedirects(response, '/admin/perjalanan/perjalanandinas/')
+        
+        # Count should remain 3, none should be added, skipped should work gracefully
+        self.assertEqual(PerjalananDinas.objects.count(), 3)
+
+    def test_nomor_spd_collision_resolution(self):
+        # Set up a situation where the next prefix generated by config (which is 1)
+        # already exists as a PerjalananDinas nomor_spd.
+        collision_no = "1/SPD/KPU-KU/V/2026"
+        PerjalananDinas.objects.create(
+            surat_tugas=self.st1,
+            pegawai=self.pegawai1,
+            nomor_spd=collision_no,
+            status=PerjalananDinas.Status.DRAFT
+        )
+
+        # Now, create a new PerjalananDinas without nomor_spd.
+        # It should increment past 1 (since 1 is taken) and auto-assign 2.
+        p2 = PerjalananDinas.objects.create(
+            surat_tugas=self.st1,
+            pegawai=self.pegawai2,
+            status=PerjalananDinas.Status.DRAFT
+        )
+
+        self.assertEqual(p2.nomor_spd, "2/SPD/KPU-KU/V/2026")
+        self.assertEqual(PerjalananDinas.objects.filter(nomor_spd="2/SPD/KPU-KU/V/2026").count(), 1)
+
+
+class PerjalananKalenderTestCase(TestCase):
+    def setUp(self):
+        # Create normal employee user
+        self.user = User.objects.create_user(email="pegawai@kpu.go.id", username="pegawaiuser", password="password123")
+        self.pegawai = Pegawai.objects.create(
+            nip="199501012019011001",
+            nama="Bambang Pamungkas",
+            email="pegawai@kpu.go.id",
+            golongan="III/a",
+            jabatan="Fungsional Umum",
+            user=self.user
+        )
+        self.client.force_login(self.user)
+
+        self.provinsi = Provinsi.objects.create(nama="DKI JAKARTA")
+        self.anggaran = Anggaran.objects.create(
+            kode_dipa="076.01.2.123456/2026",
+            nama_kegiatan="Kegiatan Test",
+            pagu=Decimal("100000000"),
+            sisa_pagu=Decimal("100000000")
+        )
+
+        # Config nomor SPD
+        from perjalanan.models import PengaturanNomorSPD
+        PengaturanNomorSPD.objects.get_or_create(
+            id=1,
+            defaults={'prefix_terakhir': 0, 'suffix_format': '/SPD/KPU-KU/V/2026'}
+        )
+
+    def test_kalender_perjadin_render_no_trips(self):
+        url = reverse('perjalanan:kalender_perjadin')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Kalender Perjalanan Dinas")
+        self.assertFalse(response.context['has_overlaps'])
+        self.assertEqual(len(response.context['overlaps']), 0)
+
+    def test_kalender_perjadin_with_non_overlapping_trips(self):
+        # Trip 1: May 1 to May 3
+        st1 = SuratTugas.objects.create(
+            nomor_surat="001/ST/2026", perihal="Rakornas", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 1), tanggal_kembali=datetime.date(2026, 5, 3),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st1.pegawai.add(self.pegawai)
+        PerjalananDinas.objects.create(surat_tugas=st1, pegawai=self.pegawai, status=PerjalananDinas.Status.APPROVED)
+
+        # Trip 2: May 5 to May 7
+        st2 = SuratTugas.objects.create(
+            nomor_surat="002/ST/2026", perihal="Bimtek", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 5), tanggal_kembali=datetime.date(2026, 5, 7),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st2.pegawai.add(self.pegawai)
+        PerjalananDinas.objects.create(surat_tugas=st2, pegawai=self.pegawai, status=PerjalananDinas.Status.PENDING)
+
+        url = reverse('perjalanan:kalender_perjadin')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['has_overlaps'])
+        
+        # Verify serialized JSON contains both trips
+        trips_data = json.loads(response.context['trips_json'])
+        self.assertEqual(len(trips_data), 2)
+        self.assertFalse(trips_data[0]['has_overlap'])
+        self.assertFalse(trips_data[1]['has_overlap'])
+
+    def test_kalender_perjadin_with_overlapping_trips(self):
+        # Trip 1: May 1 to May 5
+        st1 = SuratTugas.objects.create(
+            nomor_surat="001/ST/2026", perihal="Rakornas", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 1), tanggal_kembali=datetime.date(2026, 5, 5),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st1.pegawai.add(self.pegawai)
+        PerjalananDinas.objects.create(surat_tugas=st1, pegawai=self.pegawai, status=PerjalananDinas.Status.APPROVED)
+
+        # Trip 2: May 4 to May 7 (overlaps on May 4 & 5)
+        st2 = SuratTugas.objects.create(
+            nomor_surat="002/ST/2026", perihal="Bimtek", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 4), tanggal_kembali=datetime.date(2026, 5, 7),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st2.pegawai.add(self.pegawai)
+        PerjalananDinas.objects.create(surat_tugas=st2, pegawai=self.pegawai, status=PerjalananDinas.Status.PENDING)
+
+        url = reverse('perjalanan:kalender_perjadin')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['has_overlaps'])
+        self.assertEqual(len(response.context['overlaps']), 1)
+        
+        # Verify serialized JSON has overlap flag as true for both trips
+        trips_data = json.loads(response.context['trips_json'])
+        self.assertEqual(len(trips_data), 2)
+        self.assertTrue(trips_data[0]['has_overlap'])
+        self.assertTrue(trips_data[1]['has_overlap'])
+
+
 
 
 
