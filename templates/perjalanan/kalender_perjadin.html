@@ -338,12 +338,18 @@
         <!-- Controls & Nav -->
         <div class="calendar-header">
             <div class="calendar-title-nav">
-                <button type="button" class="nav-btn" id="prev-month-btn">
+                <button type="button" class="nav-btn" id="prev-trip-month-btn" title="Loncat ke bulan sebelumnya yang ada perjadin">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button type="button" class="nav-btn" id="prev-month-btn" title="Bulan sebelumnya">
                     <i class="fas fa-chevron-left"></i>
                 </button>
                 <div class="current-month-year" id="month-year-label">Mei 2026</div>
-                <button type="button" class="nav-btn" id="next-month-btn">
+                <button type="button" class="nav-btn" id="next-month-btn" title="Bulan selanjutnya">
                     <i class="fas fa-chevron-right"></i>
+                </button>
+                <button type="button" class="nav-btn" id="next-trip-month-btn" title="Loncat ke bulan berikutnya yang ada perjadin">
+                    <i class="fas fa-angle-double-right"></i>
                 </button>
             </div>
             <div>
@@ -469,6 +475,29 @@
 
     const tooltip = document.getElementById('calendar-tooltip');
 
+    function getActiveTripMonths() {
+        const activeMonths = new Set();
+        trips.forEach(t => {
+            let start = new Date(t.tanggal_berangkat);
+            let end = new Date(t.tanggal_kembali);
+            let current = new Date(start.getFullYear(), start.getMonth(), 1);
+            const endLimit = new Date(end.getFullYear(), end.getMonth(), 1);
+            while (current <= endLimit) {
+                const year = current.getFullYear();
+                const month = current.getMonth();
+                activeMonths.add(`${year}-${String(month + 1).padStart(2, '0')}`);
+                current.setMonth(current.getMonth() + 1);
+            }
+        });
+        return Array.from(activeMonths).map(s => {
+            const parts = s.split('-');
+            return { year: parseInt(parts[0]), month: parseInt(parts[1]) - 1 };
+        }).sort((a, b) => {
+            if (a.year !== b.year) return a.year - b.year;
+            return a.month - b.month;
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         renderCalendar();
 
@@ -480,6 +509,37 @@
         document.getElementById('next-month-btn').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
             renderCalendar();
+        });
+
+        document.getElementById('prev-trip-month-btn').addEventListener('click', () => {
+            const activeMonths = getActiveTripMonths();
+            const viewYear = currentDate.getFullYear();
+            const viewMonth = currentDate.getMonth();
+            const pastMonths = activeMonths.filter(m => {
+                return m.year < viewYear || (m.year === viewYear && m.month < viewMonth);
+            });
+            if (pastMonths.length > 0) {
+                const prevMonth = pastMonths[pastMonths.length - 1];
+                currentDate = new Date(prevMonth.year, prevMonth.month, 1);
+                renderCalendar();
+            } else {
+                alert("Tidak ada perjalanan dinas di bulan-bulan sebelumnya.");
+            }
+        });
+
+        document.getElementById('next-trip-month-btn').addEventListener('click', () => {
+            const activeMonths = getActiveTripMonths();
+            const viewYear = currentDate.getFullYear();
+            const viewMonth = currentDate.getMonth();
+            const nextMonth = activeMonths.find(m => {
+                return m.year > viewYear || (m.year === viewYear && m.month > viewMonth);
+            });
+            if (nextMonth) {
+                currentDate = new Date(nextMonth.year, nextMonth.month, 1);
+                renderCalendar();
+            } else {
+                alert("Tidak ada perjalanan dinas di bulan-bulan berikutnya.");
+            }
         });
 
         document.getElementById('today-btn').addEventListener('click', () => {
