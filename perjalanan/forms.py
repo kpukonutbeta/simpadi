@@ -96,3 +96,24 @@ BerkasPerjalananFormSet = inlineformset_factory(
     can_delete=True,
     extra=0,
 )
+
+from .models import HarianPerjalanan
+
+class HarianPerjalananForm(forms.ModelForm):
+    class Meta:
+        model = HarianPerjalanan
+        fields = ['hari_ke', 'tanggal', 'provinsi', 'jenis_harian']
+        widgets = {
+            'hari_ke': forms.HiddenInput(),
+            'tanggal': forms.HiddenInput(),
+            'provinsi': forms.Select(attrs={'class': 'form-control harian-provinsi-select'}),
+            'jenis_harian': forms.Select(attrs={'class': 'form-control harian-jenis-select'}),
+        }
+
+HarianPerjalananFormSet = inlineformset_factory(
+    PerjalananDinas, HarianPerjalanan,
+    form=HarianPerjalananForm,
+    can_delete=False,
+    extra=0,
+)
+

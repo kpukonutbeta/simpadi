@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import SuratTugas, PerjalananDinas
-from .forms import PerjalananDinasForm, BiayaPerjalananFormSet, BerkasPerjalananFormSet
+from .forms import PerjalananDinasForm, BiayaPerjalananFormSet, BerkasPerjalananFormSet, HarianPerjalananFormSet
 from master_data.models import Provinsi, Anggaran
 
 def get_pegawai_by_surat_tugas(request):
@@ -40,13 +40,14 @@ def ajukan_perjadin(request, surat_tugas_id):
 
     # Check if PerjalananDinas already exists for this ST and Pegawai
     # This enables syncing between Admin-created drafts and Pegawai
-    perjadin_instance = PerjalananDinas.objects.filter(
+    perjadin_instance, created = PerjalananDinas.objects.get_or_create(
         surat_tugas=surat_tugas, 
-        pegawai=pegawai
-    ).first()
+        pegawai=pegawai,
+        defaults={'status': PerjalananDinas.Status.DRAFT}
+    )
 
     # If already approved or completed, don't allow editing via this form
-    if perjadin_instance and perjadin_instance.status not in [PerjalananDinas.Status.DRAFT, PerjalananDinas.Status.REJECTED]:
+    if perjadin_instance.status not in [PerjalananDinas.Status.DRAFT, PerjalananDinas.Status.REJECTED]:
         messages.warning(request, f"SPD ini sudah dalam status {perjadin_instance.get_status_display()} dan tidak dapat diubah lagi.")
         return redirect('core:dashboard')
 
@@ -59,8 +60,14 @@ def ajukan_perjadin(request, surat_tugas_id):
         
         biaya_formset = BiayaPerjalananFormSet(request.POST, instance=perjadin_instance)
         berkas_formset = BerkasPerjalananFormSet(request.POST, request.FILES, instance=perjadin_instance)
+        harian_formset = HarianPerjalananFormSet(request.POST, instance=perjadin_instance)
+        
+        if not request.user.is_staff:
+            for h_form in harian_formset:
+                h_form.fields['provinsi'].disabled = True
+                h_form.fields['jenis_harian'].disabled = True
 
-        if form.is_valid() and biaya_formset.is_valid() and berkas_formset.is_valid():
+        if form.is_valid() and biaya_formset.is_valid() and berkas_formset.is_valid() and harian_formset.is_valid():
             try:
                 with transaction.atomic():
                     # Save main form
@@ -73,7 +80,11 @@ def ajukan_perjadin(request, surat_tugas_id):
                         perjadin.status = PerjalananDinas.Status.DRAFT
                     perjadin.save()
                     
-                    # Save formsets: berkas_formset first so that BiayaPerjalanan can read the saved berkas nominals
+                    # Save formsets: harian_formset first so that when BiayaPerjalanan calculates, it reads the updated daily transit SBM
+                    harian_formset.instance = perjadin
+                    harian_formset.save()
+
+                    # Save formsets: berkas_formset next so that BiayaPerjalanan can read the saved berkas nominals
                     berkas_formset.instance = perjadin
                     berkas_formset.save()
                     
@@ -90,6 +101,12 @@ def ajukan_perjadin(request, surat_tugas_id):
         form = PerjalananDinasForm(instance=perjadin_instance, user=request.user)
         biaya_formset = BiayaPerjalananFormSet(instance=perjadin_instance)
         berkas_formset = BerkasPerjalananFormSet(instance=perjadin_instance)
+        harian_formset = HarianPerjalananFormSet(instance=perjadin_instance)
+        
+        if not request.user.is_staff:
+            for h_form in harian_formset:
+                h_form.fields['provinsi'].disabled = True
+                h_form.fields['jenis_harian'].disabled = True
 
     from master_data.models import JenisBerkas
     jenis_berkas_nominal = list(JenisBerkas.objects.filter(nominal_biaya=True).values_list('id', flat=True))
@@ -129,7 +146,8 @@ def ajukan_perjadin(request, surat_tugas_id):
         'form': form,
         'biaya_formset': biaya_formset,
         'berkas_formset': berkas_formset,
-        'is_edit': perjadin_instance is not None,
+        'harian_formset': harian_formset,
+        'is_edit': True,
         'jenis_berkas_nominal': jenis_berkas_nominal,
         'jenis_berkas_wajib': jenis_berkas_wajib,
         'jenis_berkas_penginapan': jenis_berkas_penginapan,
@@ -271,7 +289,8 @@ def hitung_estimasi_ajax(request):
     )
 
     berkas_payload = data.get('berkas', [])
-    breakdown = b_obj.calculate_breakdown(mock_berkas=berkas_payload)
+    harian_payload = data.get('harian', [])
+    breakdown = b_obj.calculate_breakdown(mock_berkas=berkas_payload, mock_harian=harian_payload)
 
     # Serialize breakdown_categories for AJAX
     serialized_categories = {}
@@ -294,6 +313,18 @@ def hitung_estimasi_ajax(request):
             'subtotal': float(category['subtotal']),
         }
 
+    serialized_harian_breakdown = []
+    for item in breakdown.get('harian_breakdown', []):
+        serialized_harian_breakdown.append({
+            'hari_ke': item['hari_ke'],
+            'tanggal': item['tanggal'].strftime('%Y-%m-%d') if item['tanggal'] else "",
+            'provinsi_id': item['provinsi_id'],
+            'provinsi_nama': item['provinsi_nama'],
+            'jenis_harian': item['jenis_harian'],
+            'rate': float(item['rate']),
+            'representasi': float(item['representasi']),
+        })
+
     # Return JSON with all float/int format for numeric items
     return JsonResponse({
         'uang_harian_riil': float(breakdown['uang_harian_riil']),
@@ -310,6 +341,7 @@ def hitung_estimasi_ajax(request):
         'penginapan_formula': breakdown['penginapan_formula'],
         'transport_formula': breakdown['transport_formula'],
         'breakdown_categories': serialized_categories,
+        'harian_breakdown': serialized_harian_breakdown,
     })
 
 @login_required
@@ -331,7 +363,12 @@ def get_standar_biaya_tiket_ajax(request):
     jenis_berkas_tiket_pesawat = list(JenisBerkas.objects.filter(
         kategori_biaya='transportasi_pesawat'
     ).values_list('id', flat=True))
+    jenis_berkas_penginapan = list(JenisBerkas.objects.filter(
+        kategori_biaya__in=['penginapan', 'penginapan_30', 'penginapan_fb_luar', 'penginapan_fb_dalam']
+    ).values_list('id', flat=True))
     return JsonResponse({
         'routes': data,
-        'ticket_pesawat_ids': jenis_berkas_tiket_pesawat
+        'ticket_pesawat_ids': jenis_berkas_tiket_pesawat,
+        'penginapan_berkas_ids': jenis_berkas_penginapan
     })
+

@@ -59,8 +59,16 @@ function initAdminFilter() {
                 const nominalVal = nominalInput ? nominalInput.value.replace(/\./g, '') : 0;
                 const malamInput = row.querySelector('input[name$="-malam_menginap"]');
                 const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
-                const tagHidden = row.querySelector('.admin-ticket-tag-hidden');
-                const keteranganVal = (tagHidden && isTicketPesawat(select)) ? tagHidden.value : '';
+                
+                let keteranganVal = '';
+                if (isTicketPesawat(select)) {
+                    const tagHidden = row.querySelector('.admin-ticket-tag-hidden');
+                    keteranganVal = tagHidden ? tagHidden.value : '';
+                } else if (isPenginapanBerkas(select)) {
+                    const tagHidden = row.querySelector('.admin-hotel-tag-hidden');
+                    keteranganVal = tagHidden ? tagHidden.value : '';
+                }
+
                 if (jbId) {
                     berkas.push({
                         'jenis_berkas_id': parseInt(jbId),
@@ -73,6 +81,28 @@ function initAdminFilter() {
         });
 
         const jenisPerjalanan = document.querySelector('#id_jenis_perjalanan')?.value;
+
+        // Gather all harian details from admin inline
+        const harian = [];
+        const harianGroup = document.querySelector('#harian_details-group');
+        if (harianGroup) {
+            const harianRows = harianGroup.querySelectorAll('tr.form-row:not(.empty-form)');
+            harianRows.forEach((row, index) => {
+                const provSelect = row.querySelector('select[name$="-provinsi"]');
+                const jenisSelect = row.querySelector('select[name$="-jenis_harian"]');
+                const hariKeTd = row.querySelector('.field-hari_ke');
+                let hariKe = hariKeTd ? (parseInt(hariKeTd.textContent.trim()) || 0) : (index + 1);
+                
+                if (provSelect && jenisSelect && hariKe) {
+                    harian.push({
+                        'hari_ke': hariKe,
+                        'provinsi_id': provSelect.value ? parseInt(provSelect.value) : null,
+                        'jenis_harian': jenisSelect.value || 'luar_kota'
+                    });
+                }
+            });
+        }
+
         const payload = {
             tanggal_berangkat: tanggalBerangkat,
             tanggal_kembali: tanggalKembali,
@@ -82,7 +112,8 @@ function initAdminFilter() {
             jenis_perjalanan: jenisPerjalanan,
             tahun_sbm: tahunSbm,
             pegawai_id: pegawaiId,
-            berkas: berkas
+            berkas: berkas,
+            harian: harian
         };
 
         let csrfToken = '';
@@ -220,9 +251,14 @@ function initAdminFilter() {
         checkAdminFullboard();
     }
 
-    // Delegate listener to capture edits/additions/deletions in the inline berkas rows in Admin
+    // Delegate listener to capture edits/additions/deletions in the inline berkas or harian rows in Admin
     document.addEventListener('change', function (e) {
-        if (e.target.matches('input[name$="-nominal"]') || e.target.matches('select[name$="-jenis_berkas"]') || e.target.matches('input[name$="-DELETE"]') || e.target.matches('input[name$="-malam_menginap"]')) {
+        if (e.target.matches('input[name$="-nominal"]') || 
+            e.target.matches('select[name$="-jenis_berkas"]') || 
+            e.target.matches('input[name$="-DELETE"]') || 
+            e.target.matches('input[name$="-malam_menginap"]') ||
+            e.target.matches('select[name$="-provinsi"]') ||
+            e.target.matches('select[name$="-jenis_harian"]')) {
             updateAdminEstimasi();
         }
     });
@@ -294,17 +330,33 @@ function initAdminFilter() {
                 if (deleteInput && deleteInput.checked) return;
 
                 const select = row.querySelector('select[name$="-jenis_berkas"]');
-                if (select && isTicketPesawat(select)) {
-                    const tagHidden = row.querySelector('.admin-ticket-tag-hidden');
-                    const descInput = row.querySelector('input[name$="-keterangan"]');
-                    if (tagHidden && descInput) {
-                        const tagVal = tagHidden.value;
-                        const descVal = descInput.value.trim();
-                        if (tagVal) {
-                            if (descVal) {
-                                descInput.value = `${tagVal} | ${descVal}`;
-                            } else {
-                                descInput.value = tagVal;
+                if (select) {
+                    if (isTicketPesawat(select)) {
+                        const tagHidden = row.querySelector('.admin-ticket-tag-hidden');
+                        const descInput = row.querySelector('input[name$="-keterangan"]');
+                        if (tagHidden && descInput) {
+                            const tagVal = tagHidden.value;
+                            const descVal = descInput.value.trim();
+                            if (tagVal) {
+                                if (descVal) {
+                                    descInput.value = `${tagVal} | ${descVal}`;
+                                } else {
+                                    descInput.value = tagVal;
+                                }
+                            }
+                        }
+                    } else if (isPenginapanBerkas(select)) {
+                        const tagHidden = row.querySelector('.admin-hotel-tag-hidden');
+                        const descInput = row.querySelector('input[name$="-keterangan"]');
+                        if (tagHidden && descInput) {
+                            const tagVal = tagHidden.value;
+                            const descVal = descInput.value.trim();
+                            if (tagVal) {
+                                if (descVal) {
+                                    descInput.value = `${tagVal} | ${descVal}`;
+                                } else {
+                                    descInput.value = tagVal;
+                                }
                             }
                         }
                     }
@@ -471,7 +523,8 @@ function initAdminFilter() {
         }
 
         /* Adjust padding to prevent overlapping with badge */
-        .inline-related tr.form-row.has-ticket-route td {
+        .inline-related tr.form-row.has-ticket-route td,
+        .inline-related tr.form-row.has-hotel-route td {
             padding-top: 2.2rem !important;
             position: relative !important;
         }
@@ -518,12 +571,56 @@ function initAdminFilter() {
 
     let ticketRoutes = [];
     let ticketPesawatIds = [];
+    let penginapanBerkasIds = [];
     let activeTicketRow = null;
+    let activeHotelRow = null;
+
+    const JENIS_HARIAN_LABELS = {
+        'luar_kota': 'Luar Kota',
+        'dalam_kota': 'Dalam Kota (> 8 Jam)',
+        'diklat': 'Diklat',
+        'halfday': 'Rapat/Pertemuan Halfday',
+        'fullday': 'Rapat/Pertemuan Fullday',
+        'fullboard': 'Rapat/Pertemuan Fullboard',
+    };
 
     function isTicketPesawat(selectElement) {
         if (!selectElement || !selectElement.value) return false;
         const val = parseInt(selectElement.value, 10);
         return !isNaN(val) && ticketPesawatIds.includes(val);
+    }
+
+    function isPenginapanBerkas(selectElement) {
+        if (!selectElement || !selectElement.value) return false;
+        const val = parseInt(selectElement.value, 10);
+        return !isNaN(val) && penginapanBerkasIds.includes(val);
+    }
+
+    function formatTglIndo(tglStr) {
+        if (!tglStr) return '';
+        const parts = tglStr.split('-');
+        if (parts.length !== 3) return tglStr;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        const day = parseInt(parts[2]);
+        const month = months[parseInt(parts[1]) - 1];
+        const year = parts[0];
+        return `${day} ${month} ${year}`;
+    }
+
+    function parsePenginapanKeterangan(keteranganVal) {
+        if (!keteranganVal) return null;
+        const match = keteranganVal.match(/^\[SBM-PENGINAPAN:([^:]+):([^:]+):(\d+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$/);
+        if (match) {
+            return {
+                checkIn: match[1],
+                checkOut: match[2],
+                nights: parseInt(match[3]),
+                provinsiId: match[4],
+                provinsiNama: match[5],
+                userDesc: match[6] || ""
+            };
+        }
+        return null;
     }
 
     function countFlightTickets(currentRow = null) {
@@ -845,11 +942,71 @@ function initAdminFilter() {
         updateAdminEstimasi();
     }
 
+    function toggleAdminHotelInputs(row, isBadgeActive) {
+        const malamInput = row.querySelector('input[name$="-malam_menginap"]');
+        const keteranganInput = row.querySelector('input[name$="-keterangan"]');
+        
+        if (isBadgeActive) {
+            if (malamInput) {
+                malamInput.readOnly = true;
+                malamInput.style.backgroundColor = '#f1f5f9';
+                malamInput.style.cursor = 'not-allowed';
+            }
+            if (keteranganInput) {
+                keteranganInput.readOnly = true;
+                keteranganInput.style.backgroundColor = '#f1f5f9';
+                keteranganInput.style.cursor = 'not-allowed';
+                keteranganInput.removeAttribute('required');
+            }
+        } else {
+            if (malamInput) {
+                malamInput.readOnly = false;
+                malamInput.style.backgroundColor = '';
+                malamInput.style.cursor = '';
+            }
+            if (keteranganInput) {
+                keteranganInput.readOnly = false;
+                keteranganInput.style.backgroundColor = '';
+                keteranganInput.style.cursor = '';
+            }
+        }
+    }
+
+    function updateAdminRowHotelLayout(row, isActive, provinsiNama, checkIn, checkOut) {
+        const originalCell = row.querySelector('td.original') || row.querySelector('td.field-jenis_berkas') || row.querySelector('td:first-child');
+        if (!originalCell) return;
+        let hElement = originalCell.querySelector('p.hotel-badge');
+        if (!hElement) {
+            hElement = document.createElement('p');
+            hElement.className = 'hotel-badge';
+            originalCell.appendChild(hElement);
+        }
+
+        if (typeof hElement.dataset.originalText === 'undefined') {
+            hElement.dataset.originalText = hElement.textContent.trim();
+        }
+
+        if (isActive && provinsiNama && checkIn && checkOut) {
+            row.classList.add('has-hotel-route');
+            hElement.className = 'hotel-badge admin-ticket-route-badge-active';
+            hElement.style.setProperty('background-color', '#ecfdf5', 'important');
+            hElement.style.setProperty('border-color', '#a7f3d0', 'important');
+            hElement.style.setProperty('color', '#065f46', 'important');
+            hElement.style.setProperty('top', '0.4rem', 'important');
+            hElement.innerHTML = `🏨 ${provinsiNama} (${formatTglIndo(checkIn)} - ${formatTglIndo(checkOut)}) <button type="button" class="admin-hotel-route-edit admin-ticket-route-edit-btn" style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;" title="Ubah Akomodasi">✏️</button>`;
+        } else {
+            row.classList.remove('has-hotel-route');
+            hElement.className = 'hotel-badge';
+            hElement.innerHTML = '';
+        }
+    }
+
     function handleAdminJenisChange(row) {
         const select = row.querySelector('select[name$="-jenis_berkas"]');
         if (!select) return;
 
         const tagHidden = row.querySelector('.admin-ticket-tag-hidden');
+        const hotelTagHidden = row.querySelector('.admin-hotel-tag-hidden');
 
         if (isTicketPesawat(select)) {
             if (countFlightTickets(row) >= 2) {
@@ -869,9 +1026,27 @@ function initAdminFilter() {
             } else {
                 openAdminTicketModal(row);
             }
+            if (hotelTagHidden) hotelTagHidden.value = '';
+            updateAdminRowHotelLayout(row, false);
+            toggleAdminHotelInputs(row, false);
+        } else if (isPenginapanBerkas(select)) {
+            if (hotelTagHidden && hotelTagHidden.value) {
+                const parsed = parsePenginapanKeterangan(hotelTagHidden.value);
+                if (parsed) {
+                    updateAdminRowHotelLayout(row, true, parsed.provinsiNama, parsed.checkIn, parsed.checkOut);
+                    toggleAdminHotelInputs(row, true);
+                }
+            } else {
+                openAdminHotelModal(row);
+            }
+            if (tagHidden) tagHidden.value = '';
+            updateAdminRowRouteLayout(row, false);
         } else {
             if (tagHidden) tagHidden.value = '';
             updateAdminRowRouteLayout(row, false);
+            if (hotelTagHidden) hotelTagHidden.value = '';
+            updateAdminRowHotelLayout(row, false);
+            toggleAdminHotelInputs(row, false);
             updateAdminEstimasi();
         }
     }
@@ -883,7 +1058,7 @@ function initAdminFilter() {
         const select = row.querySelector('select[name$="-jenis_berkas"]');
         if (!select) return;
 
-        const originalCell = row.querySelector('td.original');
+        const originalCell = row.querySelector('td.original') || row.querySelector('td.field-jenis_berkas') || row.querySelector('td:first-child');
         if (!originalCell) return;
 
         // Create/get hidden tag input inside originalCell
@@ -895,34 +1070,66 @@ function initAdminFilter() {
             originalCell.appendChild(tagHidden);
         }
 
-        // Get or create p element
-        let pElement = originalCell.querySelector('p');
+        let hotelTagHidden = originalCell.querySelector('.admin-hotel-tag-hidden');
+        if (!hotelTagHidden) {
+            hotelTagHidden = document.createElement('input');
+            hotelTagHidden.type = 'hidden';
+            hotelTagHidden.className = 'admin-hotel-tag-hidden';
+            originalCell.appendChild(hotelTagHidden);
+        }
+
+        // Get or create p element for ticket route badge
+        let pElement = originalCell.querySelector('p.ticket-badge');
         if (!pElement) {
             pElement = document.createElement('p');
+            pElement.className = 'ticket-badge';
             originalCell.appendChild(pElement);
+        }
+
+        // Get or create p element for hotel route badge
+        let hElement = originalCell.querySelector('p.hotel-badge');
+        if (!hElement) {
+            hElement = document.createElement('p');
+            hElement.className = 'hotel-badge';
+            originalCell.appendChild(hElement);
         }
 
         // Store original text if not already stored
         if (typeof pElement.dataset.originalText === 'undefined') {
             pElement.dataset.originalText = pElement.textContent.trim();
         }
+        if (typeof hElement.dataset.originalText === 'undefined') {
+            hElement.dataset.originalText = hElement.textContent.trim();
+        }
 
         // Load existing tag from keterangan field
         const descInput = row.querySelector('input[name$="-keterangan"]');
         if (descInput) {
-            const parsed = parseTicketKeterangan(descInput.value);
-            if (parsed) {
-                const tagVal = `[SBM-TIKET:${parsed.asalId}-${parsed.tujuanId}-${parsed.kelas}:${parsed.namaAsal}:${parsed.namaTujuan}]`;
+            const parsedTicket = parseTicketKeterangan(descInput.value);
+            const parsedHotel = parsePenginapanKeterangan(descInput.value);
+            if (parsedTicket) {
+                const tagVal = `[SBM-TIKET:${parsedTicket.asalId}-${parsedTicket.tujuanId}-${parsedTicket.kelas}:${parsedTicket.namaAsal}:${parsedTicket.namaTujuan}]`;
                 tagHidden.value = tagVal;
-                descInput.value = parsed.userDesc;
+                descInput.value = parsedTicket.userDesc;
 
-                const kelasDisplay = parsed.kelas === 'ekonomi' ? 'Ekonomi' : 'Bisnis';
-                updateAdminRowRouteLayout(row, true, parsed.namaAsal, parsed.namaTujuan, kelasDisplay);
+                const kelasDisplay = parsedTicket.kelas === 'ekonomi' ? 'Ekonomi' : 'Bisnis';
+                updateAdminRowRouteLayout(row, true, parsedTicket.namaAsal, parsedTicket.namaTujuan, kelasDisplay);
+            } else if (parsedHotel) {
+                const tagVal = `[SBM-PENGINAPAN:${parsedHotel.checkIn}:${parsedHotel.checkOut}:${parsedHotel.nights}:${parsedHotel.provinsiId}:${parsedHotel.provinsiNama}]`;
+                hotelTagHidden.value = tagVal;
+                descInput.value = parsedHotel.userDesc;
+
+                updateAdminRowHotelLayout(row, true, parsedHotel.provinsiNama, parsedHotel.checkIn, parsedHotel.checkOut);
+                toggleAdminHotelInputs(row, true);
             } else {
                 updateAdminRowRouteLayout(row, false);
+                updateAdminRowHotelLayout(row, false);
+                toggleAdminHotelInputs(row, false);
             }
         } else {
             updateAdminRowRouteLayout(row, false);
+            updateAdminRowHotelLayout(row, false);
+            toggleAdminHotelInputs(row, false);
         }
     }
 
@@ -933,12 +1140,276 @@ function initAdminFilter() {
         });
     }
 
+    function getAdminTransitDays() {
+        const harian = [];
+        const harianGroup = document.querySelector('#harian_details-group');
+        if (harianGroup) {
+            const harianRows = harianGroup.querySelectorAll('tr.form-row:not(.empty-form)');
+            harianRows.forEach((row, index) => {
+                const provSelect = row.querySelector('select[name$="-provinsi"]');
+                const jenisSelect = row.querySelector('select[name$="-jenis_harian"]');
+                const hariKeTd = row.querySelector('.field-hari_ke');
+                const hariKe = hariKeTd ? (parseInt(hariKeTd.textContent.trim()) || 0) : (index + 1);
+                const tglInput = row.querySelector('input[name$="-tanggal"]');
+                
+                if (provSelect && jenisSelect && hariKe && tglInput) {
+                    const provOpt = provSelect.options[provSelect.selectedIndex];
+                    const provNama = provOpt ? provOpt.text : '';
+                    harian.push({
+                        hari_ke: hariKe,
+                        tanggal: tglInput.value,
+                        provinsi_id: provSelect.value,
+                        provinsi_nama: provNama,
+                        jenis_harian: jenisSelect.value || 'luar_kota'
+                    });
+                }
+            });
+        }
+        harian.sort((a, b) => a.hari_ke - b.hari_ke);
+        return harian;
+    }
+
+    function updateAdminHotelNightsPreview() {
+        const checkInVal = document.getElementById('admin-hotel-check-in').value;
+        const checkOutVal = document.getElementById('admin-hotel-check-out').value;
+        const previewEl = document.getElementById('admin-hotel-nights-preview');
+        const countEl = document.getElementById('admin-hotel-nights-count');
+        
+        if (checkInVal && checkOutVal) {
+            const checkInDate = new Date(checkInVal);
+            const checkOutDate = new Date(checkOutVal);
+            const timeDiff = checkOutDate - checkInDate;
+            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            
+            if (daysDiff > 0) {
+                countEl.textContent = `${daysDiff} Malam`;
+                previewEl.style.display = 'flex';
+                return;
+            }
+        }
+        previewEl.style.display = 'none';
+    }
+
+    function injectAdminHotelModal() {
+        if (document.getElementById('adminHotelModal')) return;
+
+        // Inject HTML
+        const modalHtml = `
+            <div id="adminHotelModal" class="admin-ticket-modal">
+                <div class="admin-ticket-modal-content" style="max-width: 500px;">
+                    <div class="admin-ticket-modal-header">
+                        <h2>Pilih Segment & Tanggal Menginap</h2>
+                        <span class="admin-ticket-modal-close" id="admin-close-hotel-modal">&times;</span>
+                    </div>
+                    <div class="admin-ticket-modal-body">
+                        <div class="admin-ticket-form-group">
+                            <label>Provinsi (SBM)</label>
+                            <select id="admin-hotel-province-select" style="width: 100% !important; padding: 0.5rem !important; border-radius: 0.375rem !important; border: 1px solid #cbd5e1 !important; box-sizing: border-box !important;">
+                                <!-- Will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem;">
+                            <div class="admin-ticket-form-group" style="flex: 1;">
+                                <label>Tanggal Check-in</label>
+                                <input type="date" id="admin-hotel-check-in" style="width: 100% !important; padding: 0.5rem !important; border-radius: 0.375rem !important; border: 1px solid #cbd5e1 !important; box-sizing: border-box !important;">
+                            </div>
+                            <div class="admin-ticket-form-group" style="flex: 1;">
+                                <label>Tanggal Check-out</label>
+                                <input type="date" id="admin-hotel-check-out" style="width: 100% !important; padding: 0.5rem !important; border-radius: 0.375rem !important; border: 1px solid #cbd5e1 !important; box-sizing: border-box !important;">
+                            </div>
+                        </div>
+                        <div id="admin-hotel-nights-preview" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.25rem; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 0.875rem; color: #1e3a8a; font-weight: 600;">Jumlah Malam Menginap:</span>
+                            <span id="admin-hotel-nights-count" style="font-size: 1.125rem; color: #1d4ed8; font-weight: 700;">0 Malam</span>
+                        </div>
+                        <div class="admin-ticket-form-group">
+                            <label>Nama Hotel / Keterangan Tambahan</label>
+                            <input type="text" id="admin-hotel-user-desc" placeholder="Contoh: Hotel Grand Hyatt (Opsional)" style="width: 100% !important; padding: 0.5rem !important; border-radius: 0.375rem !important; border: 1px solid #cbd5e1 !important; box-sizing: border-box !important;">
+                        </div>
+                        <div class="admin-ticket-btn-group">
+                            <button type="button" id="admin-btn-save-hotel" class="admin-ticket-btn admin-ticket-btn-primary">Simpan Akomodasi</button>
+                            <button type="button" id="admin-btn-cancel-hotel" class="admin-ticket-btn admin-ticket-btn-secondary">Batal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        const div = document.createElement('div');
+        div.innerHTML = modalHtml;
+        document.body.appendChild(div.firstElementChild);
+
+        // Bind events
+        document.getElementById('admin-close-hotel-modal').addEventListener('click', closeAdminHotelModal);
+        document.getElementById('admin-btn-cancel-hotel').addEventListener('click', closeAdminHotelModal);
+        document.getElementById('admin-btn-save-hotel').addEventListener('click', saveAdminHotelRoute);
+        
+        document.getElementById('admin-hotel-check-in').addEventListener('input', updateAdminHotelNightsPreview);
+        document.getElementById('admin-hotel-check-out').addEventListener('input', updateAdminHotelNightsPreview);
+    }
+
+    function openAdminHotelModal(row) {
+        activeHotelRow = row;
+        const tagHidden = row.querySelector('.admin-hotel-tag-hidden');
+        const tagVal = tagHidden ? tagHidden.value : '';
+        const parsed = parsePenginapanKeterangan(tagVal);
+
+        const provinceSelect = document.getElementById('admin-hotel-province-select');
+        provinceSelect.innerHTML = '';
+
+        // Get destination province
+        const destProvId = document.querySelector('#id_tujuan_provinsi')?.value;
+        const destProvNama = document.querySelector('#id_tujuan_provinsi_nama')?.value || 'Provinsi Utama';
+        
+        const addedProvinceIds = new Set();
+        
+        // Add main destination province first
+        if (destProvId) {
+            const opt = document.createElement('option');
+            opt.value = destProvId;
+            opt.textContent = destProvNama;
+            provinceSelect.appendChild(opt);
+            addedProvinceIds.add(destProvId);
+        }
+
+        // Get unique provinces from transit rows
+        const harian = getAdminTransitDays();
+        harian.forEach(day => {
+            if (day.provinsi_id && !addedProvinceIds.has(day.provinsi_id)) {
+                const opt = document.createElement('option');
+                opt.value = day.provinsi_id;
+                opt.textContent = day.provinsi_nama;
+                provinceSelect.appendChild(opt);
+                addedProvinceIds.add(day.provinsi_id);
+            }
+        });
+
+        // Set min and max limits for date inputs
+        const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
+        const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
+        
+        const checkInInput = document.getElementById('admin-hotel-check-in');
+        const checkOutInput = document.getElementById('admin-hotel-check-out');
+
+        if (tanggalBerangkat) {
+            checkInInput.min = tanggalBerangkat;
+            checkOutInput.min = tanggalBerangkat;
+        }
+        if (tanggalKembali) {
+            checkInInput.max = tanggalKembali;
+            checkOutInput.max = tanggalKembali;
+        }
+
+        // Populate current values
+        if (parsed) {
+            provinceSelect.value = parsed.provinsiId;
+            checkInInput.value = parsed.checkIn;
+            checkOutInput.value = parsed.checkOut;
+        } else {
+            if (destProvId) provinceSelect.value = destProvId;
+            checkInInput.value = tanggalBerangkat || '';
+            checkOutInput.value = tanggalKembali || '';
+        }
+
+        updateAdminHotelNightsPreview();
+
+        const descInput = document.getElementById('admin-hotel-user-desc');
+        if (descInput) {
+            descInput.value = parsed ? parsed.userDesc : '';
+        }
+
+        document.getElementById('adminHotelModal').style.display = 'block';
+    }
+
+    function closeAdminHotelModal() {
+        document.getElementById('adminHotelModal').style.display = 'none';
+        if (activeHotelRow) {
+            const tagHidden = activeHotelRow.querySelector('.admin-hotel-tag-hidden');
+            const select = activeHotelRow.querySelector('select[name$="-jenis_berkas"]');
+            if (select && isPenginapanBerkas(select) && (!tagHidden || !tagHidden.value)) {
+                select.value = "";
+                updateAdminRowHotelLayout(activeHotelRow, false);
+                toggleAdminHotelInputs(activeHotelRow, false);
+                updateAdminEstimasi();
+            }
+        }
+        activeHotelRow = null;
+    }
+
+    function saveAdminHotelRoute() {
+        if (!activeHotelRow) return;
+
+        const checkIn = document.getElementById('admin-hotel-check-in').value;
+        const checkOut = document.getElementById('admin-hotel-check-out').value;
+        const provSelect = document.getElementById('admin-hotel-province-select');
+        const provId = provSelect.value;
+        const provNama = provSelect.options[provSelect.selectedIndex]?.text || '';
+
+        if (!provId) {
+            alert("Silakan pilih provinsi terlebih dahulu.");
+            return;
+        }
+        if (!checkIn || !checkOut) {
+            alert("Silakan isi tanggal check-in dan check-out.");
+            return;
+        }
+
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+        
+        const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
+        const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
+        
+        if (tanggalBerangkat && checkIn < tanggalBerangkat) {
+            alert(`Tanggal check-in tidak boleh kurang dari tanggal berangkat (${formatTglIndo(tanggalBerangkat)}).`);
+            return;
+        }
+        if (tanggalKembali && checkOut > tanggalKembali) {
+            alert(`Tanggal check-out tidak boleh melebihi tanggal kembali (${formatTglIndo(tanggalKembali)}).`);
+            return;
+        }
+        
+        const timeDiff = checkOutDate - checkInDate;
+        const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+        if (nights <= 0) {
+            alert("Tanggal check-out harus lebih besar dari tanggal check-in (minimal 1 malam).");
+            return;
+        }
+
+        const userDescInput = document.getElementById('admin-hotel-user-desc');
+        const userDesc = userDescInput ? userDescInput.value.trim() : '';
+
+        const tagVal = `[SBM-PENGINAPAN:${checkIn}:${checkOut}:${nights}:${provId}:${provNama}]`;
+        const tagHidden = activeHotelRow.querySelector('.admin-hotel-tag-hidden');
+        if (tagHidden) tagHidden.value = tagVal;
+
+        updateAdminRowHotelLayout(activeHotelRow, true, provNama, checkIn, checkOut);
+
+        const malamInput = activeHotelRow.querySelector('input[name$="-malam_menginap"]');
+        if (malamInput) {
+            malamInput.value = nights;
+        }
+
+        const keteranganInput = activeHotelRow.querySelector('input[name$="-keterangan"]');
+        if (keteranganInput) {
+            keteranganInput.value = userDesc;
+        }
+
+        toggleAdminHotelInputs(activeHotelRow, true);
+
+        document.getElementById('adminHotelModal').style.display = 'none';
+        activeHotelRow = null;
+
+        updateAdminEstimasi();
+    }
+
     function fetchTicketRoutes() {
         fetch('/perjalanan/api/get-standar-biaya-tiket/')
             .then(res => res.json())
             .then(data => {
                 ticketRoutes = data.routes || [];
                 ticketPesawatIds = data.ticket_pesawat_ids || [];
+                penginapanBerkasIds = data.penginapan_berkas_ids || [];
                 initializeAdminTicketRows();
             })
             .catch(err => console.error("Error fetching ticket routes in admin:", err));
@@ -946,6 +1417,7 @@ function initAdminFilter() {
 
     // Initialize Admin Ticket Features
     injectAdminTicketModal();
+    injectAdminHotelModal();
     fetchTicketRoutes();
 
     // Document-level event delegation for select changes & edit button clicks
@@ -970,6 +1442,16 @@ function initAdminFilter() {
                 openAdminTicketModal(row);
             }
         }
+
+        const editHotelBtn = e.target.closest('.admin-hotel-route-edit');
+        if (editHotelBtn) {
+            e.preventDefault();
+            const row = editHotelBtn.closest('tr.form-row');
+            if (row) {
+                setupAdminRow(row);
+                openAdminHotelModal(row);
+            }
+        }
     });
 
     if (window.django && django.jQuery) {
@@ -987,6 +1469,72 @@ function initAdminFilter() {
             }
         });
     }
+
+    function setupAdminAccordion() {
+        const harianGroup = document.querySelector('#harian_details-group');
+        if (!harianGroup) return;
+
+        const h2 = harianGroup.querySelector('h2');
+        if (!h2) return;
+
+        // Apply styles to h2 to make it clickable and style it like a premium accordion
+        h2.style.cursor = 'pointer';
+        h2.style.display = 'flex';
+        h2.style.justifyContent = 'space-between';
+        h2.style.alignItems = 'center';
+        h2.style.userSelect = 'none';
+
+        // Create the chevron indicator
+        const chevron = document.createElement('span');
+        chevron.style.display = 'inline-block';
+        chevron.style.transition = 'transform 0.2s ease';
+        chevron.style.fontSize = '0.9rem';
+        chevron.style.marginRight = '12px';
+        chevron.style.color = '#ffffff';
+        chevron.innerHTML = '&#9656;'; // Closed by default: ▶
+        h2.appendChild(chevron);
+
+        // Gather all siblings of h2 within the group (these contain the tabular inline formset elements)
+        const contentSiblings = [];
+        let next = h2.nextElementSibling;
+        while (next) {
+            contentSiblings.push(next);
+            next = next.nextElementSibling;
+        }
+
+        // Auto-expand if there are validation errors within the group
+        const hasErrors = harianGroup.querySelector('.errors, .errorlist') !== null;
+        let isExpanded = hasErrors;
+
+        // Apply initial state (hidden by default unless there are errors)
+        contentSiblings.forEach(el => {
+            el.style.display = isExpanded ? '' : 'none';
+        });
+        if (isExpanded) {
+            chevron.innerHTML = '&#9662;'; // Open: ▼
+        }
+
+        // Hover feedback styles on the header
+        h2.style.transition = 'filter 0.2s';
+        h2.addEventListener('mouseenter', () => {
+            h2.style.filter = 'brightness(1.05)';
+        });
+        h2.addEventListener('mouseleave', () => {
+            h2.style.filter = '';
+        });
+
+        // Click handler to toggle expand/collapse state
+        h2.addEventListener('click', () => {
+            isExpanded = !isExpanded;
+            contentSiblings.forEach(el => {
+                el.style.display = isExpanded ? '' : 'none';
+            });
+            chevron.innerHTML = isExpanded ? '&#9662;' : '&#9656;';
+        });
+    }
+
+    // Initialize Accordion for Uang Harian detail section
+    setupAdminAccordion();
 
     // Run initial estimation on load in Admin
     setTimeout(updateAdminEstimasi, 500);

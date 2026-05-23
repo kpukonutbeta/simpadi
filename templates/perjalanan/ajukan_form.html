@@ -182,6 +182,7 @@
         <input type="hidden" id="id_tempat_berangkat" name="tempat_berangkat" value="{{ surat_tugas.tempat_berangkat }}">
         <input type="hidden" id="id_tempat_tujuan" name="tempat_tujuan" value="{{ surat_tugas.tempat_tujuan }}">
         <input type="hidden" id="id_tujuan_provinsi" name="tujuan_provinsi" value="{{ surat_tugas.tujuan_provinsi.id }}">
+        <input type="hidden" id="id_tujuan_provinsi_nama" name="tujuan_provinsi_nama" value="{{ surat_tugas.tujuan_provinsi.nama }}">
         <input type="hidden" id="id_tahun_sbm" name="tahun_sbm" value="{{ surat_tugas.tahun_sbm }}">
         <input type="hidden" id="id_maksud_perjalanan" name="maksud_perjalanan" value="{{ surat_tugas.maksud_perjalanan|default:surat_tugas.perihal }}">
         <input type="hidden" id="id_anggaran" name="anggaran" value="{{ surat_tugas.anggaran.id }}">
@@ -215,6 +216,15 @@
                             </button>
                         </div>
                         <input type="hidden" class="ticket-tag-hidden" value="">
+
+                        <!-- Badge for hotel segment selection -->
+                        <div class="hotel-route-badge-container" style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
+                            <span class="hotel-route-text" style="font-size: 0.75rem; color: #047857; font-weight: 600;"></span>
+                            <button type="button" class="edit-hotel-route-btn" style="background: none; border: none; color: #059669; cursor: pointer; padding: 0; font-size: 0.75rem;" title="Ubah Akomodasi">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" class="hotel-tag-hidden" value="">
                         {{ br_form.jenis_berkas }}
                     </div>
                     <div class="form-group nominal-wrapper" style="transition: all 0.3s ease;">
@@ -245,6 +255,88 @@
                 </div>
             </div>
             {% endfor %}
+        </div>
+
+        <!-- Section: Uang Harian & Detail Transit -->
+        <div class="card form-section" id="section-uang-harian">
+            <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fas fa-wallet"></i> Rincian Uang Harian & Transit</span>
+                <button type="button" id="btn-toggle-harian-breakdown" class="btn" style="font-size: 0.8rem; background: var(--glass-bg); border: 1px solid var(--border); color: var(--text-main); padding: 0.35rem 0.75rem; border-radius: 0.375rem;">
+                    {% if request.user.is_staff %}
+                    <i class="fas fa-sliders-h"></i> Atur Detail Transit per Hari
+                    {% else %}
+                    <i class="fas fa-eye"></i> Lihat Detail Transit per Hari
+                    {% endif %}
+                </button>
+            </div>
+            
+            <!-- Summary Area -->
+            <div class="harian-summary-card" style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Provinsi Tujuan Utama</span>
+                        <span style="font-size: 1rem; font-weight: 600; color: var(--text-main);">{{ surat_tugas.tujuan_provinsi.nama }}</span>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Estimasi Total Uang Harian</span>
+                        <span id="harian-summary-total" style="font-size: 1rem; font-weight: 600; color: var(--text-main);">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collapsible Table Formset -->
+            <div id="harian-breakdown-container" style="display: none; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                {{ harian_formset.management_form }}
+                <div style="overflow-x: auto;">
+                    <table class="table" style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+                                <th style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 120px; font-weight: 600;">Tanggal</th>
+                                <th style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Provinsi SBM</th>
+                                <th style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 220px; font-weight: 600;">Jenis Perjalanan Dinas</th>
+                                <th style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 140px; text-align: right; font-weight: 600;">Estimasi Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h_form in harian_formset %}
+                            <tr class="harian-row" style="border-bottom: 1px solid var(--border); vertical-align: middle;">
+                                {{ h_form.id }}
+                                {{ h_form.hari_ke }}
+                                {{ h_form.tanggal }}
+                                <td style="padding: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                                    {{ h_form.instance.tanggal|date:"d M Y" }}
+                                </td>
+                                <td style="padding: 0.5rem;">
+                                    {% if request.user.is_staff %}
+                                        {{ h_form.provinsi }}
+                                    {% else %}
+                                        <span style="font-size: 0.875rem; color: var(--text-main);">{{ h_form.instance.provinsi.nama }}</span>
+                                        <div style="display: none;">
+                                            {{ h_form.provinsi }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 0.5rem;">
+                                    {% if request.user.is_staff %}
+                                        {{ h_form.jenis_harian }}
+                                    {% else %}
+                                        <span style="font-size: 0.875rem; color: var(--text-main);">{{ h_form.instance.get_jenis_harian_display }}</span>
+                                        <div style="display: none;">
+                                            {{ h_form.jenis_harian }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 0.5rem; text-align: right; vertical-align: middle;">
+                                    <span class="badge harian-rate-preview" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #10b981; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; font-weight: 600; display: inline-block;">
+                                        Rp 0
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Section 3A: Berkas Pendukung Penginapan -->
@@ -304,6 +396,15 @@
                             </button>
                         </div>
                         <input type="hidden" class="ticket-tag-hidden" value="">
+
+                        <!-- Badge for hotel segment selection -->
+                        <div class="hotel-route-badge-container" style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
+                            <span class="hotel-route-text" style="font-size: 0.75rem; color: #047857; font-weight: 600;"></span>
+                            <button type="button" class="edit-hotel-route-btn" style="background: none; border: none; color: #059669; cursor: pointer; padding: 0; font-size: 0.75rem;" title="Ubah Akomodasi">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" class="hotel-tag-hidden" value="">
                         {{ berkas_formset.empty_form.jenis_berkas }}
                     </div>
                     <div class="form-group nominal-wrapper" style="transition: all 0.3s ease;">
@@ -663,6 +764,47 @@
     </div>
 </div>
 
+<!-- Modal Akomodasi/Hotel -->
+<div id="hotelModal" class="modal">
+    <div class="modal-content" style="max-width: 600px; margin: 10% auto;">
+        <div class="modal-header">
+            <h2>Pilih Segment & Tanggal Menginap</h2>
+            <span class="close" onclick="closeHotelModal()">&times;</span>
+        </div>
+        <div class="modal-body" style="padding: 1.5rem;">
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Provinsi (SBM)</label>
+                <select id="hotel-province-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                    <!-- Will be populated dynamically via JavaScript -->
+                </select>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem;">
+                <div class="form-group" style="flex: 1;">
+                    <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Tanggal Check-in</label>
+                    <input type="date" id="hotel-check-in" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Tanggal Check-out</label>
+                    <input type="date" id="hotel-check-out" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                </div>
+            </div>
+            <div id="hotel-nights-preview" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.25rem; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.875rem; color: #1e3a8a; font-weight: 600;">Jumlah Malam Menginap:</span>
+                <span id="hotel-nights-count" style="font-size: 1.125rem; color: #1d4ed8; font-weight: 700;">0 Malam</span>
+            </div>
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 600;">Nama Hotel / Keterangan Tambahan</label>
+                <input type="text" id="hotel-user-desc" class="form-control" placeholder="Contoh: Hotel Grand Hyatt (Opsional)" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="button" id="btn-save-hotel" class="btn btn-primary" style="flex: 1; padding: 0.625rem;">Simpan Akomodasi</button>
+                <button type="button" class="btn" style="background: #e2e8f0; color: #475569; padding: 0.625rem;" onclick="closeHotelModal()">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .st-preview-card:hover {
         transform: translateY(-5px);
@@ -727,6 +869,63 @@
     let originalOptions = [];
     let ticketRoutes = [];
     let activeTicketRow = null;
+    let activeHotelRow = null;
+
+    function isPenginapanBerkas(selectElement) {
+        if (!selectElement) return false;
+        const val = parseInt(selectElement.value, 10);
+        return penginapanRequiredIds.includes(val);
+    }
+
+    function formatTglIndo(tglStr) {
+        if (!tglStr) return '';
+        const parts = tglStr.split('-');
+        if (parts.length !== 3) return tglStr;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        const day = parseInt(parts[2]);
+        const month = months[parseInt(parts[1]) - 1];
+        const year = parts[0];
+        return `${day} ${month} ${year}`;
+    }
+
+    function parsePenginapanKeterangan(keteranganVal) {
+        if (!keteranganVal) return null;
+        const match = keteranganVal.match(/^\[SBM-PENGINAPAN:([^:]+):([^:]+):(\d+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$/);
+        if (match) {
+            return {
+                checkIn: match[1],
+                checkOut: match[2],
+                nights: parseInt(match[3]),
+                provinsiId: match[4],
+                provinsiNama: match[5],
+                userDesc: match[6] || ""
+            };
+        }
+        return null;
+    }
+
+    function toggleHotelInputs(row, isBadgeActive) {
+        const malamWrapper = row.querySelector('.malam-wrapper');
+        const keteranganInput = row.querySelector('input[name$="-keterangan"]');
+        const keteranganWrapper = keteranganInput ? keteranganInput.closest('.form-group') : null;
+        
+        if (isBadgeActive) {
+            if (malamWrapper) malamWrapper.style.display = 'none';
+            if (keteranganWrapper) {
+                keteranganWrapper.style.display = 'none';
+                const input = keteranganWrapper.querySelector('input');
+                if (input) input.removeAttribute('required');
+            }
+        } else {
+            const select = row.querySelector('select[name$="-jenis_berkas"]');
+            const val = select ? parseInt(select.value) : null;
+            if (val && penginapanRequiredIds.includes(val)) {
+                if (malamWrapper) malamWrapper.style.display = 'block';
+            }
+            if (keteranganWrapper) keteranganWrapper.style.display = 'block';
+        }
+    }
+
 
     function toggleCostDetail(category) {
         const detailEl = document.getElementById('detail-' + category);
@@ -783,28 +982,45 @@
         const select = row.querySelector('select[name$="-jenis_berkas"]');
         if (!select) return;
 
-        const badgeContainer = row.querySelector('.ticket-route-badge-container');
-        const tagHidden = row.querySelector('.ticket-tag-hidden');
+        const tBadgeContainer = row.querySelector('.ticket-route-badge-container');
+        const tTagHidden = row.querySelector('.ticket-tag-hidden');
+        const hBadgeContainer = row.querySelector('.hotel-route-badge-container');
+        const hTagHidden = row.querySelector('.hotel-tag-hidden');
 
         if (isTicketPesawat(select)) {
             if (countEmployeeFlightTickets(row) >= 2) {
                 alert("Tiket pesawat hanya dapat diinput maksimal 2 kali (untuk pergi dan pulang) sesuai aturan SBM.");
                 select.value = "";
-                if (badgeContainer) badgeContainer.style.display = 'none';
-                if (tagHidden) tagHidden.value = '';
+                if (tBadgeContainer) tBadgeContainer.style.display = 'none';
+                if (tTagHidden) tTagHidden.value = '';
                 const newSectionType = getSectionType(null);
                 toggleFieldsBasedOnJenis(row, newSectionType);
                 updateEstimasi();
                 return;
             }
-            if (tagHidden && tagHidden.value) {
-                if (badgeContainer) badgeContainer.style.display = 'flex';
+            if (tTagHidden && tTagHidden.value) {
+                if (tBadgeContainer) tBadgeContainer.style.display = 'flex';
             } else {
                 openTicketModal(row);
             }
+            if (hBadgeContainer) hBadgeContainer.style.display = 'none';
+            if (hTagHidden) hTagHidden.value = '';
+            toggleHotelInputs(row, false);
+        } else if (isPenginapanBerkas(select)) {
+            if (hTagHidden && hTagHidden.value) {
+                if (hBadgeContainer) hBadgeContainer.style.display = 'flex';
+                toggleHotelInputs(row, true);
+            } else {
+                openHotelModal(row);
+            }
+            if (tBadgeContainer) tBadgeContainer.style.display = 'none';
+            if (tTagHidden) tTagHidden.value = '';
         } else {
-            if (badgeContainer) badgeContainer.style.display = 'none';
-            if (tagHidden) tagHidden.value = '';
+            if (tBadgeContainer) tBadgeContainer.style.display = 'none';
+            if (tTagHidden) tTagHidden.value = '';
+            if (hBadgeContainer) hBadgeContainer.style.display = 'none';
+            if (hTagHidden) hTagHidden.value = '';
+            toggleHotelInputs(row, false);
         }
     }
 
@@ -1143,6 +1359,21 @@
             }
         });
 
+        const harian = [];
+        const harianRows = document.querySelectorAll('.harian-row');
+        harianRows.forEach(row => {
+            const hariKeInput = row.querySelector('input[name$="-hari_ke"]');
+            const provSelect = row.querySelector('.harian-provinsi-select');
+            const jenisSelect = row.querySelector('.harian-jenis-select');
+            if (hariKeInput && provSelect && jenisSelect) {
+                harian.push({
+                    'hari_ke': parseInt(hariKeInput.value) || 0,
+                    'provinsi_id': provSelect.value ? parseInt(provSelect.value) : null,
+                    'jenis_harian': jenisSelect.value || 'luar_kota'
+                });
+            }
+        });
+
         const payload = {
             tanggal_berangkat: tanggalBerangkat,
             tanggal_kembali: tanggalKembali,
@@ -1151,7 +1382,8 @@
             jenis_perjalanan: document.querySelector('#id_jenis_perjalanan')?.value,
             tahun_sbm: tahunSbm,
             pegawai_id: pegawaiId,
-            berkas: berkas
+            berkas: berkas,
+            harian: harian
         };
 
         let csrfToken = '';
@@ -1190,6 +1422,26 @@
             if (hotelEl) hotelEl.textContent = formatRupiah(data.biaya_penginapan_riil);
             if (transportEl) transportEl.textContent = formatRupiah(data.biaya_transportasi_riil);
             if (totalEl) totalEl.textContent = formatRupiah(data.total_dibayarkan);
+
+            const harianSummaryTotal = document.querySelector('#harian-summary-total');
+            if (harianSummaryTotal) {
+                harianSummaryTotal.textContent = formatRupiah(data.uang_harian_riil);
+            }
+
+            if (data.harian_breakdown) {
+                const hrRows = document.querySelectorAll('.harian-row');
+                data.harian_breakdown.forEach(item => {
+                    hrRows.forEach(row => {
+                        const hkInput = row.querySelector('input[name$="-hari_ke"]');
+                        if (hkInput && parseInt(hkInput.value) === item.hari_ke) {
+                            const previewBadge = row.querySelector('.harian-rate-preview');
+                            if (previewBadge) {
+                                previewBadge.textContent = formatRupiah(item.rate);
+                            }
+                        }
+                    });
+                });
+            }
 
             const harianDetailEl = document.querySelector('#detail-harian');
             const reprDetailEl = document.querySelector('#detail-representasi');
@@ -1363,8 +1615,193 @@
             .then(data => {
                 ticketRoutes = data.routes || [];
                 initializeExistingTicketRows();
+                initializeExistingHotelRows();
             })
             .catch(err => console.error("Error fetching ticket routes:", err));
+
+        const JENIS_HARIAN_LABELS = {
+            'luar_kota': 'Luar Kota',
+            'dalam_kota': 'Dalam Kota (> 8 Jam)',
+            'diklat': 'Diklat',
+            'halfday': 'Rapat/Pertemuan Halfday',
+            'fullday': 'Rapat/Pertemuan Fullday',
+            'fullboard': 'Rapat/Pertemuan Fullboard',
+        };
+
+        function getTransitDays() {
+            const harian = [];
+            const harianRows = document.querySelectorAll('.harian-row');
+            harianRows.forEach(row => {
+                const hariKeInput = row.querySelector('input[name$="-hari_ke"]');
+                const provSelect = row.querySelector('.harian-provinsi-select');
+                const jenisSelect = row.querySelector('.harian-jenis-select');
+                const tglInput = row.querySelector('input[name$="-tanggal"]');
+                
+                if (hariKeInput && provSelect && jenisSelect && tglInput) {
+                    const provOpt = provSelect.options[provSelect.selectedIndex];
+                    const provNama = provOpt ? provOpt.text : '';
+                    harian.push({
+                        hari_ke: parseInt(hariKeInput.value) || 0,
+                        tanggal: tglInput.value,
+                        provinsi_id: provSelect.value,
+                        provinsi_nama: provNama,
+                        jenis_harian: jenisSelect.value || 'luar_kota'
+                    });
+                }
+            });
+            harian.sort((a, b) => a.hari_ke - b.hari_ke);
+            return harian;
+        }
+
+        function updateHotelNightsPreview() {
+            const checkInVal = document.getElementById('hotel-check-in').value;
+            const checkOutVal = document.getElementById('hotel-check-out').value;
+            const previewEl = document.getElementById('hotel-nights-preview');
+            const countEl = document.getElementById('hotel-nights-count');
+            
+            if (checkInVal && checkOutVal) {
+                const checkInDate = new Date(checkInVal);
+                const checkOutDate = new Date(checkOutVal);
+                const timeDiff = checkOutDate - checkInDate;
+                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                
+                if (daysDiff > 0) {
+                    countEl.textContent = `${daysDiff} Malam`;
+                    previewEl.style.display = 'flex';
+                    return;
+                }
+            }
+            previewEl.style.display = 'none';
+        }
+
+        function openHotelModal(row) {
+            activeHotelRow = row;
+            const tagHidden = row.querySelector('.hotel-tag-hidden');
+            const tagVal = tagHidden ? tagHidden.value : '';
+            const parsed = parsePenginapanKeterangan(tagVal);
+
+            const provinceSelect = document.getElementById('hotel-province-select');
+            provinceSelect.innerHTML = '';
+
+            // Get destination province
+            const destProvId = document.querySelector('#id_tujuan_provinsi')?.value;
+            const destProvNama = document.querySelector('#id_tujuan_provinsi_nama')?.value || 'Provinsi Utama';
+            
+            const addedProvinceIds = new Set();
+            
+            // Add main destination province first
+            if (destProvId) {
+                const opt = document.createElement('option');
+                opt.value = destProvId;
+                opt.textContent = destProvNama;
+                provinceSelect.appendChild(opt);
+                addedProvinceIds.add(destProvId);
+            }
+
+            // Get unique provinces from transit rows
+            const harian = getTransitDays();
+            harian.forEach(day => {
+                if (day.provinsi_id && !addedProvinceIds.has(day.provinsi_id)) {
+                    const opt = document.createElement('option');
+                    opt.value = day.provinsi_id;
+                    opt.textContent = day.provinsi_nama;
+                    provinceSelect.appendChild(opt);
+                    addedProvinceIds.add(day.provinsi_id);
+                }
+            });
+
+            // Set min and max limits for date inputs
+            const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
+            const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
+            
+            const checkInInput = document.getElementById('hotel-check-in');
+            const checkOutInput = document.getElementById('hotel-check-out');
+
+            if (tanggalBerangkat) {
+                checkInInput.min = tanggalBerangkat;
+                checkOutInput.min = tanggalBerangkat;
+            }
+            if (tanggalKembali) {
+                checkInInput.max = tanggalKembali;
+                checkOutInput.max = tanggalKembali;
+            }
+
+            // Populate current values
+            if (parsed) {
+                provinceSelect.value = parsed.provinsiId;
+                checkInInput.value = parsed.checkIn;
+                checkOutInput.value = parsed.checkOut;
+            } else {
+                if (destProvId) provinceSelect.value = destProvId;
+                checkInInput.value = tanggalBerangkat || '';
+                checkOutInput.value = tanggalKembali || '';
+            }
+
+            updateHotelNightsPreview();
+
+            const descInput = document.getElementById('hotel-user-desc');
+            if (descInput) {
+                descInput.value = parsed ? parsed.userDesc : '';
+            }
+
+            document.getElementById('hotelModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.closeHotelModal = function() {
+            document.getElementById('hotelModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            
+            if (activeHotelRow) {
+                const tagHidden = activeHotelRow.querySelector('.hotel-tag-hidden');
+                const select = activeHotelRow.querySelector('select[name$="-jenis_berkas"]');
+                if (select && isPenginapanBerkas(select) && (!tagHidden || !tagHidden.value)) {
+                    select.value = "";
+                    const newSectionType = getSectionType(null);
+                    toggleFieldsBasedOnJenis(activeHotelRow, newSectionType);
+                    updateEstimasi();
+                }
+            }
+            activeHotelRow = null;
+        }
+
+        function initializeExistingHotelRows() {
+            const rows = document.querySelectorAll('.formset-row');
+            rows.forEach(row => {
+                const select = row.querySelector('select[name$="-jenis_berkas"]');
+                if (select) {
+                    const descInput = row.querySelector('input[name$="-keterangan"]');
+                    const tagHidden = row.querySelector('.hotel-tag-hidden');
+                    
+                    if (descInput) {
+                        const parsed = parsePenginapanKeterangan(descInput.value);
+                        if (parsed) {
+                            const tagVal = `[SBM-PENGINAPAN:${parsed.checkIn}:${parsed.checkOut}:${parsed.nights}:${parsed.provinsiId}:${parsed.provinsiNama}]`;
+                            if (tagHidden) tagHidden.value = tagVal;
+                            descInput.value = parsed.userDesc;
+
+                            const badgeContainer = row.querySelector('.hotel-route-badge-container');
+                            const badgeText = row.querySelector('.hotel-route-text');
+                            if (badgeText) {
+                                badgeText.textContent = `🏨 ${parsed.provinsiNama} (${formatTglIndo(parsed.checkIn)} - ${formatTglIndo(parsed.checkOut)})`;
+                            }
+                            if (badgeContainer) badgeContainer.style.display = 'flex';
+                            toggleHotelInputs(row, true);
+                        }
+                    }
+
+                    const editBtn = row.querySelector('.edit-hotel-route-btn');
+                    if (editBtn) {
+                        editBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openHotelModal(row);
+                        });
+                    }
+                }
+            });
+            updateEstimasi();
+        }
 
         function initializeExistingTicketRows() {
             const rows = document.querySelectorAll('.formset-row');
@@ -1446,6 +1883,15 @@
                 });
             }
 
+            const editHotelBtn = newRow.querySelector('.edit-hotel-route-btn');
+            if (editHotelBtn) {
+                editHotelBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openHotelModal(newRow);
+                });
+            }
+
             // Increment form count
             totalFormsInput.value = currentCount + 1;
             updateEstimasi();
@@ -1477,6 +1923,34 @@
                 el.addEventListener('input', updateEstimasi);
             }
         });
+
+        // Toggle Harian Breakdown visibility
+        const btnToggleHarian = document.getElementById('btn-toggle-harian-breakdown');
+        const harianBreakdownContainer = document.getElementById('harian-breakdown-container');
+        if (btnToggleHarian && harianBreakdownContainer) {
+            btnToggleHarian.addEventListener('click', function() {
+                if (harianBreakdownContainer.style.display === 'none') {
+                    harianBreakdownContainer.style.display = 'block';
+                    btnToggleHarian.innerHTML = '<i class="fas fa-times"></i> Tutup Detail Transit';
+                } else {
+                    harianBreakdownContainer.style.display = 'none';
+                    {% if request.user.is_staff %}
+                    btnToggleHarian.innerHTML = '<i class="fas fa-sliders-h"></i> Atur Detail Transit per Hari';
+                    {% else %}
+                    btnToggleHarian.innerHTML = '<i class="fas fa-eye"></i> Lihat Detail Transit per Hari';
+                    {% endif %}
+                }
+            });
+        }
+
+        // Delegate listener for harian breakdown selects
+        if (harianBreakdownContainer) {
+            harianBreakdownContainer.addEventListener('change', (e) => {
+                if (e.target.matches('select')) {
+                    updateEstimasi();
+                }
+            });
+        }
 
         const jenisPerjalananSelect = document.querySelector('#id_jenis_perjalanan');
         const sectionPenginapan = document.querySelector('#section-berkas-penginapan');
@@ -1615,17 +2089,33 @@
                     if (deleteInput && deleteInput.checked) return;
 
                     const select = row.querySelector('select[name$="-jenis_berkas"]');
-                    if (select && isTicketPesawat(select)) {
-                        const tagHidden = row.querySelector('.ticket-tag-hidden');
-                        const descInput = row.querySelector('input[name$="-keterangan"]');
-                        if (tagHidden && descInput) {
-                            const tagVal = tagHidden.value;
-                            const descVal = descInput.value.trim();
-                            if (tagVal) {
-                                if (descVal) {
-                                    descInput.value = `${tagVal} | ${descVal}`;
-                                } else {
-                                    descInput.value = tagVal;
+                    if (select) {
+                        if (isTicketPesawat(select)) {
+                            const tagHidden = row.querySelector('.ticket-tag-hidden');
+                            const descInput = row.querySelector('input[name$="-keterangan"]');
+                            if (tagHidden && descInput) {
+                                const tagVal = tagHidden.value;
+                                const descVal = descInput.value.trim();
+                                if (tagVal) {
+                                    if (descVal) {
+                                        descInput.value = `${tagVal} | ${descVal}`;
+                                    } else {
+                                        descInput.value = tagVal;
+                                    }
+                                }
+                            }
+                        } else if (isPenginapanBerkas(select)) {
+                            const tagHidden = row.querySelector('.hotel-tag-hidden');
+                            const descInput = row.querySelector('input[name$="-keterangan"]');
+                            if (tagHidden && descInput) {
+                                const tagVal = tagHidden.value;
+                                const descVal = descInput.value.trim();
+                                if (tagVal) {
+                                    if (descVal) {
+                                        descInput.value = `${tagVal} | ${descVal}`;
+                                    } else {
+                                        descInput.value = tagVal;
+                                    }
                                 }
                             }
                         }
@@ -1697,6 +2187,92 @@
                 document.getElementById('ticketModal').style.display = 'none';
                 document.body.style.overflow = 'auto';
                 activeTicketRow = null;
+
+                updateEstimasi();
+            });
+        }
+
+        // Bind input listeners for date inputs to update nights preview
+        const checkInInput = document.getElementById('hotel-check-in');
+        const checkOutInput = document.getElementById('hotel-check-out');
+        if (checkInInput) checkInInput.addEventListener('input', updateHotelNightsPreview);
+        if (checkOutInput) checkOutInput.addEventListener('input', updateHotelNightsPreview);
+
+        // Save hotel selection
+        const btnSaveHotel = document.getElementById('btn-save-hotel');
+        if (btnSaveHotel) {
+            btnSaveHotel.addEventListener('click', function() {
+                if (!activeHotelRow) return;
+
+                const checkIn = document.getElementById('hotel-check-in').value;
+                const checkOut = document.getElementById('hotel-check-out').value;
+                const provSelect = document.getElementById('hotel-province-select');
+                const provId = provSelect.value;
+                const provNama = provSelect.options[provSelect.selectedIndex]?.text || '';
+
+                if (!provId) {
+                    alert("Silakan pilih provinsi terlebih dahulu.");
+                    return;
+                }
+                if (!checkIn || !checkOut) {
+                    alert("Silakan isi tanggal check-in dan check-out.");
+                    return;
+                }
+
+                const checkInDate = new Date(checkIn);
+                const checkOutDate = new Date(checkOut);
+                
+                const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
+                const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
+                
+                if (tanggalBerangkat && checkIn < tanggalBerangkat) {
+                    alert(`Tanggal check-in tidak boleh kurang dari tanggal berangkat (${formatTglIndo(tanggalBerangkat)}).`);
+                    return;
+                }
+                if (tanggalKembali && checkOut > tanggalKembali) {
+                    alert(`Tanggal check-out tidak boleh melebihi tanggal kembali (${formatTglIndo(tanggalKembali)}).`);
+                    return;
+                }
+                
+                const timeDiff = checkOutDate - checkInDate;
+                const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                if (nights <= 0) {
+                    alert("Tanggal check-out harus lebih besar dari tanggal check-in (minimal 1 malam).");
+                    return;
+                }
+
+                const userDescInput = document.getElementById('hotel-user-desc');
+                const userDesc = userDescInput ? userDescInput.value.trim() : '';
+
+                const tagVal = `[SBM-PENGINAPAN:${checkIn}:${checkOut}:${nights}:${provId}:${provNama}]`;
+                const tagHidden = activeHotelRow.querySelector('.hotel-tag-hidden');
+                if (tagHidden) tagHidden.value = tagVal;
+
+                const badgeContainer = activeHotelRow.querySelector('.hotel-route-badge-container');
+                const badgeText = activeHotelRow.querySelector('.hotel-route-text');
+                if (badgeText) {
+                    badgeText.textContent = `🏨 ${provNama} (${formatTglIndo(checkIn)} - ${formatTglIndo(checkOut)})`;
+                }
+                if (badgeContainer) {
+                    badgeContainer.style.display = 'flex';
+                }
+
+                const malamInput = activeHotelRow.querySelector('input[name$="-malam_menginap"]');
+                if (malamInput) {
+                    malamInput.value = nights;
+                }
+
+                const descInput = activeHotelRow.querySelector('input[name$="-keterangan"]');
+                if (descInput) {
+                    descInput.value = userDesc;
+                }
+
+                toggleHotelInputs(activeHotelRow, true);
+
+                document.getElementById('hotelModal').style.display = 'none';
+                document.body.style.overflow = 'auto';
+                activeHotelRow = null;
 
                 updateEstimasi();
             });

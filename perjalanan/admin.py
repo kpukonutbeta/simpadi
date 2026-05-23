@@ -6,7 +6,8 @@ from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.safestring import mark_safe
 from .models import (
     PerjalananDinas, BiayaPerjalanan, BerkasPerjalanan, SuratTugas,
-    PengaturanNomorSPD, BerkasPerjalananPenginapan, BerkasPerjalananTransportasi, BerkasPerjalananNonNominal
+    PengaturanNomorSPD, BerkasPerjalananPenginapan, BerkasPerjalananTransportasi, BerkasPerjalananNonNominal,
+    HarianPerjalanan
 )
 from master_data.models import JenisBerkas
 
@@ -371,6 +372,25 @@ class PengaturanNomorSPDAdmin(admin.ModelAdmin):
             return False
         return True
 
+from .forms import HarianPerjalananForm
+
+class HarianPerjalananInline(admin.TabularInline):
+    model = HarianPerjalanan
+    form = HarianPerjalananForm
+    extra = 0
+    can_delete = False
+    fields = ('tanggal_display', 'tanggal', 'provinsi', 'jenis_harian')
+    readonly_fields = ('tanggal_display',)
+    verbose_name = "Detail Transit Perjalanan Dinas"
+    verbose_name_plural = "Detail Transit Perjalanan Dinas"
+
+    def tanggal_display(self, obj):
+        if obj and obj.tanggal:
+            from django.utils.formats import date_format
+            return date_format(obj.tanggal, "d F Y")
+        return "-"
+    tanggal_display.short_description = "Tanggal"
+
 @admin.register(PerjalananDinas)
 class PerjalananDinasAdmin(admin.ModelAdmin):
     list_display = ('nomor_spd', 'surat_tugas', 'pegawai', 'jenis_perjalanan', 'jenis_transportasi', 'status', 'tanggal_berangkat', 'durasi_hari')
@@ -398,7 +418,13 @@ class PerjalananDinasAdmin(admin.ModelAdmin):
             }),
         )
     
-    inlines = [BerkasPerjalananPenginapanInline, BerkasPerjalananTransportasiInline, BerkasPerjalananNonNominalInline, BiayaPerjalananInline]
+    inlines = [
+        HarianPerjalananInline,
+        BerkasPerjalananPenginapanInline,
+        BerkasPerjalananTransportasiInline,
+        BerkasPerjalananNonNominalInline,
+        BiayaPerjalananInline
+    ]
 
     def get_detail_perjalanan_table(self, obj):
         if not obj or not obj.surat_tugas:

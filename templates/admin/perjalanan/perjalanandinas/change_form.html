@@ -6,6 +6,7 @@
 <input type="hidden" id="id_tanggal_berangkat" value="{{ original.tanggal_berangkat|date:'Y-m-d' }}">
 <input type="hidden" id="id_tanggal_kembali" value="{{ original.tanggal_kembali|date:'Y-m-d' }}">
 <input type="hidden" id="id_tujuan_provinsi" value="{{ original.tujuan_provinsi.id }}">
+<input type="hidden" id="id_tujuan_provinsi_nama" value="{{ original.tujuan_provinsi.nama|default:'' }}">
 <input type="hidden" id="id_jenis_transportasi" value="{{ original.jenis_transportasi }}">
 <input type="hidden" id="id_jenis_perjalanan" value="{{ original.jenis_perjalanan }}">
 <input type="hidden" id="id_tahun_sbm" value="{{ original.tahun_sbm }}">
