@@ -1030,6 +1030,18 @@ function initAdminFilter() {
             updateAdminRowHotelLayout(row, false);
             toggleAdminHotelInputs(row, false);
         } else if (isPenginapanBerkas(select)) {
+            const maxNights = getAdminMaxNights();
+            const currentNights = getAdminCurrentClaimedNights();
+            if (currentNights >= maxNights) {
+                alert(`Total malam menginap yang diklaim sudah mencapai batas maksimum (${maxNights} malam). Anda tidak perlu menambahkan berkas akomodasi baru.`);
+                select.value = "";
+                if (hotelTagHidden) hotelTagHidden.value = '';
+                updateAdminRowHotelLayout(row, false);
+                toggleAdminHotelInputs(row, false);
+                updateAdminEstimasi();
+                return;
+            }
+
             if (hotelTagHidden && hotelTagHidden.value) {
                 const parsed = parsePenginapanKeterangan(hotelTagHidden.value);
                 if (parsed) {
@@ -1167,6 +1179,42 @@ function initAdminFilter() {
         }
         harian.sort((a, b) => a.hari_ke - b.hari_ke);
         return harian;
+    }
+
+    function getAdminMaxNights() {
+        const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
+        const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
+        const jenisPerjadin = document.querySelector('#id_jenis_perjalanan')?.value;
+        
+        let maxNights = 0;
+        if (jenisPerjadin !== 'fullboard_luar' && jenisPerjadin !== 'fullboard_dalam') {
+            if (tanggalBerangkat && tanggalKembali) {
+                const diffTime = new Date(tanggalKembali) - new Date(tanggalBerangkat);
+                maxNights = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+            }
+        }
+        return maxNights;
+    }
+
+    function getAdminCurrentClaimedNights() {
+        let totalNights = 0;
+        const rows = document.querySelectorAll('.inline-related tr.form-row:not(.empty-form)');
+        rows.forEach(r => {
+            const select = r.querySelector('select[name$="-jenis_berkas"]');
+            const deleteInput = r.querySelector('input[name$="-DELETE"]');
+            if (deleteInput && deleteInput.checked) return;
+            
+            if (select && isPenginapanBerkas(select)) {
+                const tagHidden = r.querySelector('.admin-hotel-tag-hidden');
+                if (tagHidden && tagHidden.value) {
+                    const parsed = parsePenginapanKeterangan(tagHidden.value);
+                    if (parsed) {
+                        totalNights += parsed.nights;
+                    }
+                }
+            }
+        });
+        return totalNights;
     }
 
     function updateAdminHotelNightsPreview() {
@@ -1454,6 +1502,26 @@ function initAdminFilter() {
     injectAdminTicketModal();
     injectAdminHotelModal();
     fetchTicketRoutes();
+
+    // Intercept "Add another" button clicks for accommodation inline in Admin
+    document.addEventListener('click', function(e) {
+        const addRowBtn = e.target.closest('.add-row a');
+        if (addRowBtn) {
+            const inlineGroup = addRowBtn.closest('.inline-related') || addRowBtn.closest('.inline-group');
+            if (inlineGroup) {
+                const groupText = (inlineGroup.id + ' ' + (inlineGroup.textContent || '')).toLowerCase();
+                if (groupText.includes('penginapan')) {
+                    const maxNights = getAdminMaxNights();
+                    const currentNights = getAdminCurrentClaimedNights();
+                    if (currentNights >= maxNights) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert(`Total malam menginap yang diklaim sudah mencapai batas maksimum (${maxNights} malam). Anda tidak perlu menambahkan berkas akomodasi baru.`);
+                    }
+                }
+            }
+        }
+    });
 
     // Document-level event delegation for select changes & edit button clicks
     document.addEventListener('change', function (e) {

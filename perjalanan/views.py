@@ -175,6 +175,7 @@ def generate_spd_bulk(request):
 
     if request.method == 'POST':
         count_created = 0
+        count_skipped = 0
         try:
             with transaction.atomic():
                 for st in surat_tugas_list:
@@ -188,8 +189,16 @@ def generate_spd_bulk(request):
                                 status=PerjalananDinas.Status.DRAFT,
                             )
                             count_created += 1
+                        else:
+                            count_skipped += 1
                             
-            messages.success(request, f"Berhasil menerbitkan {count_created} SPD baru dengan nomor otomatis.")
+            if count_created > 0:
+                messages.success(request, f"Berhasil menerbitkan {count_created} SPD baru dengan nomor otomatis.")
+            if count_skipped > 0:
+                messages.info(request, f"{count_skipped} SPD dilewati karena sudah pernah diterbitkan sebelumnya.")
+            if count_created == 0 and count_skipped == 0:
+                messages.warning(request, "Tidak ada data SPD yang diproses.")
+                
             del request.session['selected_st_ids']
             return redirect('/admin/perjalanan/perjalanandinas/')
         except Exception as e:

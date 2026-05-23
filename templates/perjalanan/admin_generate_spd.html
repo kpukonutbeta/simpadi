@@ -1,48 +1,55 @@
-{% extends 'base.html' %}
+{% extends 'admin/base_site.html' %}
 {% load static %}
 
-{% block title %}Terbitkan SPD Masal - SIMPADI{% endblock %}
+{% block title %}Terbitkan SPD Masal | SIMPADI Admin{% endblock %}
 
-{% block page_title %}Penerbitan SPD Otomatis{% endblock %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">Beranda</a>
+&rsaquo; <a href="/admin/perjalanan/">Perjalanan Dinas</a>
+&rsaquo; <a href="/admin/perjalanan/surattugas/">Manajemen Surat Tugas</a>
+&rsaquo; Terbitkan SPD Masal
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 800px; margin: 0 auto;">
+<div id="content-main" style="max-width: 800px; margin: 0 auto; background: var(--body-bg, #fff); color: var(--body-fg, #333);">
     <div style="margin-bottom: 2rem;">
-        <h3 style="margin-bottom: 0.5rem;"><i class="fas fa-magic"></i> Konfigurasi Penomoran</h3>
-        <p style="color: var(--text-muted);">Sistem akan mencari nomor terakhir dan melakukan <i>increment</i> otomatis untuk pegawai yang terpilih.</p>
+        <h1 style="margin-bottom: 0.5rem;"><i class="fas fa-magic"></i> Penerbitan SPD Otomatis</h1>
+        <p style="color: var(--text-muted, #666); font-size: 0.9rem;">Sistem akan mencari nomor terakhir dan melakukan <i>increment</i> otomatis untuk pegawai yang terpilih.</p>
     </div>
 
     <form method="post">
         {% csrf_token %}
         
-        <div class="form-group" style="margin-bottom: 2rem; background: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border);">
+        <div class="module" style="margin-bottom: 2rem; background: var(--darker-bg, #f8fafc); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color, #ddd);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <label class="form-label" style="color: var(--primary); font-weight: 800; margin: 0;">FORMAT NOMOR SPD (OTOMATIS)</label>
-                <a href="/admin/perjalanan/pengaturannomorspd/" target="_blank" style="font-size: 0.75rem; color: #3b82f6; text-decoration: none;">
+                <label style="color: var(--primary, #2563eb); font-weight: 800; margin: 0; font-size: 0.85rem; text-transform: uppercase;">Format Nomor SPD (Otomatis)</label>
+                <a href="/admin/perjalanan/pengaturannomorspd/" target="_blank" style="font-size: 0.75rem; color: #2563eb; text-decoration: none;">
                     <i class="fas fa-cog"></i> Ubah Pengaturan
                 </a>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 1.25rem; font-weight: 700; color: #1e293b;">
-                <span style="color: #3b82f6;">[Next Number]</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 1.25rem; font-weight: 700; color: var(--body-fg, #1e293b);">
+                <span style="color: #2563eb;">[Next Number]</span>
                 <span style="color: #64748b;">{{ default_suffix }}</span>
             </div>
-            <small style="display: block; margin-top: 0.5rem; color: var(--text-muted);">
+            <small style="display: block; margin-top: 0.5rem; color: var(--text-muted, #666); font-size: 0.8rem;">
                 Nomor akan digenerate otomatis mulai dari angka terakhir + 1. Suffix diatur melalui menu Pengaturan.
             </small>
         </div>
 
-
-
-        <div style="margin-bottom: 2rem;">
-            <h4 style="font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem;">Surat Tugas Terpilih ({{ surat_tugas_list|length }})</h4>
+        <div class="module" style="margin-bottom: 2rem;">
+            <h2 style="font-size: 0.875rem; color: var(--text-muted, #666); text-transform: uppercase; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color, #ddd); padding-bottom: 0.5rem;">
+                Surat Tugas Terpilih ({{ surat_tugas_list|length }})
+            </h2>
             <div style="display: grid; gap: 0.75rem;">
                 {% for st in surat_tugas_list %}
-                <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.75rem; background: white;">
-                    <div style="font-weight: 700;">{{ st.nomor_surat }}</div>
-                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.5rem;">{{ st.perihal }}</div>
+                <div style="padding: 1rem; border: 1px solid var(--border-color, #ddd); border-radius: 8px; background: var(--body-bg, #fff);">
+                    <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.25rem;">{{ st.nomor_surat }}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted, #666); margin-bottom: 0.75rem;">{{ st.perihal }}</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                         {% for p in st.pegawai.all %}
-                        <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.7rem; border: 1px solid #e2e8f0;">
+                        <span style="background: var(--darker-bg, #f1f5f9); color: var(--body-fg, #475569); font-size: 0.75rem; border: 1px solid var(--border-color, #e2e8f0); padding: 0.25rem 0.5rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
                             <i class="fas fa-user"></i> {{ p.nama }}
                         </span>
                         {% endfor %}
@@ -52,19 +59,10 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-primary" style="flex: 2;">
-                <i class="fas fa-check-circle"></i> Terbitkan Semua SPD Sekarang
-            </button>
-            <a href="/admin/perjalanan/surattugas/" class="btn" style="background: #e2e8f0; color: #475569; flex: 1; text-align: center; text-decoration: none;">Batal</a>
+        <div class="submit-row" style="display: flex; gap: 1rem; padding: 1rem 0; margin: 0; background: none; border: none; justify-content: flex-start; align-items: center;">
+            <input type="submit" value="Terbitkan Semua SPD Sekarang" class="default" style="float: none; margin: 0; padding: 10px 20px; font-weight: 600; cursor: pointer;">
+            <a href="/admin/perjalanan/surattugas/" class="closelink" style="display: inline-block; padding: 10px 20px; background: #e2e8f0; color: #475569; border-radius: 4px; text-decoration: none; font-size: 0.85rem; text-align: center; line-height: 1.2;">Batal</a>
         </div>
     </form>
 </div>
-
-<style>
-    .form-group { margin-bottom: 1.25rem; }
-    .form-label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .form-control { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 0.5rem; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-</style>
 {% endblock %}
