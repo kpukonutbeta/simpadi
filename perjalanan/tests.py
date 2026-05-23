@@ -1107,6 +1107,16 @@ class PerjalananKalenderTestCase(TestCase):
             defaults={'uang_harian': Decimal('400000'), 'plafon_penginapan': Decimal('500000'), 'plafon_transportasi': Decimal('300000')}
         )
 
+        # Setup JenisBerkas
+        jb_hotel, _ = JenisBerkas.objects.get_or_create(
+            nama="Kuitansi Hotel Test",
+            defaults={'wajib': False, 'nominal_biaya': True, 'kategori_biaya': 'penginapan'}
+        )
+        jb_tiket, _ = JenisBerkas.objects.get_or_create(
+            nama="Tiket Pesawat Test",
+            defaults={'wajib': False, 'nominal_biaya': True, 'kategori_biaya': 'transportasi_pesawat'}
+        )
+
         # Trip A (pd1): May 1 to May 3
         st1 = SuratTugas.objects.create(
             nomor_surat="001/ST/2026", perihal="Rakornas", tgl_surat=datetime.date(2026, 4, 30),
@@ -1139,9 +1149,32 @@ class PerjalananKalenderTestCase(TestCase):
         biaya1.save()
         biaya2.save()
 
-        # Both trips initially calculate 3 days of uang harian (3 * 400.000 = 1.200.000)
+        # Create hotel bill for Trip B (pd2): 2 nights covering May 2 and May 3 (unpaid dates)
+        BerkasPerjalanan.objects.create(
+            perjalanan=pd2,
+            jenis_berkas=jb_hotel,
+            nominal=Decimal('1000000'),
+            malam_menginap=2,
+            keterangan=f"[SBM-PENGINAPAN:2026-05-02:2026-05-04:2:{self.provinsi.id}:{self.provinsi.nama}] | Hotel Trip B"
+        )
+
+        # Create plane ticket for Trip B (pd2): date May 2 in description
+        BerkasPerjalanan.objects.create(
+            perjalanan=pd2,
+            jenis_berkas=jb_tiket,
+            nominal=Decimal('1500000'),
+            keterangan="[SBM-TIKET:1-2-ekonomi:Kendari:Jakarta] | Tiket Pergi 2026-05-02"
+        )
+
+        # Re-save/calculate after attaching files
+        pd2.biaya.save()
+
+        # Verify initial costs: Both trips initially calculate 3 days of uang harian (3 * 400.000 = 1.200.000)
+        # Trip B has hotel (1.000.000) and ticket (1.500.000)
         self.assertEqual(pd1.biaya.uang_harian_riil, Decimal('1200000'))
         self.assertEqual(pd2.biaya.uang_harian_riil, Decimal('1200000'))
+        self.assertEqual(pd2.biaya.biaya_penginapan_riil, Decimal('1000000'))
+        self.assertEqual(pd2.biaya.biaya_transportasi_riil, Decimal('1500000'))
 
         # Admin resolves conflict: choosing Trip A (pd1) for May 2 & 3
         url = reverse('perjalanan:resolusi_konflik')
@@ -1168,13 +1201,26 @@ class PerjalananKalenderTestCase(TestCase):
         self.assertEqual(harian_b4.jenis_harian, 'luar_kota') # May 4 was not part of the overlap
 
         # Verify costs are recalculated
-        # Trip A should remain 1.200.000
+        # Trip A should remain 1.200.000 harian
         pd1.biaya.refresh_from_db()
         self.assertEqual(pd1.biaya.uang_harian_riil, Decimal('1200000'))
 
         # Trip B should only be financed for May 4 (1 day = 400.000)
+        # Trip B's hotel (May 2 & 3) is fully unfinanced/cancelled -> 0
+        # Trip B's plane ticket (May 2) is fully unfinanced/cancelled -> 0
         pd2.biaya.refresh_from_db()
         self.assertEqual(pd2.biaya.uang_harian_riil, Decimal('400000'))
+        self.assertEqual(pd2.biaya.biaya_penginapan_riil, Decimal('0'))
+        self.assertEqual(pd2.biaya.biaya_transportasi_riil, Decimal('0'))
+
+        # Verify cancellation text is appended to description in breakdown
+        bd = pd2.biaya.calculate_breakdown()
+        # Hotel bill description check
+        hotel_desc = bd['breakdown_categories']['biaya_penginapan']['items'][0]['keterangan']
+        self.assertIn("[DIBATALKAN 2 MALAM KARENA BENTROK]", hotel_desc)
+        # Ticket description check
+        ticket_desc = bd['breakdown_categories']['biaya_perjalanan']['items'][0]['keterangan']
+        self.assertIn("[DIBATALKAN KARENA BENTROK]", ticket_desc)
 
     def test_resolusi_konflik_employee_forbidden(self):
         # Log in as normal employee user

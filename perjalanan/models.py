@@ -491,6 +491,122 @@ class BiayaPerjalanan(models.Model):
                                     total_transport_non_pesawat_input += nominal
                                     non_flight_transports.append({'nominal': nominal, 'keterangan': keterangan or jenis.nama, 'file_url': file_url, 'file_name': file_name})
 
+        # Process overlap cancellations for hotel and transport bills
+        from datetime import datetime
+        unpaid_dates = set()
+        if self.perjalanan_id:
+            unpaid_dates = set(
+                self.perjalanan.harian_details.filter(jenis_harian='tidak_dibayai').values_list('tanggal', flat=True)
+            )
+        if mock_harian:
+            for item in mock_harian:
+                if item.get('jenis_harian') == 'tidak_dibayai':
+                    hk = int(item.get('hari_ke') or 0)
+                    if hk and self.perjalanan.tanggal_berangkat:
+                        unpaid_dates.add(self.perjalanan.tanggal_berangkat + timedelta(days=hk - 1))
+
+        # Helper to parse dates from string
+        def get_date_from_string(s):
+            if not s:
+                return None
+            m1 = re.search(r"\b(\d{4})-(\d{2})-(\d{2})\b", s)
+            if m1:
+                try:
+                    return datetime.strptime(m1.group(0), '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            m2 = re.search(r"\b(\d{2})-(\d{2})-(\d{4})\b", s)
+            if m2:
+                try:
+                    return datetime.strptime(m2.group(0), '%d-%m-%Y').date()
+                except ValueError:
+                    pass
+            m3 = re.search(r"\b(\d{2})/(\d{2})/(\d{4})\b", s)
+            if m3:
+                try:
+                    return datetime.strptime(m3.group(0), '%d/%m/%Y').date()
+                except ValueError:
+                    pass
+            return None
+
+        # Adjust hotel/penginapan bills
+        def adjust_hotel_bill(bill):
+            if not bill['keterangan'] or not bill['keterangan'].startswith('[SBM-PENGINAPAN:'):
+                return
+            c_in, c_out, malam, p_id, p_nama, u_desc = parse_penginapan_keterangan(bill['keterangan'])
+            if not c_in or not c_out:
+                return
+            try:
+                start_dt = datetime.strptime(c_in, '%Y-%m-%d').date()
+                end_dt = datetime.strptime(c_out, '%Y-%m-%d').date()
+            except Exception:
+                return
+            
+            total_nights = (end_dt - start_dt).days
+            if total_nights <= 0:
+                return
+            
+            unpaid_count = 0
+            curr = start_dt
+            while curr < end_dt:
+                if curr in unpaid_dates:
+                    unpaid_count += 1
+                curr += timedelta(days=1)
+                
+            if unpaid_count > 0:
+                financed_nights = max(0, total_nights - unpaid_count)
+                orig_nominal = bill['nominal']
+                bill['nominal'] = Decimal(str(orig_nominal * financed_nights / total_nights)).quantize(Decimal('1'))
+                bill['malam'] = financed_nights
+                # Add cancellation note to keterangan
+                bill['keterangan'] = bill['keterangan'] + f" [DIBATALKAN {unpaid_count} MALAM KARENA BENTROK]"
+
+        for b in hotel_bills: adjust_hotel_bill(b)
+        for b in lumpsum_bills: adjust_hotel_bill(b)
+        for b in fb_luar_bills: adjust_hotel_bill(b)
+        for b in fb_dalam_bills: adjust_hotel_bill(b)
+
+        # Recalculate hotel/penginapan sums from adjusted lists
+        total_hotel_input = sum(b['nominal'] for b in hotel_bills)
+        total_malam_hotel = sum(b['malam'] for b in hotel_bills)
+        total_malam_lumpsum = sum(b['malam'] for b in lumpsum_bills)
+        total_malam_fb_luar = sum(b['malam'] for b in fb_luar_bills)
+        total_malam_fb_dalam = sum(b['malam'] for b in fb_dalam_bills)
+
+        # Adjust flight tickets
+        for idx, ft in enumerate(flight_tickets_details):
+            tgl_ticket = get_date_from_string(ft.get('route_str') or '') or get_date_from_string(ft.get('file_name') or '')
+            if not tgl_ticket:
+                # Fallback based on sequence
+                if len(flight_tickets_details) == 1:
+                    tgl_ticket = self.perjalanan.tanggal_berangkat
+                elif len(flight_tickets_details) == 2:
+                    if idx == 0:
+                        tgl_ticket = self.perjalanan.tanggal_berangkat
+                    else:
+                        tgl_ticket = self.perjalanan.tanggal_kembali
+                        
+            if tgl_ticket and tgl_ticket in unpaid_dates:
+                ft['nominal'] = Decimal('0')
+                ft['route_str'] = ft.get('route_str', '') + " [DIBATALKAN KARENA BENTROK]"
+
+        # Adjust non-flight transports
+        for nt in non_flight_transports:
+            tgl_ticket = get_date_from_string(nt.get('keterangan') or '') or get_date_from_string(nt.get('file_name') or '')
+            if not tgl_ticket:
+                k_lower = (nt.get('keterangan') or '').lower()
+                if 'berangkat' in k_lower or 'pergi' in k_lower:
+                    tgl_ticket = self.perjalanan.tanggal_berangkat
+                elif 'kembali' in k_lower or 'pulang' in k_lower:
+                    tgl_ticket = self.perjalanan.tanggal_kembali
+                    
+            if tgl_ticket and tgl_ticket in unpaid_dates:
+                nt['nominal'] = Decimal('0')
+                nt['keterangan'] = nt.get('keterangan', '') + " [DIBATALKAN KARENA BENTROK]"
+
+        # Recalculate non-plane transport sum
+        total_transport_non_pesawat_input = sum(b['nominal'] for b in non_flight_transports)
+
         total_tiket_pesawat_nominal = Decimal('0')
         max_plafon_tiket = Decimal('0')
         if flight_tickets_details:
@@ -791,10 +907,13 @@ class BiayaPerjalanan(models.Model):
 
         for (prov_obj, jh, rate), qty in sorted(harian_item_groups.items(), key=lambda x: x[0][0].nama if (x[0][0] and hasattr(x[0][0], 'nama')) else ""):
             jh_label = JENIS_HARIAN_LABELS.get(jh, jh)
+            item_keterangan = f"Uang Harian {jh_label} ({prov_obj.nama if prov_obj else ''})"
+            if jh == 'tidak_dibayai':
+                item_keterangan += " [DIBATALKAN KARENA BENTROK]"
             uang_harian_items.append({
                 'perihal': 'Uang Harian Riil',
                 'no': 0,
-                'keterangan': f"Uang Harian {jh_label} ({prov_obj.nama if prov_obj else ''})",
+                'keterangan': item_keterangan,
                 'harga': rate,
                 'kuantitas': f"{qty} (hari)",
                 'total': qty * rate,
@@ -817,6 +936,25 @@ class BiayaPerjalanan(models.Model):
                 'harga': rate,
                 'kuantitas': f"{qty} (hari)",
                 'total': qty * rate,
+                'file_url': None,
+                'file_name': None
+            })
+
+        # Add cancelled representasi row if applicable
+        cancelled_repr_qty = 0
+        for day_info in harian_breakdown:
+            if day_info['jenis_harian'] == 'tidak_dibayai':
+                sbm_day = get_sbm_for_province(day_info['provinsi_id'])
+                if sbm_day and getattr(sbm_day, 'uang_representasi', Decimal('0')) > 0:
+                    cancelled_repr_qty += 1
+        if cancelled_repr_qty > 0:
+            uang_representasi_items.append({
+                'perihal': 'Uang Representasi Riil',
+                'no': 0,
+                'keterangan': f"Uang Representasi ({self.perjalanan.tujuan_provinsi.nama if self.perjalanan.tujuan_provinsi else ''}) [DIBATALKAN KARENA BENTROK]",
+                'harga': Decimal('0'),
+                'kuantitas': f"{cancelled_repr_qty} (hari)",
+                'total': Decimal('0'),
                 'file_url': None,
                 'file_name': None
             })
