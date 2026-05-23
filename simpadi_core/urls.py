@@ -39,6 +39,14 @@ _original_get_app_list = admin.site.__class__.get_app_list
 def _ordered_get_app_list(self, request, app_label=None):
     app_list = _original_get_app_list(self, request, app_label)
     for app in app_list:
+        if app.get('app_label') == 'perjalanan':
+            if not any(m.get('object_name') == 'KalenderPerjadin' for m in app.get('models', [])):
+                app['models'].append({
+                    'name': 'Kalender Perjadin',
+                    'object_name': 'KalenderPerjadin',
+                    'admin_url': '/perjalanan/kalender/',
+                    'view_only': True,
+                })
         for model in app.get('models', []):
             if model.get('object_name') == 'PerjalananDinas':
                 model['name'] = 'Manajemen SPD'

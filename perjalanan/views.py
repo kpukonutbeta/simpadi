@@ -388,44 +388,85 @@ def get_standar_biaya_tiket_ajax(request):
 @login_required
 def kalender_perjadin(request):
     import json
-    if not hasattr(request.user, 'pegawai_profile'):
-        messages.error(request, "Akun Anda belum terhubung dengan data Pegawai.")
-        return redirect('core:dashboard')
+    is_admin = request.user.is_staff
     
-    pegawai = request.user.pegawai_profile
-    perjalanan_qs = PerjalananDinas.objects.filter(pegawai=pegawai).select_related('surat_tugas__tujuan_provinsi', 'pegawai')
+    if is_admin:
+        perjalanan_qs = PerjalananDinas.objects.all().select_related('surat_tugas__tujuan_provinsi', 'pegawai')
+    else:
+        if not hasattr(request.user, 'pegawai_profile'):
+            messages.error(request, "Akun Anda belum terhubung dengan data Pegawai.")
+            return redirect('core:dashboard')
+        pegawai = request.user.pegawai_profile
+        perjalanan_qs = PerjalananDinas.objects.filter(pegawai=pegawai).select_related('surat_tugas__tujuan_provinsi', 'pegawai')
     
     trips = list(perjalanan_qs)
     overlaps = []
     overlapping_ids = set()
     
-    for i in range(len(trips)):
-        for j in range(i + 1, len(trips)):
-            t1 = trips[i]
-            t2 = trips[j]
-            if t1.tanggal_berangkat <= t2.tanggal_kembali and t1.tanggal_kembali >= t2.tanggal_berangkat:
-                overlapping_ids.add(t1.id)
-                overlapping_ids.add(t2.id)
-                overlaps.append({
-                    'trip1': {
-                        'id': t1.id,
-                        'nomor_spd': t1.nomor_spd or 'Draft SPD',
-                        'nomor_surat': t1.surat_tugas.nomor_surat,
-                        'perihal': t1.surat_tugas.perihal,
-                        'maksud_perjalanan': t1.maksud_perjalanan,
-                        'tujuan': t1.tujuan_provinsi.nama,
-                        'tanggal': f"{t1.tanggal_berangkat.strftime('%d %b %Y')} - {t1.tanggal_kembali.strftime('%d %b %Y')}"
-                    },
-                    'trip2': {
-                        'id': t2.id,
-                        'nomor_spd': t2.nomor_spd or 'Draft SPD',
-                        'nomor_surat': t2.surat_tugas.nomor_surat,
-                        'perihal': t2.surat_tugas.perihal,
-                        'maksud_perjalanan': t2.maksud_perjalanan,
-                        'tujuan': t2.tujuan_provinsi.nama,
-                        'tanggal': f"{t2.tanggal_berangkat.strftime('%d %b %Y')} - {t2.tanggal_kembali.strftime('%d %b %Y')}"
-                    }
+    from collections import defaultdict
+    from datetime import timedelta
+    
+    # 1. Group travels by pegawai_id
+    pegawai_trips = defaultdict(list)
+    for t in trips:
+        pegawai_trips[t.pegawai_id].append(t)
+        
+    # 2. Find overlaps per employee grouped by date
+    for peg_id, p_trips in pegawai_trips.items():
+        date_trips = defaultdict(list)
+        for t in p_trips:
+            # Find all dates this trip spans
+            curr = t.tanggal_berangkat
+            if curr and t.tanggal_kembali:
+                while curr <= t.tanggal_kembali:
+                    date_trips[curr].append(t)
+                    curr += timedelta(days=1)
+        
+        # Filter dates with > 1 trips (conflicts)
+        conflict_dates = {}
+        for dt, ts in date_trips.items():
+            if len(ts) > 1:
+                conflict_dates[dt] = ts
+        
+        if conflict_dates:
+            peg_nama = p_trips[0].pegawai.nama
+            overlap_dates_details = []
+            for dt in sorted(conflict_dates.keys()):
+                trips_on_date = conflict_dates[dt]
+                
+                trips_details = []
+                any_financed = False
+                for t in trips_on_date:
+                    h_day = t.harian_details.filter(tanggal=dt).first()
+                    is_financed = True
+                    if h_day and h_day.jenis_harian == 'tidak_dibayai':
+                        is_financed = False
+                    
+                    overlapping_ids.add(t.id)
+                    
+                    trips_details.append({
+                        'id': t.id,
+                        'nomor_spd': t.nomor_spd or 'Draft SPD',
+                        'tujuan': t.tujuan_provinsi.nama,
+                        'perihal': t.surat_tugas.perihal,
+                        'maksud_perjalanan': t.maksud_perjalanan,
+                        'is_financed': is_financed
+                    })
+                    if is_financed:
+                        any_financed = True
+                        
+                overlap_dates_details.append({
+                    'tanggal_iso': dt.isoformat(),
+                    'tanggal_str': dt.strftime('%d %b %Y'),
+                    'trips': trips_details,
+                    'none_financed': not any_financed
                 })
+            
+            overlaps.append({
+                'pegawai_id': peg_id,
+                'pegawai_nama': peg_nama,
+                'conflict_dates': overlap_dates_details
+            })
                 
     serialized_trips = []
     for t in trips:
@@ -434,8 +475,9 @@ def kalender_perjadin(request):
             'nomor_spd': t.nomor_spd or 'Draft SPD',
             'nomor_surat': t.surat_tugas.nomor_surat,
             'perihal': t.surat_tugas.perihal,
-            'tanggal_berangkat': t.tanggal_berangkat.isoformat(),
-            'tanggal_kembali': t.tanggal_kembali.isoformat(),
+            'pegawai_nama': t.pegawai.nama,
+            'tanggal_berangkat': t.tanggal_berangkat.isoformat() if t.tanggal_berangkat else None,
+            'tanggal_kembali': t.tanggal_kembali.isoformat() if t.tanggal_kembali else None,
             'tujuan': t.tujuan_provinsi.nama,
             'status': t.status,
             'status_display': t.get_status_display(),
@@ -446,7 +488,49 @@ def kalender_perjadin(request):
         'trips_json': json.dumps(serialized_trips),
         'overlaps': overlaps,
         'has_overlaps': len(overlaps) > 0,
+        'is_admin': is_admin,
     }
     return render(request, 'perjalanan/kalender_perjadin.html', context)
+
+
+@login_required
+@staff_member_required
+def resolusi_konflik(request):
+    import datetime
+    from .models import HarianPerjalanan
+    
+    if request.method == 'POST':
+        pegawai_id = request.POST.get('pegawai_id')
+        
+        # We find all inputs chosen_<date_iso>
+        for key, value in request.POST.items():
+            if key.startswith('chosen_'):
+                date_str = key.replace('chosen_', '')
+                try:
+                    tanggal = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    continue
+                chosen_trip_id = value
+                
+                # Get all HarianPerjalanan for this pegawai and date
+                harian_days = HarianPerjalanan.objects.filter(
+                    perjalanan__pegawai_id=pegawai_id,
+                    tanggal=tanggal
+                )
+                
+                for h in harian_days:
+                    if str(h.perjalanan_id) == chosen_trip_id:
+                        # Restore to luar_kota if it was set to tidak_dibayai
+                        if h.jenis_harian == 'tidak_dibayai':
+                            h.jenis_harian = 'luar_kota'
+                            h.save()
+                    else:
+                        # Set to tidak_dibayai
+                        if h.jenis_harian != 'tidak_dibayai':
+                            h.jenis_harian = 'tidak_dibayai'
+                            h.save()
+                            
+        messages.success(request, "Resolusi bentrok jadwal berhasil disimpan.")
+    return redirect('perjalanan:kalender_perjadin')
 
 

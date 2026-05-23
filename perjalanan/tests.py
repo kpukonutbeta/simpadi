@@ -981,6 +981,215 @@ class PerjalananKalenderTestCase(TestCase):
         self.assertTrue(trips_data[0]['has_overlap'])
         self.assertTrue(trips_data[1]['has_overlap'])
 
+    def test_admin_kalender_sees_all_pegawais(self):
+        # Create admin user
+        admin_user = User.objects.create_superuser(email="admin@kpu.go.id", username="adminuser", password="password123")
+        self.client.force_login(admin_user)
+
+        # Create Pegawai 2
+        user2 = User.objects.create_user(email="pegawai2@kpu.go.id", username="pegawai2user", password="password123")
+        pegawai2 = Pegawai.objects.create(
+            nip="199501012019011002",
+            nama="Christian Gonzales",
+            email="pegawai2@kpu.go.id",
+            golongan="III/b",
+            jabatan="Fungsional Umum",
+            user=user2
+        )
+
+        # Trip for Pegawai 1 (self.pegawai): May 1 to May 3
+        st1 = SuratTugas.objects.create(
+            nomor_surat="001/ST/2026", perihal="Rakornas", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 1), tanggal_kembali=datetime.date(2026, 5, 3),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st1.pegawai.add(self.pegawai)
+        PerjalananDinas.objects.create(surat_tugas=st1, pegawai=self.pegawai, status=PerjalananDinas.Status.APPROVED)
+
+        # Trip for Pegawai 2: May 1 to May 3 (same dates, but different pegawai)
+        st2 = SuratTugas.objects.create(
+            nomor_surat="002/ST/2026", perihal="Bimtek", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 1), tanggal_kembali=datetime.date(2026, 5, 3),
+            tempat_berangkat="Kendari", tempat_tujuan="Surabaya", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st2.pegawai.add(pegawai2)
+        PerjalananDinas.objects.create(surat_tugas=st2, pegawai=pegawai2, status=PerjalananDinas.Status.PENDING)
+
+        url = reverse('perjalanan:kalender_perjadin')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Admin should see both trips
+        trips_data = json.loads(response.context['trips_json'])
+        self.assertEqual(len(trips_data), 2)
+        self.assertTrue(any(t['pegawai_nama'] == self.pegawai.nama for t in trips_data))
+        self.assertTrue(any(t['pegawai_nama'] == pegawai2.nama for t in trips_data))
+
+    def test_admin_kalender_overlap_detection_per_pegawai(self):
+        # Create admin user
+        admin_user = User.objects.create_superuser(email="admin@kpu.go.id", username="adminuser", password="password123")
+        self.client.force_login(admin_user)
+
+        # Create Pegawai 2
+        user2 = User.objects.create_user(email="pegawai2@kpu.go.id", username="pegawai2user", password="password123")
+        pegawai2 = Pegawai.objects.create(
+            nip="199501012019011002",
+            nama="Christian Gonzales",
+            email="pegawai2@kpu.go.id",
+            golongan="III/b",
+            jabatan="Fungsional Umum",
+            user=user2
+        )
+
+        # Pegawai 1 Trip 1: May 1 to May 5
+        st1 = SuratTugas.objects.create(
+            nomor_surat="001/ST/2026", perihal="Rakornas", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 1), tanggal_kembali=datetime.date(2026, 5, 5),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st1.pegawai.add(self.pegawai)
+        pd1 = PerjalananDinas.objects.create(surat_tugas=st1, pegawai=self.pegawai, status=PerjalananDinas.Status.APPROVED)
+
+        # Pegawai 1 Trip 2 (overlaps with Trip 1): May 4 to May 7
+        st2 = SuratTugas.objects.create(
+            nomor_surat="002/ST/2026", perihal="Bimtek", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 4), tanggal_kembali=datetime.date(2026, 5, 7),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st2.pegawai.add(self.pegawai)
+        pd2 = PerjalananDinas.objects.create(surat_tugas=st2, pegawai=self.pegawai, status=PerjalananDinas.Status.PENDING)
+
+        # Pegawai 2 Trip (overlaps in DATE with Pegawai 1's trips, but different pegawai): May 3 to May 6
+        st3 = SuratTugas.objects.create(
+            nomor_surat="003/ST/2026", perihal="Kunjungan Kerja", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 3), tanggal_kembali=datetime.date(2026, 5, 6),
+            tempat_berangkat="Kendari", tempat_tujuan="Surabaya", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st3.pegawai.add(pegawai2)
+        pd3 = PerjalananDinas.objects.create(surat_tugas=st3, pegawai=pegawai2, status=PerjalananDinas.Status.APPROVED)
+
+        url = reverse('perjalanan:kalender_perjadin')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # There should only be 1 overlap recorded (between pd1 and pd2 for Pegawai 1)
+        self.assertTrue(response.context['has_overlaps'])
+        self.assertEqual(len(response.context['overlaps']), 1)
+        overlap = response.context['overlaps'][0]
+        self.assertEqual(overlap['pegawai_nama'], self.pegawai.nama)
+        
+        # Verify serialized JSON
+        trips_data = {t['id']: t for t in json.loads(response.context['trips_json'])}
+        self.assertTrue(trips_data[pd1.id]['has_overlap'])
+        self.assertTrue(trips_data[pd2.id]['has_overlap'])
+        self.assertFalse(trips_data[pd3.id]['has_overlap'])
+
+    def test_resolusi_konflik_admin_success(self):
+        # Create admin user
+        admin_user = User.objects.create_superuser(email="admin@kpu.go.id", username="adminuser", password="password123")
+        self.client.force_login(admin_user)
+
+        # Setup StandarBiaya for calculation
+        StandarBiaya.objects.get_or_create(
+            provinsi=self.provinsi,
+            golongan=self.pegawai.golongan,
+            tahun=2024,
+            defaults={'uang_harian': Decimal('400000'), 'plafon_penginapan': Decimal('500000'), 'plafon_transportasi': Decimal('300000')}
+        )
+
+        # Trip A (pd1): May 1 to May 3
+        st1 = SuratTugas.objects.create(
+            nomor_surat="001/ST/2026", perihal="Rakornas", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 1), tanggal_kembali=datetime.date(2026, 5, 3),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st1.pegawai.add(self.pegawai)
+        pd1 = PerjalananDinas.objects.create(surat_tugas=st1, pegawai=self.pegawai, status=PerjalananDinas.Status.APPROVED)
+
+        # Trip B (pd2): May 2 to May 4 (overlaps on May 2 & 3)
+        st2 = SuratTugas.objects.create(
+            nomor_surat="002/ST/2026", perihal="Bimtek", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 2), tanggal_kembali=datetime.date(2026, 5, 4),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st2.pegawai.add(self.pegawai)
+        pd2 = PerjalananDinas.objects.create(surat_tugas=st2, pegawai=self.pegawai, status=PerjalananDinas.Status.PENDING)
+
+        # Create biaya perjalanan
+        biaya1, _ = BiayaPerjalanan.objects.get_or_create(perjalanan=pd1)
+        biaya2, _ = BiayaPerjalanan.objects.get_or_create(perjalanan=pd2)
+
+        # Verify initial state of harian_details
+        pd1.sync_harian_details()
+        pd2.sync_harian_details()
+        biaya1.save()
+        biaya2.save()
+
+        # Both trips initially calculate 3 days of uang harian (3 * 400.000 = 1.200.000)
+        self.assertEqual(pd1.biaya.uang_harian_riil, Decimal('1200000'))
+        self.assertEqual(pd2.biaya.uang_harian_riil, Decimal('1200000'))
+
+        # Admin resolves conflict: choosing Trip A (pd1) for May 2 & 3
+        url = reverse('perjalanan:resolusi_konflik')
+        post_data = {
+            'pegawai_id': self.pegawai.id,
+            'chosen_2026-05-02': pd1.id,
+            'chosen_2026-05-03': pd1.id,
+        }
+        response = self.client.post(url, post_data)
+        self.assertRedirects(response, reverse('perjalanan:kalender_perjadin'))
+
+        # Verify Trip A still has normal rates
+        harian_a2 = pd1.harian_details.get(tanggal=datetime.date(2026, 5, 2))
+        harian_a3 = pd1.harian_details.get(tanggal=datetime.date(2026, 5, 3))
+        self.assertEqual(harian_a2.jenis_harian, 'luar_kota')
+        self.assertEqual(harian_a3.jenis_harian, 'luar_kota')
+
+        # Verify Trip B has tidak_dibayai on May 2 & 3
+        harian_b2 = pd2.harian_details.get(tanggal=datetime.date(2026, 5, 2))
+        harian_b3 = pd2.harian_details.get(tanggal=datetime.date(2026, 5, 3))
+        harian_b4 = pd2.harian_details.get(tanggal=datetime.date(2026, 5, 4))
+        self.assertEqual(harian_b2.jenis_harian, 'tidak_dibayai')
+        self.assertEqual(harian_b3.jenis_harian, 'tidak_dibayai')
+        self.assertEqual(harian_b4.jenis_harian, 'luar_kota') # May 4 was not part of the overlap
+
+        # Verify costs are recalculated
+        # Trip A should remain 1.200.000
+        pd1.biaya.refresh_from_db()
+        self.assertEqual(pd1.biaya.uang_harian_riil, Decimal('1200000'))
+
+        # Trip B should only be financed for May 4 (1 day = 400.000)
+        pd2.biaya.refresh_from_db()
+        self.assertEqual(pd2.biaya.uang_harian_riil, Decimal('400000'))
+
+    def test_resolusi_konflik_employee_forbidden(self):
+        # Log in as normal employee user
+        self.client.force_login(self.user)
+
+        url = reverse('perjalanan:resolusi_konflik')
+        post_data = {
+            'pegawai_id': self.pegawai.id,
+            'chosen_2026-05-02': 'some-id',
+        }
+        response = self.client.post(url, post_data)
+        # Should redirect to login / admin login since they aren't staff
+        self.assertEqual(response.status_code, 302)
+
+
 
 
 

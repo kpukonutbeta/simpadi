@@ -288,6 +288,7 @@ class HarianPerjalanan(models.Model):
         HALFDAY = 'halfday', 'Rapat/Pertemuan Halfday'
         FULLDAY = 'fullday', 'Rapat/Pertemuan Fullday'
         FULLBOARD = 'fullboard', 'Rapat/Pertemuan Fullboard'
+        TIDAK_DIBAYAI = 'tidak_dibayai', 'Tidak Dibiayai (Bentrok)'
 
     perjalanan = models.ForeignKey(PerjalananDinas, on_delete=models.CASCADE, related_name='harian_details')
     hari_ke = models.PositiveIntegerField(verbose_name="Hari Ke")
@@ -562,7 +563,9 @@ class BiayaPerjalanan(models.Model):
             sbm_day = get_sbm_for_province(prov_id)
 
             if sbm_day:
-                if jenis_harian == 'luar_kota':
+                if jenis_harian == 'tidak_dibayai':
+                    rate = Decimal('0')
+                elif jenis_harian == 'luar_kota':
                     rate = sbm_day.uang_harian
                 elif jenis_harian == 'dalam_kota':
                     rate = (sbm_day.uang_harian * Decimal('0.40')).quantize(Decimal('1'))
@@ -582,7 +585,9 @@ class BiayaPerjalanan(models.Model):
                 else:
                     rate = sbm_day.uang_harian
 
-                if self.perjalanan.jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
+                if jenis_harian == 'tidak_dibayai':
+                    rep_rate = Decimal('0')
+                elif self.perjalanan.jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
                     rep_rate = Decimal('0')
                 elif jenis_harian == 'luar_kota':
                     rep_rate = getattr(sbm_day, 'uang_representasi', Decimal('0'))
@@ -694,6 +699,7 @@ class BiayaPerjalanan(models.Model):
             'halfday': 'Rapat/Pertemuan Halfday',
             'fullday': 'Rapat/Pertemuan Fullday',
             'fullboard': 'Rapat/Pertemuan Fullboard',
+            'tidak_dibayai': 'Tidak Dibiayai (Bentrok)',
         }
 
         # Group days by (provinsi_nama, jenis_harian, rate) to build a beautiful formula string

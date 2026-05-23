@@ -39,6 +39,11 @@
                     <i class="fas fa-money-bill-wave"></i> SBM (Tarif)
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{% url 'perjalanan:kalender_perjadin' %}" class="nav-link {% if request.resolver_match.url_name == 'kalender_perjadin' %}active{% endif %}">
+                    <i class="fas fa-calendar-alt"></i> Kalender Perjadin
+                </a>
+            </li>
             {% else %}
             <li class="nav-header" style="padding: 1rem 1.5rem; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Menu Pegawai</li>
             <li class="nav-item">
@@ -77,9 +82,11 @@
         <header class="header">
             <h1>{% block page_title %}Dashboard{% endblock %}</h1>
             <div class="actions">
+                {% block header_actions %}
                 <button class="btn btn-primary">
                     <i class="fas fa-plus"></i> Pengajuan Baru
                 </button>
+                {% endblock %}
             </div>
         </header>
 

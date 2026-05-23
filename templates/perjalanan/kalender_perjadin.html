@@ -5,6 +5,8 @@
 
 {% block page_title %}Kalender Perjalanan Dinas{% endblock %}
 
+{% block header_actions %}{% endblock %}
+
 {% block extra_css %}
 <style>
     .calendar-container {
@@ -389,26 +391,77 @@
             <p style="font-size: 0.75rem; color: #991b1b; margin-bottom: 0.75rem; line-height: 1.3;">
                 Pegawai memiliki perjalanan dinas yang berjadwal pada hari yang sama. Silakan tinjau jadwal berikut:
             </p>
-            <div>
+            <div style="margin-top: 0.5rem;">
                 {% for o in overlaps %}
-                <div class="warning-item">
-                    <strong>Jadwal Beririsan:</strong>
-                    <div style="margin-bottom: 0.5rem;">
-                        <span class="badge badge-danger" style="padding: 0.1rem 0.4rem; font-size: 0.65rem;">Trip A</span>
-                        <span style="font-weight: 600;">{{ o.trip1.tujuan }}</span>
-                        <div style="font-size: 0.7rem; color: #7f1d1d;">SPD: {{ o.trip1.nomor_spd }}</div>
-                        <div style="font-size: 0.7rem; color: #7f1d1d; font-style: italic; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ o.trip1.maksud_perjalanan }}">Maksud: {{ o.trip1.maksud_perjalanan|truncatechars:45 }}</div>
-                        <div style="font-size: 0.7rem; color: #7f1d1d;">ST: {{ o.trip1.nomor_surat }}</div>
-                        <div style="font-size: 0.7rem; color: #991b1b; font-family: monospace;">{{ o.trip1.tanggal }}</div>
+                <div class="warning-item" style="border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(255, 255, 255, 0.9); padding: 0.75rem; border-radius: 0.75rem; margin-bottom: 0.75rem;">
+                    <div style="font-weight: 700; font-size: 0.8rem; color: #991b1b; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="fas fa-user-circle"></i>
+                        <span>{% if is_admin %}{{ o.pegawai_nama }}{% else %}Jadwal Anda{% endif %}</span>
                     </div>
-                    <div style="border-top: 1px dashed rgba(239, 68, 68, 0.2); padding-top: 0.5rem; margin-top: 0.5rem;">
-                        <span class="badge badge-danger" style="padding: 0.1rem 0.4rem; font-size: 0.65rem;">Trip B</span>
-                        <span style="font-weight: 600;">{{ o.trip2.tujuan }}</span>
-                        <div style="font-size: 0.7rem; color: #7f1d1d;">SPD: {{ o.trip2.nomor_spd }}</div>
-                        <div style="font-size: 0.7rem; color: #7f1d1d; font-style: italic; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ o.trip2.maksud_perjalanan }}">Maksud: {{ o.trip2.maksud_perjalanan|truncatechars:45 }}</div>
-                        <div style="font-size: 0.7rem; color: #7f1d1d;">ST: {{ o.trip2.nomor_surat }}</div>
-                        <div style="font-size: 0.7rem; color: #991b1b; font-family: monospace;">{{ o.trip2.tanggal }}</div>
+
+                    {% if is_admin %}
+                    <form method="POST" action="{% url 'perjalanan:resolusi_konflik' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="pegawai_id" value="{{ o.pegawai_id }}">
+                        
+                        {% for date_info in o.conflict_dates %}
+                        <div style="margin-bottom: 0.5rem; border-bottom: 1px dashed rgba(239, 68, 68, 0.15); padding-bottom: 0.5rem;">
+                            <div style="font-size: 0.725rem; font-weight: 700; color: #7f1d1d; margin-bottom: 0.25rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Tanggal: {{ date_info.tanggal_str }}</span>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                {% for trip in date_info.trips %}
+                                <label style="display: flex; align-items: flex-start; gap: 0.25rem; font-size: 0.675rem; cursor: pointer; color: #475569; line-height: 1.25;">
+                                    <input type="radio" name="chosen_{{ date_info.tanggal_iso }}" value="{{ trip.id }}" {% if trip.is_financed %}checked{% endif %} style="margin-top: 2px;">
+                                    <div>
+                                        <div style="font-weight: 700; color: {% if trip.is_financed %}#15803d{% else %}#475569{% endif %};">
+                                            {{ trip.tujuan }} (SPD: {{ trip.nomor_spd }})
+                                        </div>
+                                        <div style="font-size: 0.625rem; color: #64748b; font-style: italic;" title="{{ trip.maksud_perjalanan }}">Maksud: {{ trip.maksud_perjalanan|truncatechars:35 }}</div>
+                                        <div style="font-size: 0.625rem; color: #64748b;">Perihal: {{ trip.perihal }}</div>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                                
+                                <label style="display: flex; align-items: flex-start; gap: 0.25rem; font-size: 0.675rem; cursor: pointer; color: #dc2626; font-weight: 600; border-top: 1px dotted rgba(239, 68, 68, 0.1); padding-top: 0.25rem;">
+                                    <input type="radio" name="chosen_{{ date_info.tanggal_iso }}" value="none" {% if date_info.none_financed %}checked{% endif %} style="margin-top: 2px;">
+                                    <div>
+                                        Tidak Dibiayai (Semua Rp 0)
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <button type="submit" class="btn btn-sm btn-primary" style="width: 100%; font-size: 0.725rem; padding: 0.3rem; font-weight: 700; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; color: white;">
+                            <i class="fas fa-save"></i> Simpan Resolusi
+                        </button>
+                    </form>
+                    {% else %}
+                    <!-- Pegawai (Read-Only) view -->
+                    {% for date_info in o.conflict_dates %}
+                    <div style="margin-bottom: 0.5rem; border-bottom: 1px dashed rgba(239, 68, 68, 0.15); padding-bottom: 0.5rem;">
+                        <div style="font-size: 0.725rem; font-weight: 700; color: #7f1d1d; margin-bottom: 0.25rem;">
+                            Tanggal: {{ date_info.tanggal_str }}
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            {% for trip in date_info.trips %}
+                            <div style="font-size: 0.675rem; border-left: 2px solid {% if trip.is_financed %}#22c55e{% else %}#ef4444{% endif %}; padding-left: 0.4rem; margin-left: 0.15rem; line-height: 1.25;">
+                                <div style="font-weight: 700; color: #1e293b;">
+                                    {{ trip.tujuan }} (SPD: {{ trip.nomor_spd }})
+                                </div>
+                                <div style="font-size: 0.625rem; color: #64748b;">Maksud: {{ trip.maksud_perjalanan|truncatechars:35 }}</div>
+                                <div style="font-size: 0.625rem; color: #64748b;">Perihal: {{ trip.perihal }}</div>
+                                <div style="font-size: 0.625rem; font-weight: 700; color: {% if trip.is_financed %}#16a34a{% else %}#dc2626{% endif %}; margin-top: 0.1rem;">
+                                    Status: {% if trip.is_financed %}Dibiayai{% else %}Tidak Dibiayai (Bentrok){% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
+                    {% endfor %}
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -465,6 +518,7 @@
 <script>
     // Deserialize trips data from Django
     const trips = JSON.parse('{{ trips_json|escapejs }}');
+    const isAdmin = {{ is_admin|yesno:"true,false" }};
 
     let currentDate = new Date();
 
@@ -651,7 +705,11 @@
             }
             ev.className += ` ${statusClass}`;
             
-            ev.textContent = `${t.tujuan} - ${t.perihal}`;
+            if (isAdmin && t.pegawai_nama) {
+                ev.textContent = `[${t.pegawai_nama}] ${t.tujuan} - ${t.perihal}`;
+            } else {
+                ev.textContent = `${t.tujuan} - ${t.perihal}`;
+            }
             
             // Tooltip events
             ev.addEventListener('mouseenter', (e) => {
@@ -680,7 +738,13 @@
             `;
         }
 
+        let pegawaiHtml = '';
+        if (isAdmin && trip.pegawai_nama) {
+            pegawaiHtml = `<strong>Pegawai:</strong> ${trip.pegawai_nama}<br>`;
+        }
+
         tooltip.innerHTML = `
+            ${pegawaiHtml}
             <strong>Tujuan:</strong> ${trip.tujuan}<br>
             <strong>Nomor SPD:</strong> ${trip.nomor_spd}<br>
             <strong>Nomor Surat Tugas:</strong> ${trip.nomor_surat}<br>
