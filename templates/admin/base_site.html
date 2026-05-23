@@ -1,0 +1,233 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div class="admin-branding-container" style="display: flex; align-items: center; gap: 12px; margin: 5px 0;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/KPU_Logo.svg" alt="Logo KPU" style="height: 38px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" class="admin-logo">
+    <div class="admin-title-wrapper" style="display: flex; flex-direction: column;">
+        <h1 id="site-name" style="margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2;">
+            <a href="{% url 'admin:index' %}" style="color: white; text-decoration: none;">SIMPADI</a>
+        </h1>
+        <span class="admin-subtitle" style="display: none;">Sistem Informasi Manajemen Perjalanan Dinas</span>
+        <span class="admin-badge" style="color: rgba(255,255,255,0.8); font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">[Admin]</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Styling overrides for django admin */
+    
+    /* Center the branding/header inside the login card */
+    body.login {
+        background: radial-gradient(circle at top left, #f8fafc, #e2e8f0) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+    
+    body.login #container {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
+        padding: 2.5rem !important;
+        width: 100%;
+        max-width: 420px !important;
+        margin: 0 !important;
+        box-sizing: border-box;
+    }
+    
+    body.login #header {
+        background: none !important;
+        color: #0f172a !important;
+        border: none !important;
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem !important;
+        padding: 0 !important;
+    }
+    
+    body.login #header a {
+        color: #0f172a !important;
+    }
+    
+    body.login .admin-branding-container {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        margin: 0 !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+    
+    body.login .admin-logo {
+        height: 75px !important;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15)) !important;
+    }
+    
+    body.login .admin-title-wrapper {
+        align-items: center !important;
+    }
+    
+    body.login #site-name a {
+        font-size: 2.2rem !important;
+        font-weight: 800 !important;
+        background: linear-gradient(to right, #79aec8, #417690);
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        display: inline-block !important;
+        line-height: 1.2 !important;
+    }
+    
+    body.login .admin-subtitle {
+        display: block !important;
+        font-size: 0.875rem !important;
+        color: #64748b !important;
+        margin-top: 0.25rem !important;
+        font-weight: 500 !important;
+        line-height: 1.4 !important;
+    }
+    
+    body.login .admin-badge {
+        display: block !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        color: var(--primary-button-bg, #417690) !important;
+        margin-top: 0.25rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+    }
+    
+    body.login #content-main {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    body.login .form-row {
+        float: none !important;
+        clear: both !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 0 0 1.25rem 0 !important;
+        border: none !important;
+        text-align: left !important;
+    }
+    
+    body.login .form-row label {
+        display: block !important;
+        float: none !important;
+        width: auto !important;
+        text-align: left !important;
+        padding: 0 !important;
+        margin: 0 0 0.5rem 0 !important;
+        color: #475569 !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+    }
+    
+    body.login .form-row input[type="text"],
+    body.login .form-row input[type="password"] {
+        display: block !important;
+        width: 100% !important;
+        float: none !important;
+        padding: 0.75rem 1rem !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        font-size: 0.875rem !important;
+        transition: all 0.2s;
+    }
+    
+    body.login .form-row input[type="text"]:focus,
+    body.login .form-row input[type="password"]:focus {
+        border-color: var(--primary-button-bg, #417690) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 4px rgba(65, 118, 144, 0.15) !important;
+    }
+    
+    body.login .submit-row {
+        background: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 1rem 0 0 0 !important;
+        float: none !important;
+        clear: both !important;
+    }
+    
+    body.login .submit-row input {
+        width: 100% !important;
+        padding: 0.75rem !important;
+        background: var(--primary-button-bg, #417690) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        margin: 0 !important;
+        float: none !important;
+    }
+    
+    body.login .submit-row input:hover {
+        background: var(--primary-button-hover-bg, #2b5062) !important;
+        transform: translateY(-1px);
+    }
+    
+    body.login .errornote {
+        background: rgba(239, 68, 68, 0.1) !important;
+        color: #ef4444 !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 12px !important;
+        font-size: 0.875rem !important;
+        margin: 0 0 1.5rem 0 !important;
+        border: 1px solid rgba(239, 68, 68, 0.2) !important;
+        text-align: left !important;
+        float: none !important;
+        clear: both !important;
+    }
+    
+    body.login ul.errorlist {
+        margin: 0 0 0.5rem 0 !important;
+        padding: 0 !important;
+        list-style: none !important;
+        color: #ef4444 !important;
+        font-size: 0.75rem !important;
+        text-align: left !important;
+    }
+    
+    body.login #footer {
+        margin-top: 1.5rem !important;
+        border-top: 1px solid #e2e8f0 !important;
+        padding-top: 1.5rem !important;
+        color: #64748b !important;
+        font-size: 0.75rem !important;
+        background: none !important;
+    }
+    
+    /* Navigation Sidebar & Header customization for logged-in admin */
+    #footer {
+        text-align: center;
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+        color: #666;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block footer %}
+<div id="footer" style="padding: 1.5rem 0 !important; margin-top: auto !important; border-top: 1px solid var(--border-color, #e0e0e0) !important; background: none !important; width: 100%; text-align: center !important;">
+    <div style="font-size: 0.8rem; color: var(--body-quiet-color, #666); text-align: center !important;">
+        &copy; {% now "Y" %} SIMPADI | By Subag Keuangan KPU Provinsi Sulawesi Tenggara
+    </div>
+</div>
+{% endblock %}

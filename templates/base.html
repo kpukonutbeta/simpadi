@@ -15,7 +15,10 @@
 <body>
     <!-- Sidebar -->
     <aside class="sidebar">
-        <div class="logo">SIMPADI</div>
+        <div class="logo" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 2rem; background: none; -webkit-text-fill-color: initial;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/KPU_Logo.svg" alt="KPU Logo" style="height: 55px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));">
+            <span style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #f43f5e, #9f1239); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SIMPADI</span>
+        </div>
         <ul class="nav-links">
             <li class="nav-item">
                 <a href="{% url 'core:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
@@ -83,9 +86,11 @@
             <h1>{% block page_title %}Dashboard{% endblock %}</h1>
             <div class="actions">
                 {% block header_actions %}
+                {% if request.user.is_staff %}
                 <button class="btn btn-primary">
                     <i class="fas fa-plus"></i> Pengajuan Baru
                 </button>
+                {% endif %}
                 {% endblock %}
             </div>
         </header>
@@ -102,6 +107,13 @@
 
         {% block content %}
         {% endblock %}
+
+        <footer style="margin-top: auto; padding-top: 2rem; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 0.8rem; color: var(--text-muted); padding-top: 1rem; border-top: 1px solid var(--border);">
+                <span>&copy; {% now "Y" %} SIMPADI</span>
+                <span>By Subag Keuangan KPU Provinsi Sulawesi Tenggara</span>
+            </div>
+        </footer>
     </main>
 
     {% block extra_js %}{% endblock %}

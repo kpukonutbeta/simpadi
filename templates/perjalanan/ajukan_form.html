@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 {% load static %}
 
 {% block title %}Ajukan Perjalanan Dinas - SIMPADI{% endblock %}
@@ -486,7 +487,7 @@
                             <i id="icon-harian" class="fas fa-chevron-right" style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
                             Uang Harian
                         </span>
-                        <span id="preview-uang-harian" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_harian_riil|default:0|floatformat:0 }}</span>
+                        <span id="preview-uang-harian" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_harian_riil|intcomma }}</span>
                     </div>
                     <div id="detail-harian" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
                         {% if breakdown_initial and breakdown_initial.breakdown_categories.uang_harian.items %}
@@ -510,7 +511,7 @@
                                                 {% endif %}
                                             </td>
                                             <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
-                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|floatformat:0 }}</td>
+                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|intcomma }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -528,7 +529,7 @@
                             <i id="icon-representasi" class="fas fa-chevron-right" style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
                             Uang Representasi
                         </span>
-                        <span id="preview-uang-representasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_representasi_riil|default:0|floatformat:0 }}</span>
+                        <span id="preview-uang-representasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_representasi_riil|intcomma }}</span>
                     </div>
                     <div id="detail-representasi" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
                         {% if breakdown_initial and breakdown_initial.breakdown_categories.uang_representasi.items %}
@@ -552,7 +553,7 @@
                                                 {% endif %}
                                             </td>
                                             <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
-                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|floatformat:0 }}</td>
+                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|intcomma }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -570,7 +571,7 @@
                             <i id="icon-penginapan" class="fas fa-chevron-right" style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
                             Biaya Penginapan
                         </span>
-                        <span id="preview-biaya-penginapan" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_penginapan_riil|default:0|floatformat:0 }}</span>
+                        <span id="preview-biaya-penginapan" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_penginapan_riil|intcomma }}</span>
                     </div>
                     <div id="detail-penginapan" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
                         {% if breakdown_initial and breakdown_initial.breakdown_categories.biaya_penginapan.items %}
@@ -594,7 +595,7 @@
                                                 {% endif %}
                                             </td>
                                             <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
-                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|floatformat:0 }}</td>
+                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|intcomma }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -612,7 +613,7 @@
                             <i id="icon-transportasi" class="fas fa-chevron-right" style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
                             Biaya Transportasi
                         </span>
-                        <span id="preview-biaya-transportasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_transportasi_riil|default:0|floatformat:0 }}</span>
+                        <span id="preview-biaya-transportasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_transportasi_riil|intcomma }}</span>
                     </div>
                     <div id="detail-transportasi" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
                         {% if breakdown_initial and breakdown_initial.breakdown_categories.biaya_perjalanan.items %}
@@ -636,7 +637,7 @@
                                                 {% endif %}
                                             </td>
                                             <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
-                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|floatformat:0 }}</td>
+                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|intcomma }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -651,11 +652,11 @@
             <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
                 <div style="padding: 0.75rem 1rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
                     <span style="font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">Total Dibayarkan</span>
-                    <span id="preview-total-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">Rp {{ perjadin.biaya.total_dibayarkan|default:0|floatformat:0 }}</span>
+                    <span id="preview-total-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">Rp {{ perjadin.biaya.total_dibayarkan|intcomma }}</span>
                 </div>
                 <div id="row-total-tidak-dibayarkan" style="padding: 0.75rem 1rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.02) 0%, rgba(220, 38, 38, 0.02) 100%); border-radius: 0.5rem; border: 1px dashed #dc2626; display: {% if perjadin.biaya.total_tidak_dibayarkan > 0 %}flex{% else %}none{% endif %}; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
                     <span style="font-size: 0.75rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em;">Total Tidak Dibayarkan</span>
-                    <span id="preview-total-tidak-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #dc2626;">Rp {{ perjadin.biaya.total_tidak_dibayarkan|default:0|floatformat:0 }}</span>
+                    <span id="preview-total-tidak-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #dc2626;">Rp {{ perjadin.biaya.total_tidak_dibayarkan|intcomma }}</span>
                 </div>
                 <div id="row-warning-overlimit" style="padding: 0.75rem 1rem; background: #fff1f2; border-radius: 0.5rem; border: 1px solid #fda4af; display: none; flex-direction: column; gap: 0.25rem; box-shadow: var(--shadow-sm);">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">

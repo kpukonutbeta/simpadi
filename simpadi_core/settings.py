@@ -33,6 +33,15 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.shares.zrok.io',
+    'https://*.zrok.io',
+    'https://*.ngrok.io',
+    'https://*.ngrok-free.app',
+    'http://127.0.0.1:8002',
+    'http://localhost:8002',
+]
+
 
 # Application definition
 
@@ -43,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     
     # Local Apps
     'core',

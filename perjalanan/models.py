@@ -223,7 +223,39 @@ class PerjalananDinas(models.Model):
         # Delete extra days if durasi was reduced
         self.harian_details.filter(hari_ke__gt=durasi).delete()
 
+    @property
+    def history_timeline(self):
+        history = list(self.status_history.all().order_by('created_at'))
+        if not history:
+            class VirtualHistory:
+                def __init__(self, status, get_status_display, created_at):
+                    self.status = status
+                    self._status_display = get_status_display
+                    self.created_at = created_at
+                def get_status_display(self):
+                    return self._status_display
+
+            history = [
+                VirtualHistory(self.Status.DRAFT, 'Draft', self.created_at)
+            ]
+            if self.status != self.Status.DRAFT:
+                history.append(
+                    VirtualHistory(self.status, self.get_status_display(), self.updated_at)
+                )
+        return history
+
     def save(self, *args, **kwargs):
+        status_changed = False
+        if not self.pk:
+            status_changed = True
+        else:
+            try:
+                original = PerjalananDinas.objects.get(pk=self.pk)
+                if original.status != self.status:
+                    status_changed = True
+            except PerjalananDinas.DoesNotExist:
+                status_changed = True
+
         # 1. Otomatisasi Nomor SPD jika belum ada
         if not self.nomor_spd:
             from django.db import transaction
@@ -241,6 +273,10 @@ class PerjalananDinas(models.Model):
         self.sync_harian_details()
         if hasattr(self, 'biaya'):
             self.biaya.save()
+
+        # Log status history if changed
+        if status_changed:
+            StatusHistoryPerjalanan.objects.create(perjalanan=self, status=self.status)
 
     @property
     def durasi_hari(self):
@@ -261,23 +297,22 @@ class PerjalananDinas(models.Model):
         if self.tanggal_berangkat and self.tanggal_kembali:
             if self.tanggal_berangkat > self.tanggal_kembali:
                 raise ValidationError("Tanggal berangkat tidak boleh setelah tanggal kembali.")
-        
-        if hasattr(self, 'pegawai') and self.pegawai and self.tanggal_berangkat and self.tanggal_kembali:
-            overlapping = PerjalananDinas.objects.filter(
-                pegawai=self.pegawai,
-                surat_tugas__tanggal_berangkat__lte=self.tanggal_kembali,
-                surat_tugas__tanggal_kembali__gte=self.tanggal_berangkat
-            ).exclude(pk=self.pk)
-            
-            if overlapping.exists():
-                raise ValidationError(f"Pegawai sudah memiliki jadwal perjalanan dinas lain pada rentang tanggal ini.")
 
     def __str__(self):
         return f"{self.nomor_spd or 'No SPD'} - {self.pegawai.nama}"
 
+class StatusHistoryPerjalanan(models.Model):
+    perjalanan = models.ForeignKey(PerjalananDinas, on_delete=models.CASCADE, related_name='status_history')
+    status = models.CharField(max_length=20, choices=PerjalananDinas.Status.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
-        verbose_name = "Surat Perjalanan Dinas"
-        verbose_name_plural = "Surat Perjalanan Dinas"
+        ordering = ['created_at']
+        verbose_name = "Riwayat Status Perjalanan"
+        verbose_name_plural = "Riwayat Status Perjalanan"
+
+    def __str__(self):
+        return f"{self.perjalanan.nomor_spd or 'SPD'} - {self.get_status_display()} ({self.created_at})"
 
 
 class HarianPerjalanan(models.Model):

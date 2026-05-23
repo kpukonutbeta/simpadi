@@ -84,6 +84,9 @@ body {
     margin-left: 260px;
     padding: 2rem;
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .header {
@@ -197,3 +200,14 @@ tr:hover {
 .badge-success { background: #dcfce7; color: #166534; }
 .badge-warning { background: #fef9c3; color: #854d0e; }
 .badge-danger { background: #fee2e2; color: #991b1b; }
+
+/* Footer */
+.footer {
+    margin-top: auto;
+    padding: 1.5rem 0 0 0;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    font-weight: 500;
+}

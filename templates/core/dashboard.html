@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}Dashboard - SIMPADI{% endblock %}
 
@@ -14,14 +15,14 @@
     </div>
     <div class="stat-card">
         <div class="stat-label">Total Biaya</div>
-        <div class="stat-value">Rp {{ total_biaya|floatformat:0 }}</div>
+        <div class="stat-value">Rp {{ total_biaya|intcomma }}</div>
         <div class="stat-label">Rincian riil</div>
     </div>
     {% if is_admin %}
     <div class="stat-card">
         <div class="stat-label">Penyerapan Anggaran</div>
         <div class="stat-value">{{ penyerapan }}%</div>
-        <div class="stat-label" style="color: var(--text-muted);">Rp {{ sisa_pagu|floatformat:0 }} Sisa</div>
+        <div class="stat-label" style="color: var(--text-muted);">Rp {{ sisa_pagu|intcomma }} Sisa</div>
     </div>
     {% else %}
     <div class="stat-card">
@@ -107,6 +108,80 @@
                             <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">
                                 <i class="fas fa-check-circle" style="display: block; font-size: 2rem; margin-bottom: 1rem; color: #10b981;"></i>
                                 Belum ada SPD baru yang perlu dilengkapi.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--text-main);">
+                    <i class="fas fa-route" style="color: var(--primary); margin-right: 0.5rem;"></i> Pelacakan Status SPD Saya
+                </h3>
+                <a href="{% url 'perjalanan:riwayat_perjadin' %}" style="color: var(--primary); text-decoration: none; font-size: 0.875rem; font-weight: 600;">Lihat Riwayat <i class="fas fa-chevron-right" style="font-size: 0.75rem;"></i></a>
+            </div>
+            
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nomor SPD</th>
+                            <th>Perihal / Surat Tugas</th>
+                            <th>Tanggal Perjalanan</th>
+                            <th>Total Biaya</th>
+                            <th style="text-align: center;">Status Tahapan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for spd in recent_perjalanan %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700;">{{ spd.nomor_spd|default:"(Belum Diterbitkan)" }}</div>
+                                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem;">ST: {{ spd.surat_tugas.nomor_surat }}</div>
+                            </td>
+                            <td>
+                                <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-main);">{{ spd.surat_tugas.perihal }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">{{ spd.surat_tugas.tempat_tujuan }}</div>
+                            </td>
+                            <td style="font-size: 0.85rem;">
+                                <div>{{ spd.tanggal_berangkat|date:"d M Y" }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">s.d. {{ spd.tanggal_kembali|date:"d M Y" }} ({{ spd.durasi_hari }} Hari)</div>
+                            </td>
+                            <td style="font-weight: 600; font-size: 0.875rem;">
+                                Rp {{ spd.biaya.total_dibayarkan|intcomma }}
+                            </td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                {% if spd.status == 'DRAFT' %}
+                                    <span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 600;">
+                                        <i class="fas fa-edit" style="margin-right: 0.25rem;"></i> Draft
+                                    </span>
+                                {% elif spd.status == 'PENDING' %}
+                                    <span class="badge badge-warning" style="font-weight: 600;">
+                                        <i class="fas fa-clock" style="margin-right: 0.25rem;"></i> Menunggu Verifikasi
+                                    </span>
+                                {% elif spd.status == 'APPROVED' %}
+                                    <span class="badge badge-success" style="font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 0.25rem;"></i> Disetujui
+                                    </span>
+                                {% elif spd.status == 'REJECTED' %}
+                                    <span class="badge badge-danger" style="font-weight: 600;">
+                                        <i class="fas fa-times-circle" style="margin-right: 0.25rem;"></i> Ditolak
+                                    </span>
+                                {% elif spd.status == 'PROCESSED' %}
+                                    <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 600;">
+                                        <i class="fas fa-check-double" style="margin-right: 0.25rem;"></i> Selesai Diproses
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                                <i class="fas fa-folder-open" style="display: block; font-size: 2.25rem; margin-bottom: 1rem; color: #cbd5e1;"></i>
+                                Belum ada data perjalanan dinas yang diajukan.
                             </td>
                         </tr>
                         {% endfor %}
