@@ -1376,6 +1376,41 @@ function initAdminFilter() {
             return;
         }
 
+        // Validate total nights against travel max nights limit
+        const jenisPerjadin = document.querySelector('#id_jenis_perjalanan')?.value;
+        let maxNights = 0;
+        if (jenisPerjadin !== 'fullboard_luar' && jenisPerjadin !== 'fullboard_dalam') {
+            if (tanggalBerangkat && tanggalKembali) {
+                const diffTime = new Date(tanggalKembali) - new Date(tanggalBerangkat);
+                maxNights = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+            }
+        }
+
+        let totalOtherNights = 0;
+        const rows = document.querySelectorAll('.inline-related tr.form-row:not(.empty-form)');
+        rows.forEach(r => {
+            if (r === activeHotelRow) return;
+            
+            const select = r.querySelector('select[name$="-jenis_berkas"]');
+            const deleteInput = r.querySelector('input[name$="-DELETE"]');
+            if (deleteInput && deleteInput.checked) return;
+            
+            if (select && isPenginapanBerkas(select)) {
+                const tagHidden = r.querySelector('.admin-hotel-tag-hidden');
+                if (tagHidden && tagHidden.value) {
+                    const parsed = parsePenginapanKeterangan(tagHidden.value);
+                    if (parsed) {
+                        totalOtherNights += parsed.nights;
+                    }
+                }
+            }
+        });
+
+        if (totalOtherNights + nights > maxNights) {
+            alert(`Total malam menginap yang diklaim (${totalOtherNights + nights} malam) melebihi batas malam perjalanan yang diperbolehkan (${maxNights} malam).`);
+            return;
+        }
+
         const userDescInput = document.getElementById('admin-hotel-user-desc');
         const userDesc = userDescInput ? userDescInput.value.trim() : '';
 
