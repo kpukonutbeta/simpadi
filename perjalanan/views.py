@@ -46,8 +46,11 @@ def ajukan_perjadin(request, surat_tugas_id):
         defaults={'status': PerjalananDinas.Status.DRAFT}
     )
 
-    # If already approved or completed, don't allow editing via this form
-    if perjadin_instance.status not in [PerjalananDinas.Status.DRAFT, PerjalananDinas.Status.REJECTED]:
+    # Allow editing for DRAFT and REJECTED status only
+    is_editable = perjadin_instance.status in [PerjalananDinas.Status.DRAFT, PerjalananDinas.Status.REJECTED]
+    
+    # If status is locked (not DRAFT/REJECTED), show view-only mode
+    if not is_editable and request.method == 'POST':
         messages.warning(request, f"SPD ini sudah dalam status {perjadin_instance.get_status_display()} dan tidak dapat diubah lagi.")
         return redirect('core:dashboard')
 
@@ -75,9 +78,19 @@ def ajukan_perjadin(request, surat_tugas_id):
                     perjadin.surat_tugas = surat_tugas
                     perjadin.pegawai = pegawai
                     
-                    # Keep status as DRAFT if it was new, or keep existing status if it was REJECTED
-                    if not perjadin.status:
-                        perjadin.status = PerjalananDinas.Status.DRAFT
+                    # Check which action button was clicked
+                    action = request.POST.get('action', 'save')
+                    
+                    # If submit_verification action, change status to PENDING
+                    if action == 'submit_verification':
+                        perjadin.status = PerjalananDinas.Status.PENDING
+                        message_type = "SPD berhasil diajukan untuk verifikasi"
+                    else:
+                        # Keep status as DRAFT if it was new, or keep existing status if it was REJECTED
+                        if not perjadin.status:
+                            perjadin.status = PerjalananDinas.Status.DRAFT
+                        message_type = "Data Perjalanan Dinas berhasil disimpan"
+                    
                     perjadin.save()
                     
                     # Save formsets: harian_formset first so that when BiayaPerjalanan calculates, it reads the updated daily transit SBM
@@ -91,7 +104,7 @@ def ajukan_perjadin(request, surat_tugas_id):
                     biaya_formset.instance = perjadin
                     biaya_formset.save()
                     
-                messages.success(request, "Data Perjalanan Dinas berhasil disimpan.")
+                messages.success(request, message_type + ".")
                 return redirect('core:dashboard')
             except Exception as e:
                 messages.error(request, f"Terjadi kesalahan saat menyimpan: {e}")
@@ -107,6 +120,20 @@ def ajukan_perjadin(request, surat_tugas_id):
             for h_form in harian_formset:
                 h_form.fields['provinsi'].disabled = True
                 h_form.fields['jenis_harian'].disabled = True
+        
+        # Disable all form fields if status is not editable (not DRAFT or REJECTED)
+        if not is_editable:
+            for field in form.fields.values():
+                field.disabled = True
+            for b_form in biaya_formset:
+                for field in b_form.fields.values():
+                    field.disabled = True
+            for bk_form in berkas_formset:
+                for field in bk_form.fields.values():
+                    field.disabled = True
+            for h_form in harian_formset:
+                for field in h_form.fields.values():
+                    field.disabled = True
 
     from master_data.models import JenisBerkas
     jenis_berkas_nominal = list(JenisBerkas.objects.filter(nominal_biaya=True).values_list('id', flat=True))
@@ -151,6 +178,7 @@ def ajukan_perjadin(request, surat_tugas_id):
         'berkas_formset': berkas_formset,
         'harian_formset': harian_formset,
         'is_edit': True,
+        'is_editable': is_editable,
         'jenis_berkas_nominal': jenis_berkas_nominal,
         'jenis_berkas_wajib': jenis_berkas_wajib,
         'jenis_berkas_penginapan': jenis_berkas_penginapan,

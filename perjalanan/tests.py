@@ -543,6 +543,7 @@ class TransitHarianOverrideTestCase(TestCase):
         self.assertIn('display: none;', html)
         self.assertIn('Lihat Detail Transit per Hari', html)
 
+
     def test_admin_harian_view_rendering(self):
         # Make the user staff (admin)
         self.user.is_staff = True
@@ -1678,6 +1679,89 @@ class DynamicSBMTestCase(TestCase):
         filt_es_ii = get_eligible_tiket_filter(self.pegawai)
         self.assertIn("('kelas', 'bisnis')", str(filt_es_ii))
         self.assertNotIn("('kelas', 'ekonomi')", str(filt_es_ii))
+
+
+class AjukanPerjadinBerkasDraftSaveTestCase(TiketPesawatTestCase):
+    def test_save_draft_persists_new_berkas_row(self):
+        self.client.force_login(self.user)
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        surat_tugas = SuratTugas.objects.create(
+            nomor_surat="999/ST/KPU-KU/V/2026",
+            perihal="Uji Simpan Draft Berkas",
+            tgl_surat=datetime.date(2026, 5, 20),
+            tanggal_berangkat=datetime.date(2026, 5, 25),
+            tanggal_kembali=datetime.date(2026, 5, 28),
+            tempat_berangkat="Konawe Utara",
+            tempat_tujuan="Jakarta",
+            tujuan_provinsi=self.provinsi_tujuan,
+            tahun_sbm=2024,
+            anggaran=self.anggaran,
+            jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM,
+        )
+        surat_tugas.file_path.save(
+            "surat_tugas_uji.pdf",
+            SimpleUploadedFile("surat_tugas_uji.pdf", b"dummy content", content_type="application/pdf"),
+            save=True,
+        )
+        surat_tugas.pegawai.add(self.pegawai)
+        perjadin = PerjalananDinas.objects.create(
+            surat_tugas=surat_tugas,
+            pegawai=self.pegawai,
+            status=PerjalananDinas.Status.DRAFT
+        )
+
+        url = reverse('perjalanan:ajukan_perjadin', args=[surat_tugas.id])
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        berkas_formset = response.context['berkas_formset']
+        biaya_formset = response.context['biaya_formset']
+        harian_formset = response.context['harian_formset']
+
+        berkas_prefix = berkas_formset.prefix
+        biaya_prefix = biaya_formset.prefix
+        harian_prefix = harian_formset.prefix
+
+        payload = {
+            f'{berkas_prefix}-TOTAL_FORMS': '1',
+            f'{berkas_prefix}-INITIAL_FORMS': '0',
+            f'{berkas_prefix}-MIN_NUM_FORMS': '0',
+            f'{berkas_prefix}-MAX_NUM_FORMS': '1000',
+            f'{berkas_prefix}-0-jenis_berkas': str(self.jenis_taksi.id),
+            f'{berkas_prefix}-0-nominal': '8000',
+            f'{berkas_prefix}-0-keterangan': 'STRUK PARKIR',
+            f'{berkas_prefix}-0-malam_menginap': '1',
+            f'{biaya_prefix}-TOTAL_FORMS': str(biaya_formset.total_form_count()),
+            f'{biaya_prefix}-INITIAL_FORMS': str(biaya_formset.initial_form_count()),
+            f'{biaya_prefix}-MIN_NUM_FORMS': '0',
+            f'{biaya_prefix}-MAX_NUM_FORMS': '1',
+            f'{harian_prefix}-TOTAL_FORMS': str(harian_formset.total_form_count()),
+            f'{harian_prefix}-INITIAL_FORMS': str(harian_formset.initial_form_count()),
+            f'{harian_prefix}-MIN_NUM_FORMS': '0',
+            f'{harian_prefix}-MAX_NUM_FORMS': '1000',
+            'action': 'save',
+        }
+
+        if biaya_formset.forms and biaya_formset.forms[0].instance.pk:
+            payload[f'{biaya_prefix}-0-id'] = str(biaya_formset.forms[0].instance.pk)
+
+        for idx, form in enumerate(harian_formset.forms):
+            payload[f'{harian_prefix}-{idx}-id'] = str(form.instance.pk)
+            payload[f'{harian_prefix}-{idx}-hari_ke'] = str(form.instance.hari_ke)
+            payload[f'{harian_prefix}-{idx}-tanggal'] = form.instance.tanggal.isoformat()
+            payload[f'{harian_prefix}-{idx}-provinsi'] = str(form.instance.provinsi_id)
+            payload[f'{harian_prefix}-{idx}-jenis_harian'] = form.instance.jenis_harian
+
+        response = self.client.post(url, data=payload)
+        self.assertEqual(response.status_code, 302)
+
+        berkas = BerkasPerjalanan.objects.filter(perjalanan=perjadin)
+        self.assertEqual(berkas.count(), 1)
+        self.assertEqual(berkas.first().nominal, Decimal('8000'))
+        self.assertEqual(berkas.first().keterangan, 'STRUK PARKIR')
 
 
 
