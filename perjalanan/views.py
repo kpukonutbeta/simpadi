@@ -339,6 +339,8 @@ def hitung_estimasi_ajax(request):
             'jenis_harian': item['jenis_harian'],
             'rate': float(item['rate']),
             'representasi': float(item['representasi']),
+            'representasi_expected': float(item.get('representasi_expected', 0)),
+            'representasi_label': item.get('representasi_label', ''),
         })
 
     # Return JSON with all float/int format for numeric items
@@ -352,6 +354,8 @@ def hitung_estimasi_ajax(request):
         'durasi_hari': breakdown['durasi_hari'],
         'over_limit': breakdown['over_limit'],
         'plafon_hotel': float(breakdown['sbm_plafon_hotel']),
+        'sbm_uang_representasi_luar_kota': float(breakdown.get('sbm_uang_representasi_luar_kota', 0)),
+        'sbm_uang_representasi_dalam_kota': float(breakdown.get('sbm_uang_representasi_dalam_kota', 0)),
         'harian_formula': breakdown['harian_formula'],
         'representasi_formula': breakdown['representasi_formula'],
         'penginapan_formula': breakdown['penginapan_formula'],

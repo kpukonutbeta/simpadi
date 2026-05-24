@@ -137,19 +137,18 @@ class StandarBiayaForm(forms.ModelForm):
     converts to Decimal on clean.
     """
     plafon_penginapan = forms.CharField(widget=RupiahInput(), required=True)
+    uang_representasi_luar_kota = forms.CharField(widget=RupiahInput(), required=True)
+    uang_representasi_dalam_kota = forms.CharField(widget=RupiahInput(), required=True)
     biaya_taksi = forms.CharField(widget=RupiahInput(), required=True)
-    uang_representasi = forms.CharField(widget=RupiahInput(), required=True)
 
     class Meta:
         model = StandarBiaya
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
     def clean(self):
         cleaned = super().clean()
         # Convert formatted string with dots into Decimal values
-        for fname in ('plafon_penginapan', 'biaya_taksi', 'uang_representasi'):
+        for fname in ('plafon_penginapan', 'uang_representasi_luar_kota', 'uang_representasi_dalam_kota', 'biaya_taksi'):
             raw = cleaned.get(fname)
             if raw is None:
                 continue
@@ -172,8 +171,6 @@ class StandarBiayaHarianForm(forms.ModelForm):
         model = StandarBiayaHarian
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
     def clean(self):
         cleaned = super().clean()
         for fname in ('uang_harian', 'uang_harian_dalam_kota', 'uang_harian_diklat'):
@@ -193,8 +190,6 @@ class AnggaranForm(forms.ModelForm):
         model = Anggaran
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
     def clean(self):
         cleaned = super().clean()
         for fname in ('pagu', 'sisa_pagu'):
@@ -213,9 +208,6 @@ class StandarBiayaTiketForm(forms.ModelForm):
         model = StandarBiayaTiket
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def clean(self):
         cleaned = super().clean()
         raw = cleaned.get('nominal')
@@ -228,10 +220,13 @@ class StandarBiayaTiketForm(forms.ModelForm):
 class StandarBiayaAdmin(admin.ModelAdmin):
     list_display = (
         'provinsi', 'golongan', 'posisi_jabatan', 'tahun',
-        'fmt_plafon_penginapan', 'fmt_biaya_taksi', 'fmt_uang_representasi'
+        'fmt_plafon_penginapan', 'fmt_uang_representasi_luar_kota', 'fmt_uang_representasi_dalam_kota', 'fmt_biaya_taksi'
     )
     list_filter = ('provinsi', 'golongan', 'posisi_jabatan', 'tahun')
-    fields = ('provinsi', 'tahun', 'golongan', 'posisi_jabatan', 'plafon_penginapan', 'biaya_taksi', 'uang_representasi')
+    fields = (
+        'provinsi', 'tahun', 'golongan', 'posisi_jabatan',
+        'plafon_penginapan', 'uang_representasi_luar_kota', 'uang_representasi_dalam_kota', 'biaya_taksi'
+    )
     form = StandarBiayaForm
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
@@ -253,13 +248,20 @@ class StandarBiayaAdmin(admin.ModelAdmin):
     fmt_plafon_penginapan.admin_order_field = 'plafon_penginapan'
 
 
+    def fmt_uang_representasi_luar_kota(self, obj): return self._rupiah(obj.uang_representasi_luar_kota)
+    fmt_uang_representasi_luar_kota.short_description = "Uang Representasi Luar Kota"
+    fmt_uang_representasi_luar_kota.admin_order_field = 'uang_representasi_luar_kota'
+
+
+    def fmt_uang_representasi_dalam_kota(self, obj): return self._rupiah(obj.uang_representasi_dalam_kota)
+    fmt_uang_representasi_dalam_kota.short_description = "Uang Representasi Dalam Kota (> 8 Jam)"
+    fmt_uang_representasi_dalam_kota.admin_order_field = 'uang_representasi_dalam_kota'
+
+
     def fmt_biaya_taksi(self, obj): return self._rupiah(obj.biaya_taksi)
     fmt_biaya_taksi.short_description = "Taksi Bandara"
     fmt_biaya_taksi.admin_order_field = 'biaya_taksi'
 
-    def fmt_uang_representasi(self, obj): return self._rupiah(obj.uang_representasi)
-    fmt_uang_representasi.short_description = "Uang Representasi"
-    fmt_uang_representasi.admin_order_field = 'uang_representasi'
 
     class Media:
         js = ('js/rupiah_input.js?v=6',)

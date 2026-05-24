@@ -752,6 +752,15 @@ class BiayaPerjalanan(models.Model):
                     provinsi_cache[prov_id] = self.perjalanan.tujuan_provinsi
             return provinsi_cache[prov_id]
 
+        def get_representasi_info(sbm_obj, jenis_harian):
+            if not sbm_obj:
+                return Decimal('0'), ''
+            if jenis_harian == 'luar_kota':
+                return getattr(sbm_obj, 'uang_representasi_luar_kota', Decimal('0')), 'Luar Kota'
+            if jenis_harian == 'dalam_kota':
+                return getattr(sbm_obj, 'uang_representasi_dalam_kota', Decimal('0')), 'Dalam Kota (> 8 Jam)'
+            return Decimal('0'), ''
+
         harian_breakdown = []
         uang_harian_riil = Decimal('0')
         uang_representasi_riil = Decimal('0')
@@ -792,16 +801,19 @@ class BiayaPerjalanan(models.Model):
                 rate = Decimal('0')
 
             if sbm_day:
+                rep_expected_rate, rep_label = get_representasi_info(sbm_day, jenis_harian)
                 if jenis_harian == 'tidak_dibayai':
                     rep_rate = Decimal('0')
                 elif self.perjalanan.jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
                     rep_rate = Decimal('0')
-                elif jenis_harian == 'luar_kota':
-                    rep_rate = getattr(sbm_day, 'uang_representasi', Decimal('0'))
+                elif jenis_harian in ['luar_kota', 'dalam_kota']:
+                    rep_rate = rep_expected_rate
                 else:
                     rep_rate = Decimal('0')
             else:
                 rep_rate = Decimal('0')
+                rep_expected_rate = Decimal('0')
+                rep_label = ''
 
             uang_harian_riil += rate
             uang_representasi_riil += rep_rate
@@ -815,6 +827,8 @@ class BiayaPerjalanan(models.Model):
                 'jenis_harian': jenis_harian,
                 'rate': rate,
                 'representasi': rep_rate,
+                'representasi_expected': rep_expected_rate,
+                'representasi_label': rep_label,
             })
 
         # Logic 2: Capping Hotel/Penginapan (Partial 30%)
@@ -917,12 +931,13 @@ class BiayaPerjalanan(models.Model):
         repr_groups = {}
         for day_info in harian_breakdown:
             if day_info['representasi'] > 0:
-                key = (day_info['provinsi_nama'], day_info['representasi'])
+                key = (day_info['provinsi_nama'], day_info['representasi_label'], day_info['representasi'])
                 repr_groups[key] = repr_groups.get(key, 0) + 1
 
         representasi_formulas = []
-        for (prov_nama, rate), qty in sorted(repr_groups.items(), key=lambda x: x[0]):
-            representasi_formulas.append(f"{qty} Hari x {fmt_rp(rate)} ({prov_nama})")
+        for (prov_nama, rep_label, rate), qty in sorted(repr_groups.items(), key=lambda x: (x[0][0], x[0][1], x[0][2])):
+            label_txt = f"{rep_label} - " if rep_label else ""
+            representasi_formulas.append(f"{qty} Hari x {fmt_rp(rate)} ({label_txt}{prov_nama})")
 
         if not representasi_formulas:
             if self.perjalanan.jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
@@ -1026,10 +1041,8 @@ class BiayaPerjalanan(models.Model):
         # Add cancelled representasi row if applicable
         cancelled_repr_qty = 0
         for day_info in harian_breakdown:
-            if day_info['jenis_harian'] == 'tidak_dibayai':
-                sbm_day = get_sbm_for_province(day_info['provinsi_id'])
-                if sbm_day and getattr(sbm_day, 'uang_representasi', Decimal('0')) > 0:
-                    cancelled_repr_qty += 1
+            if day_info['jenis_harian'] == 'tidak_dibayai' and day_info.get('representasi_expected', Decimal('0')) > 0:
+                cancelled_repr_qty += 1
         if cancelled_repr_qty > 0:
             uang_representasi_items.append({
                 'perihal': 'Uang Representasi Riil',
@@ -1232,7 +1245,9 @@ class BiayaPerjalanan(models.Model):
             
             # SBM values for UI info
             'sbm_uang_harian': sbm_harian.uang_harian if sbm_harian else Decimal('0'),
-            'sbm_uang_representasi': sbm.uang_representasi if sbm else Decimal('0'),
+            'sbm_uang_representasi_luar_kota': sbm.uang_representasi_luar_kota if sbm else Decimal('0'),
+            'sbm_uang_representasi_dalam_kota': sbm.uang_representasi_dalam_kota if sbm else Decimal('0'),
+            'sbm_uang_representasi': sbm.uang_representasi_luar_kota if sbm else Decimal('0'),
             'sbm_plafon_hotel': plafon_hotel,
             'sbm_plafon_transport': plafon_transport,
             

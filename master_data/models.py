@@ -103,12 +103,29 @@ class StandarBiaya(models.Model):
     )
 
     plafon_penginapan = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Plafon Penginapan")
-    uang_representasi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Representasi")
+    uang_representasi_luar_kota = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        verbose_name="Uang Representasi Luar Kota",
+    )
+    uang_representasi_dalam_kota = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        verbose_name="Uang Representasi Dalam Kota (> 8 Jam)",
+    )
     biaya_taksi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Taksi Bandara")
     tahun = models.IntegerField(
         default=2024,
         verbose_name="Tahun"
     )
+
+    def __init__(self, *args, **kwargs):
+        legacy_rep = kwargs.pop('uang_representasi', None)
+        if legacy_rep is not None and 'uang_representasi_luar_kota' not in kwargs:
+            kwargs['uang_representasi_luar_kota'] = legacy_rep
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -119,6 +136,14 @@ class StandarBiaya(models.Model):
     def __str__(self):
         classification = self.golongan or self.posisi_jabatan or "Umum"
         return f"SBM {self.provinsi} - {classification}"
+
+    @property
+    def uang_representasi(self):
+        return self.uang_representasi_luar_kota
+
+    @uang_representasi.setter
+    def uang_representasi(self, value):
+        self.uang_representasi_luar_kota = value
 
     class Meta:
         unique_together = ('provinsi', 'golongan', 'posisi_jabatan', 'tahun')
