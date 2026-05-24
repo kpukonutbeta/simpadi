@@ -98,9 +98,14 @@
                                 <div style="font-size: 0.875rem; font-weight: 600;">{{ spd.surat_tugas.perihal }}</div>
                             </td>
                             <td>
-                                <a href="{% url 'perjalanan:ajukan_perjadin' spd.surat_tugas.id %}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.75rem;">
-                                    <i class="fas fa-edit"></i> Lengkapi Data
-                                </a>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <a href="{% url 'perjalanan:ajukan_perjadin' spd.surat_tugas.id %}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.75rem;">
+                                        <i class="fas fa-edit"></i> Lengkapi Data
+                                    </a>
+                                    <a href="{% url 'perjalanan:download_spd_excel' spd.id %}" class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.75rem; background: #10b981; border: none;">
+                                        <i class="fas fa-file-excel"></i> Download SPD
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         {% empty %}

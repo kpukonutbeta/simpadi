@@ -651,3 +651,280 @@ def resolusi_konflik(request):
     return redirect('perjalanan:kalender_perjadin')
 
 
+import os
+import openpyxl
+from django.conf import settings
+from django.http import HttpResponse
+from master_data.models import PejabatPenandatangan
+
+@login_required
+def download_spd_excel(request, perjadin_id):
+    perjadin = get_object_or_404(PerjalananDinas, id=perjadin_id)
+    surat_tugas = perjadin.surat_tugas
+    pegawai = perjadin.pegawai
+
+    months = {
+        1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April', 5: 'Mei', 6: 'Juni',
+        7: 'Juli', 8: 'Agustus', 9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
+    }
+
+    def format_date_indo(date_obj):
+        if not date_obj:
+            return ""
+        return f"{date_obj.day} {months[date_obj.month]} {date_obj.year}"
+
+    ppk = PejabatPenandatangan.objects.filter(jabatan='PPK').first()
+    nama_ppk = ppk.nama if ppk else "-"
+    nip_ppk = ppk.nip if ppk else "-"
+    
+    # Ambil durasi hari
+    durasi = perjadin.durasi_hari
+    if durasi is None:
+        durasi = "-"
+        
+    # Ambil tempat tujuan
+    tempat_tujuan = surat_tugas.tujuan_provinsi.nama if surat_tugas.tujuan_provinsi else surat_tugas.tempat_tujuan
+
+    mapping = {
+        '{{FULL_NO_SPD}}': perjadin.nomor_spd or "-",
+        '{{NO_SPD}}': perjadin.nomor_spd.split('/')[0] if perjadin.nomor_spd else "-",
+        '{{NAMA_PEGAWAI}}': pegawai.nama,
+        '{{NIP_PEGAWAI}}': pegawai.nip,
+        '{{GOLONGAN_PEGAWAI}}': pegawai.get_golongan_display(),
+        '{{JABATAN_PEGAWAI}}': pegawai.jabatan,
+        '{{MAKSUD_PERJALANAN_DINAS}}': surat_tugas.maksud_perjalanan or surat_tugas.perihal,
+        '{{JENIS_TRANSPORTASI}}': surat_tugas.get_jenis_transportasi_display(),
+        '{{TEMPAT_BERANGKAT}}': surat_tugas.tempat_berangkat or "-",
+        '{{TEMPAT_TUJUAN}}': tempat_tujuan or "-",
+        '{{LAMA_HARI_PERJADIN}}': f"{durasi} Hari",
+        '{{TANGGAL_BERANGKAT}}': format_date_indo(surat_tugas.tanggal_berangkat),
+        '{{TANGGAL_KEMBALI}}': format_date_indo(surat_tugas.tanggal_kembali),
+        '{{TANGGAL_SPD_DIBUAT}}': format_date_indo(perjadin.created_at.date() if perjadin.created_at else None),
+        '{{NAMA_PPK}}': nama_ppk,
+        '{{NIP_PPK}}': nip_ppk,
+        '{{SUMBER_ANGGARAN}}': f"{surat_tugas.anggaran.kode_dipa} - {surat_tugas.anggaran.nama_kegiatan}" if surat_tugas.anggaran else "-",
+    }
+
+    template_path = os.path.join(settings.BASE_DIR, 'static', 'template_documents', 'template_SPD.xlsx')
+    
+    import zipfile
+    import io
+
+    # Gunakan in-memory buffer untuk menyimpan hasil modifikasi zip
+    output_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(template_path, 'r') as zin:
+        with zipfile.ZipFile(output_buffer, 'w') as zout:
+            for item in zin.infolist():
+                content = zin.read(item.filename)
+                if item.filename == 'xl/sharedStrings.xml' or item.filename.startswith('xl/worksheets/'):
+                    text = content.decode('utf-8')
+                    for key, val in mapping.items():
+                        text = text.replace(key, str(val))
+                    content = text.encode('utf-8')
+                zout.writestr(item, content)
+
+    response = HttpResponse(
+        output_buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="SPD_{pegawai.nama}.xlsx"'
+    return response
+
+@login_required
+def download_rincian_excel(request, perjadin_id):
+    perjadin = get_object_or_404(PerjalananDinas, id=perjadin_id)
+    surat_tugas = perjadin.surat_tugas
+
+    months = {
+        1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April', 5: 'Mei', 6: 'Juni',
+        7: 'Juli', 8: 'Agustus', 9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
+    }
+
+    def format_date_indo(date_obj):
+        if not date_obj:
+            return ""
+        return f"{date_obj.day} {months[date_obj.month]} {date_obj.year}"
+
+    ppk = PejabatPenandatangan.objects.filter(jabatan='PPK').first()
+    nama_ppk = ppk.nama if ppk else "-"
+    nip_ppk = ppk.nip if ppk else "-"
+
+    sekretaris = PejabatPenandatangan.objects.filter(jabatan='SEKRETARIS').first()
+    nama_sekretaris = sekretaris.nama if sekretaris else "-"
+    nip_sekretaris = sekretaris.nip if sekretaris else "-"
+
+    bendahara = PejabatPenandatangan.objects.filter(jabatan='BENDAHARA').first()
+    nama_bendahara = bendahara.nama if bendahara else "-"
+    nip_bendahara = bendahara.nip if bendahara else "-"
+    
+    # Hitung total biaya
+    try:
+        biaya = perjadin.biaya
+        breakdown = biaya.calculate_breakdown()
+        total = breakdown.get('total_dibayarkan', 0)
+    except Exception:
+        biaya = None
+        breakdown = {}
+        total = 0
+        
+    formatted_total = '{:,.0f}'.format(total).replace(',', '.')
+
+    # Tambahan TAHUN_BULAN_SEKARANG
+    from datetime import date
+    today = date.today()
+    tahun_bulan_sekarang = f"{months[today.month]} {today.year}"
+
+    mapping = {
+        '{{NOMOR_SPD}}': perjadin.nomor_spd or "-",
+        '{{TANGGAL_SURAT_SPD}}': format_date_indo(perjadin.created_at.date() if perjadin.created_at else None),
+        '{{NAMA_PPK}}': nama_ppk,
+        '{{NIP_PPK}}': nip_ppk,
+        '{{NAMA_SEKRETARIS}}': nama_sekretaris,
+        '{{NIP_SEKRETARIS}}': nip_sekretaris,
+        '{{NAMA_BENDAHARA}}': nama_bendahara,
+        '{{NIP_BENDAHARA}}': nip_bendahara,
+        '{{TOTAL_BIAYA}}': formatted_total,
+        '{{TOTAL_DIBAYARKAN}}': formatted_total,
+        '{{TAHUN_BULAN_SEKARANG}}': tahun_bulan_sekarang,
+        '{{BULAN_TAHUN_SEKARANG}}': tahun_bulan_sekarang,
+    }
+
+    template_path = os.path.join(settings.BASE_DIR, 'static', 'template_documents', 'rincian_SPD.xlsx')
+    
+    import openpyxl
+    from copy import copy
+    import io
+    import zipfile
+    
+    wb = openpyxl.load_workbook(template_path)
+    ws = wb.active
+    
+    # 1. Replace variables in all cells
+    for row in ws.iter_rows():
+        for cell in row:
+            if isinstance(cell.value, str):
+                for key, val in mapping.items():
+                    if key in cell.value:
+                        cell.value = cell.value.replace(key, str(val))
+                        
+    # Kumpulkan item rincian
+    items_to_insert = []
+    cats = breakdown.get('breakdown_categories', {})
+    for cat_key, cat_data in cats.items():
+        for item in cat_data.get('items', []):
+            if item.get('total', 0) > 0:
+                items_to_insert.append({
+                    'uraian': item.get('keterangan', ''),
+                    'jumlah': item.get('total', 0)
+                })
+
+    start_row = 12
+    # Fill data into fixed rows
+    for i, item in enumerate(items_to_insert):
+        row_idx = start_row + i
+        if row_idx > 28:  # Batas maksimal row rincian yang ada di template
+            break
+            
+        formatted_jumlah = 'Rp {:,.0f}'.format(item['jumlah']).replace(',', '.')
+        
+        ws.cell(row=row_idx, column=2, value=str(i+1))
+        ws.cell(row=row_idx, column=3, value=item['uraian'])
+        ws.cell(row=row_idx, column=7, value=formatted_jumlah)
+
+    openpyxl_buf = io.BytesIO()
+    wb.save(openpyxl_buf)
+    openpyxl_buf.seek(0)
+    
+    # 2. Re-inject drawing tag to preserve the image
+    final_buf = io.BytesIO()
+    with zipfile.ZipFile(openpyxl_buf, 'r') as zin:
+        with zipfile.ZipFile(final_buf, 'w') as zout:
+            for item in zin.infolist():
+                content = zin.read(item.filename)
+                if item.filename == 'xl/worksheets/sheet1.xml':
+                    text = content.decode('utf-8')
+                    if '<drawing' not in text:
+                        text = text.replace('</worksheet>', '<drawing r:id="rId1"/></worksheet>')
+                    content = text.encode('utf-8')
+                zout.writestr(item, content)
+
+    response = HttpResponse(
+        final_buf.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="Rincian_Biaya_{perjadin.pegawai.nama}.xlsx"'
+    return response
+
+@login_required
+def download_kwitansi_excel(request, perjadin_id):
+    perjadin = get_object_or_404(PerjalananDinas, id=perjadin_id)
+    surat_tugas = perjadin.surat_tugas
+    pegawai = perjadin.pegawai
+
+    months = {
+        1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April', 5: 'Mei', 6: 'Juni',
+        7: 'Juli', 8: 'Agustus', 9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
+    }
+
+    def format_date_indo(date_obj):
+        if not date_obj:
+            return ""
+        return f"{date_obj.day} {months[date_obj.month]} {date_obj.year}"
+
+    from datetime import date
+    today = date.today()
+    tanggal_kwitansi = f"{today.day} {months[today.month]} {today.year}"
+
+    ppk = PejabatPenandatangan.objects.filter(jabatan='PPK').first()
+    nama_ppk = ppk.nama if ppk else "-"
+    nip_ppk = ppk.nip if ppk else "-"
+
+    try:
+        biaya = perjadin.biaya
+        breakdown = biaya.calculate_breakdown()
+        total = breakdown.get('total_dibayarkan', 0)
+    except Exception:
+        total = 0
+        
+    formatted_total = '{:,.0f}'.format(total).replace(',', '.')
+
+    tempat_tujuan = surat_tugas.tujuan_provinsi.nama if surat_tugas.tujuan_provinsi else surat_tugas.tempat_tujuan
+
+    mapping = {
+        '{{NO_FULL_SPD}}': perjadin.nomor_spd or "-",
+        '{{NAMA_PEGAWAI}}': pegawai.nama,
+        '{{NIP_PEGAWAI}}': pegawai.nip,
+        '{{NAMA_PPK}}': nama_ppk,
+        '{{NIP_PPK}}': nip_ppk,
+        '{{TANGGAL_KWITANSI}}': tanggal_kwitansi,
+        '{{TANGGAL_SURAT_SPD}}': format_date_indo(perjadin.created_at.date() if perjadin.created_at else None),
+        '{{TEMPAT_BERANGKAT}}': surat_tugas.tempat_berangkat or "-",
+        '{{TEMPAT_TUJUAN}}': tempat_tujuan or "-",
+        '{{TOTAL_DIBAYARKAN}}': formatted_total,
+    }
+
+    template_path = os.path.join(settings.BASE_DIR, 'static', 'template_documents', 'kwitansi_SPD.xlsx')
+    
+    import zipfile
+    import io
+
+    output_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(template_path, 'r') as zin:
+        with zipfile.ZipFile(output_buffer, 'w') as zout:
+            for item in zin.infolist():
+                content = zin.read(item.filename)
+                if item.filename == 'xl/sharedStrings.xml' or item.filename.startswith('xl/worksheets/'):
+                    text = content.decode('utf-8')
+                    for key, val in mapping.items():
+                        text = text.replace(key, str(val))
+                    content = text.encode('utf-8')
+                zout.writestr(item, content)
+
+    response = HttpResponse(
+        output_buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="Kwitansi_{pegawai.nama}.xlsx"'
+    return response

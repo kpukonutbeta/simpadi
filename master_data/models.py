@@ -199,6 +199,7 @@ class PejabatPenandatangan(models.Model):
     class Jabatan(models.TextChoices):
         SEKRETARIS = 'SEKRETARIS', 'Sekretaris'
         PPK = 'PPK', 'Pejabat Pembuat Komitmen (PPK)'
+        BENDAHARA = 'BENDAHARA', 'Bendahara'
 
     nama = models.CharField(max_length=150, verbose_name="Nama Lengkap")
     nip = models.CharField(max_length=30, verbose_name="NIP")
