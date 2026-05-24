@@ -107,13 +107,13 @@ class StandarBiaya(models.Model):
         max_digits=12,
         decimal_places=0,
         default=0,
-        verbose_name="Uang Representasi Luar Kota",
+        verbose_name="Representasi Luar Kota",
     )
     uang_representasi_dalam_kota = models.DecimalField(
         max_digits=12,
         decimal_places=0,
         default=0,
-        verbose_name="Uang Representasi Dalam Kota (> 8 Jam)",
+        verbose_name="Representasi Dalam Kota (> 8 Jam)",
     )
     biaya_taksi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Taksi Bandara")
     tahun = models.IntegerField(

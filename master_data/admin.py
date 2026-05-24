@@ -249,12 +249,12 @@ class StandarBiayaAdmin(admin.ModelAdmin):
 
 
     def fmt_uang_representasi_luar_kota(self, obj): return self._rupiah(obj.uang_representasi_luar_kota)
-    fmt_uang_representasi_luar_kota.short_description = "Uang Representasi Luar Kota"
+    fmt_uang_representasi_luar_kota.short_description = "Representasi Luar Kota"
     fmt_uang_representasi_luar_kota.admin_order_field = 'uang_representasi_luar_kota'
 
 
     def fmt_uang_representasi_dalam_kota(self, obj): return self._rupiah(obj.uang_representasi_dalam_kota)
-    fmt_uang_representasi_dalam_kota.short_description = "Uang Representasi Dalam Kota (> 8 Jam)"
+    fmt_uang_representasi_dalam_kota.short_description = "Representasi Dalam Kota (> 8 Jam)"
     fmt_uang_representasi_dalam_kota.admin_order_field = 'uang_representasi_dalam_kota'
 
 
