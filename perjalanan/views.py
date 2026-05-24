@@ -105,7 +105,10 @@ def ajukan_perjadin(request, surat_tugas_id):
                     biaya_formset.save()
                     
                 messages.success(request, message_type + ".")
-                return redirect('core:dashboard')
+                if action == 'save':
+                    return redirect('perjalanan:ajukan_perjadin', surat_tugas_id=surat_tugas.id)
+                else:
+                    return redirect('core:dashboard')
             except Exception as e:
                 messages.error(request, f"Terjadi kesalahan saat menyimpan: {e}")
         else:

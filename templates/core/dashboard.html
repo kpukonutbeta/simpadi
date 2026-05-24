@@ -133,6 +133,7 @@
                             <th>Tanggal Perjalanan</th>
                             <th>Total Biaya</th>
                             <th style="text-align: center;">Status Tahapan</th>
+                            <th style="text-align: center;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -176,10 +177,15 @@
                                     </span>
                                 {% endif %}
                             </td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <a href="{% url 'perjalanan:ajukan_perjadin' spd.surat_tugas.id %}" class="btn" style="background: white; border: 1px solid var(--primary); color: var(--primary); padding: 0.35rem 0.75rem; font-size: 0.75rem; border-radius: 0.375rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600;">
+                                    <i class="fas fa-eye"></i> Detail
+                                </a>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                            <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
                                 <i class="fas fa-folder-open" style="display: block; font-size: 2.25rem; margin-bottom: 1rem; color: #cbd5e1;"></i>
                                 Belum ada data perjalanan dinas yang diajukan.
                             </td>
