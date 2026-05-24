@@ -453,6 +453,32 @@ def get_standar_biaya_tiket_ajax(request):
         'penginapan_berkas_ids': jenis_berkas_penginapan
     })
 
+@login_required
+def get_standar_biaya_penginapan_ajax(request):
+    from master_data.models import StandarBiaya, Pegawai
+    from perjalanan.models import get_eligible_sbm_filter
+    
+    pegawai_id = request.GET.get('pegawai_id')
+    provinsi_id = request.GET.get('provinsi_id')
+    tahun_sbm = request.GET.get('tahun_sbm')
+    
+    if not all([pegawai_id, provinsi_id, tahun_sbm]):
+        return JsonResponse({'error': 'Missing parameters'}, status=400)
+        
+    try:
+        pegawai = Pegawai.objects.get(id=pegawai_id)
+        q_filter = get_eligible_sbm_filter(pegawai)
+        sbm = StandarBiaya.objects.filter(
+            q_filter,
+            provinsi_id=provinsi_id,
+            tahun=int(tahun_sbm)
+        ).order_by('-plafon_penginapan').first()
+        
+        plafon = float(sbm.plafon_penginapan) if sbm else 0
+        return JsonResponse({'plafon': plafon})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 @login_required
 def kalender_perjadin(request):

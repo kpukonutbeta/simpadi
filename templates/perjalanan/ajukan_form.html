@@ -961,15 +961,15 @@
 
     function parsePenginapanKeterangan(keteranganVal) {
         if (!keteranganVal) return null;
-        const match = keteranganVal.match(/^\[SBM-PENGINAPAN:([^:]+):([^:]+):(\d+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$/);
+        const match = keteranganVal.trim().match(/^\[SBM-PENGINAPAN:([^:]*):([^:]*):(\d+):([^:]*):([^\]]*)\](?:\s*\|\s*(.*))?$/);
         if (match) {
             return {
-                checkIn: match[1],
-                checkOut: match[2],
+                checkIn: match[1].trim(),
+                checkOut: match[2].trim(),
                 nights: parseInt(match[3]),
-                provinsiId: match[4],
-                provinsiNama: match[5],
-                userDesc: match[6] || ""
+                provinsiId: match[4].trim(),
+                provinsiNama: match[5].trim(),
+                userDesc: match[6] ? match[6].trim() : ""
             };
         }
         return null;
@@ -1035,15 +1035,15 @@
 
     function parseTicketKeterangan(keteranganVal) {
         if (!keteranganVal) return null;
-        const match = keteranganVal.match(/^\[SBM-TIKET:(\d+)-(\d+)-(\w+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$/);
+        const match = keteranganVal.trim().match(/^\[SBM-TIKET:(\d+)-(\d+)-(\w+):([^:]*):([^\]]*)\](?:\s*\|\s*(.*))?$/);
         if (match) {
             return {
-                asalId: match[1],
-                tujuanId: match[2],
+                asalId: parseInt(match[1]),
+                tujuanId: parseInt(match[2]),
                 kelas: match[3],
-                namaAsal: match[4],
-                namaTujuan: match[5],
-                userDesc: match[6] || ""
+                namaAsal: match[4].trim(),
+                namaTujuan: match[5].trim(),
+                userDesc: match[6] ? match[6].trim() : ""
             };
         }
         return null;
@@ -1701,10 +1701,12 @@
             .then(res => res.json())
             .then(data => {
                 ticketRoutes = data.routes || [];
+            })
+            .catch(err => console.error("Error fetching ticket routes:", err))
+            .finally(() => {
                 initializeExistingTicketRows();
                 initializeExistingHotelRows();
-            })
-            .catch(err => console.error("Error fetching ticket routes:", err));
+            });
 
         const JENIS_HARIAN_LABELS = {
             'luar_kota': 'Luar Kota',

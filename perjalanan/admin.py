@@ -501,7 +501,7 @@ class PerjalananDinasAdmin(admin.ModelAdmin):
     get_detail_perjalanan_table.short_description = "Rincian Perjalanan Dinas"
 
     class Media:
-        js = ('js/admin_loader.js', 'js/admin_accordion.js')
+        js = ('js/rupiah_input.js', 'js/admin_loader.js', 'js/admin_accordion.js')
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         context.update({

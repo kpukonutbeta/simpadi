@@ -65,8 +65,11 @@ function initAdminFilter() {
                     const tagHidden = row.querySelector('.admin-ticket-tag-hidden');
                     keteranganVal = tagHidden ? tagHidden.value : '';
                 } else if (isPenginapanBerkas(select)) {
-                    const tagHidden = row.querySelector('.admin-hotel-tag-hidden');
-                    keteranganVal = tagHidden ? tagHidden.value : '';
+                    const hotelTagHidden = row.querySelector('.admin-hotel-tag-hidden');
+                    const descInput = row.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
+                    if (hotelTagHidden && descInput) {
+                        keteranganVal = hotelTagHidden.value;
+                    }
                 }
 
                 if (jbId) {
@@ -268,41 +271,6 @@ function initAdminFilter() {
         }
     });
 
-    // Thousand separator formatting for nominal inputs
-    function formatRupiahInput(value) {
-        let digits = value.replace(/\D/g, '');
-        if (!digits) return '';
-        return parseInt(digits, 10).toLocaleString('id-ID');
-    }
-
-    document.addEventListener('input', function (e) {
-        if (e.target.matches('input[name$="-nominal"]')) {
-            let input = e.target;
-            if (input.type === 'number') {
-                input.type = 'text';
-            }
-            let cursorPosition = input.selectionStart;
-            let originalLength = input.value.length;
-
-            let formatted = formatRupiahInput(input.value);
-            if (input.value !== formatted) {
-                input.value = formatted;
-                let newLength = formatted.length;
-                let diff = newLength - originalLength;
-                input.setSelectionRange(cursorPosition + diff, cursorPosition + diff);
-            }
-        }
-    });
-
-    // Format all nominal fields initially
-    document.querySelectorAll('input[name$="-nominal"]').forEach(input => {
-        if (input.type === 'number') {
-            input.type = 'text';
-        }
-        if (input.value) {
-            input.value = formatRupiahInput(input.value);
-        }
-    });
 
     // Strip dots and concat ticket tags before form submit in Admin
     const form = document.getElementById('perjalanandinas_form') || document.querySelector('form');
@@ -333,7 +301,7 @@ function initAdminFilter() {
                 if (select) {
                     if (isTicketPesawat(select)) {
                         const tagHidden = row.querySelector('.admin-ticket-tag-hidden');
-                        const descInput = row.querySelector('input[name$="-keterangan"]');
+                        const descInput = row.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
                         if (tagHidden && descInput) {
                             const tagVal = tagHidden.value;
                             const descVal = descInput.value.trim();
@@ -347,7 +315,7 @@ function initAdminFilter() {
                         }
                     } else if (isPenginapanBerkas(select)) {
                         const tagHidden = row.querySelector('.admin-hotel-tag-hidden');
-                        const descInput = row.querySelector('input[name$="-keterangan"]');
+                        const descInput = row.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
                         if (tagHidden && descInput) {
                             const tagVal = tagHidden.value;
                             const descVal = descInput.value.trim();
@@ -361,10 +329,6 @@ function initAdminFilter() {
                         }
                     }
                 }
-            });
-
-            form.querySelectorAll('input[name$="-nominal"]').forEach(input => {
-                input.value = input.value.replace(/\./g, '');
             });
         });
     }
@@ -609,15 +573,15 @@ function initAdminFilter() {
 
     function parsePenginapanKeterangan(keteranganVal) {
         if (!keteranganVal) return null;
-        const match = keteranganVal.match(/^\[SBM-PENGINAPAN:([^:]+):([^:]+):(\d+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$/);
+        const match = keteranganVal.trim().match(/^\[SBM-PENGINAPAN:([^:]*):([^:]*):(\d+):([^:]*):([^\]]*)\](?:\s*\|\s*(.*))?$/);
         if (match) {
             return {
-                checkIn: match[1],
-                checkOut: match[2],
+                checkIn: match[1].trim(),
+                checkOut: match[2].trim(),
                 nights: parseInt(match[3]),
-                provinsiId: match[4],
-                provinsiNama: match[5],
-                userDesc: match[6] || ""
+                provinsiId: match[4].trim(),
+                provinsiNama: match[5].trim(),
+                userDesc: match[6] ? match[6].trim() : ""
             };
         }
         return null;
@@ -641,15 +605,15 @@ function initAdminFilter() {
 
     function parseTicketKeterangan(keteranganVal) {
         if (!keteranganVal) return null;
-        const match = keteranganVal.match(/^\[SBM-TIKET:(\d+)-(\d+)-(\w+):([^:]+):([^\]]+)\](?:\s*\|\s*(.*))?$/);
+        const match = keteranganVal.trim().match(/^\[SBM-TIKET:(\d+)-(\d+)-(\w+):([^:]*):([^\]]*)\](?:\s*\|\s*(.*))?$/);
         if (match) {
             return {
-                asalId: match[1],
-                tujuanId: match[2],
+                asalId: parseInt(match[1]),
+                tujuanId: parseInt(match[2]),
                 kelas: match[3],
-                namaAsal: match[4],
-                namaTujuan: match[5],
-                userDesc: match[6] || ""
+                namaAsal: match[4].trim(),
+                namaTujuan: match[5].trim(),
+                userDesc: match[6] ? match[6].trim() : ""
             };
         }
         return null;
@@ -931,9 +895,12 @@ function initAdminFilter() {
 
         updateAdminRowRouteLayout(activeTicketRow, true, originName, destName, kelasName);
 
-        const nominalInput = activeTicketRow.querySelector('input[name$="-nominal"]');
-        if (nominalInput) {
-            nominalInput.value = route.nominal.toLocaleString('id-ID');
+        const descInput = activeTicketRow.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
+        if (descInput) {
+            const nominalInput = activeTicketRow.querySelector('input[name$="-nominal"]');
+            if (nominalInput) {
+                nominalInput.value = route.nominal.toLocaleString('id-ID');
+            }
         }
 
         document.getElementById('adminTicketModal').style.display = 'none';
@@ -944,7 +911,7 @@ function initAdminFilter() {
 
     function toggleAdminHotelInputs(row, isBadgeActive) {
         const malamInput = row.querySelector('input[name$="-malam_menginap"]');
-        const keteranganInput = row.querySelector('input[name$="-keterangan"]');
+        const keteranganInput = row.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
         
         if (isBadgeActive) {
             if (malamInput) {
@@ -989,15 +956,18 @@ function initAdminFilter() {
         if (isActive && provinsiNama && checkIn && checkOut) {
             row.classList.add('has-hotel-route');
             hElement.className = 'hotel-badge admin-ticket-route-badge-active';
-            hElement.style.setProperty('background-color', '#ecfdf5', 'important');
-            hElement.style.setProperty('border-color', '#a7f3d0', 'important');
-            hElement.style.setProperty('color', '#065f46', 'important');
-            hElement.style.setProperty('top', '0.4rem', 'important');
-            hElement.innerHTML = `🏨 ${provinsiNama} (${formatTglIndo(checkIn)} - ${formatTglIndo(checkOut)}) <button type="button" class="admin-hotel-route-edit admin-ticket-route-edit-btn" style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;" title="Ubah Akomodasi">✏️</button>`;
+            hElement.innerHTML = `🏨 ${provinsiNama} (${formatTglIndo(checkIn)} - ${formatTglIndo(checkOut)}) <button type="button" class="edit-hotel-route-btn admin-ticket-route-edit-btn" style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;" title="Ubah Akomodasi">✏️</button>`;
+            hElement.style.display = 'block';
+            
+            let btn = hElement.querySelector('.edit-hotel-route-btn');
+            if (btn) {
+                btn.addEventListener('click', () => openAdminHotelModal(row));
+            }
         } else {
             row.classList.remove('has-hotel-route');
             hElement.className = 'hotel-badge';
-            hElement.innerHTML = '';
+            hElement.innerHTML = hElement.dataset.originalText || '';
+            hElement.style.display = hElement.dataset.originalText ? 'block' : 'none';
         }
     }
 
@@ -1115,7 +1085,7 @@ function initAdminFilter() {
         }
 
         // Load existing tag from keterangan field
-        const descInput = row.querySelector('input[name$="-keterangan"]');
+        const descInput = row.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
         if (descInput) {
             const parsedTicket = parseTicketKeterangan(descInput.value);
             const parsedHotel = parsePenginapanKeterangan(descInput.value);
@@ -1473,30 +1443,53 @@ function initAdminFilter() {
             malamInput.value = nights;
         }
 
-        const keteranganInput = activeHotelRow.querySelector('input[name$="-keterangan"]');
+        const keteranganInput = activeHotelRow.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
         if (keteranganInput) {
             keteranganInput.value = userDesc;
         }
 
         toggleAdminHotelInputs(activeHotelRow, true);
 
+        // --- Fetch plafon and calculate nominal ---
+        const pegawaiId = document.querySelector('#id_pegawai')?.value;
+        const tahunSbm = document.querySelector('#id_tahun_sbm')?.value || '';
+        if (pegawaiId && provId) {
+            fetch(`/perjalanan/api/get-plafon-penginapan/?pegawai_id=${pegawaiId}&provinsi_id=${provId}&tahun_sbm=${tahunSbm}`)
+                .then(res => res.json())
+                .then(data => {
+                    const plafon = data.plafon || 0;
+                    const totalNominal = plafon * nights;
+                    const nominalInput = activeHotelRow.querySelector('input[name$="-nominal"]');
+                    if (nominalInput) {
+                        nominalInput.value = totalNominal.toLocaleString('id-ID');
+                    }
+                    updateAdminEstimasi();
+                })
+                .catch(err => {
+                    console.error("Error fetching hotel plafon:", err);
+                    updateAdminEstimasi();
+                });
+        } else {
+            updateAdminEstimasi();
+        }
+
         document.getElementById('adminHotelModal').style.display = 'none';
         activeHotelRow = null;
-
-        updateAdminEstimasi();
     }
 
     function fetchTicketRoutes() {
         const tahunSbm = document.querySelector('#id_tahun_sbm')?.value || '';
-        fetch(`/perjalanan/api/get-standar-biaya-tiket/?tahun_sbm=${tahunSbm}`)
+        fetch(`/perjalanan/api/get-standar-biaya-tiket/?tahun_sbm=${tahunSbm}`, {credentials: 'same-origin'})
             .then(res => res.json())
             .then(data => {
                 ticketRoutes = data.routes || [];
                 ticketPesawatIds = data.ticket_pesawat_ids || [];
                 penginapanBerkasIds = data.penginapan_berkas_ids || [];
-                initializeAdminTicketRows();
             })
-            .catch(err => console.error("Error fetching ticket routes in admin:", err));
+            .catch(err => console.error("Error fetching ticket routes in admin:", err))
+            .finally(() => {
+                initializeAdminTicketRows();
+            });
     }
 
     // Initialize Admin Ticket Features
@@ -1696,6 +1689,7 @@ function initAdminFilter() {
 
     // Run initial estimation on load in Admin
     setTimeout(updateAdminEstimasi, 500);
+}
 }
 
 if (document.readyState === 'loading') {

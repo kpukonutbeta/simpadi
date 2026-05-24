@@ -1,0 +1,462 @@
+L1: level 0 -> 1 | function initAdminFilter() {
+L5: level 1 -> 2 |     if (suratTugasSelect && pegawaiSelect) {
+L6: level 2 -> 3 |         suratTugasSelect.addEventListener('change', function
+L12: level 3 -> 4 |                 .then(data => {
+L16: level 4 -> 5 |                     data.pegawai.forEach(p => {
+L20: level 5 -> 6 |                         if (p.id == currentPegawaiId) {
+L22: level 6 -> 5 |                         }
+L24: level 5 -> 4 |                     });
+L26: level 4 -> 3 |                     updateAdminEstimasi();
+L28: level 3 -> 2 |                 .catch(error => console.error('Error fetchin
+L30: level 2 -> 3 | 
+L32: level 3 -> 2 |             suratTugasSelect.dispatchEvent(new Event('change
+L33: level 2 -> 1 |         }
+L35: level 1 -> 2 | 
+L37: level 2 -> 2 |     function updateAdminEstimasi() {
+L47: level 2 -> 3 |         // Gather all berkas inlines from tabular rows
+L54: level 3 -> 4 | 
+L61: level 4 -> 5 |                 const malamVal = malamInput ? parseInt(malam
+L67: level 5 -> 6 |                 } else if (isPenginapanBerkas(select)) {
+L69: level 6 -> 5 |                     const descInput = row.querySelector('inp
+L70: level 5 -> 4 |                     if (hotelTagHidden && descInput) {
+L72: level 4 -> 5 |                     }
+L73: level 5 -> 6 |                 }
+L78: level 6 -> 5 |                         'nominal': parseFloat(nominalVal) ||
+L79: level 5 -> 4 |                         'malam_menginap': malamVal,
+L80: level 4 -> 3 |                         'keterangan': keteranganVal
+L81: level 3 -> 2 |                     });
+L87: level 2 -> 3 | 
+L89: level 3 -> 4 |         const harian = [];
+L95: level 4 -> 5 |                 const jenisSelect = row.querySelector('selec
+L96: level 5 -> 6 |                 const hariKeTd = row.querySelector('.field-h
+L100: level 6 -> 5 |                     harian.push({
+L101: level 5 -> 4 |                         'hari_ke': hariKe,
+L102: level 4 -> 3 |                         'provinsi_id': provSelect.value ? pa
+L103: level 3 -> 2 |                         'jenis_harian': jenisSelect.value ||
+L105: level 2 -> 3 |                 }
+L116: level 3 -> 2 |             tahun_sbm: tahunSbm,
+L122: level 2 -> 3 |         let csrfToken = '';
+L124: level 3 -> 4 |         if (csrfInput) csrfToken = csrfInput.value;
+L127: level 4 -> 3 |             method: 'POST',
+L129: level 3 -> 2 |                 'Content-Type': 'application/json',
+L131: level 2 -> 3 |             },
+L134: level 3 -> 4 |             .then(response => response.json())
+L135: level 4 -> 5 |             .then(data => {
+L138: level 5 -> 4 |                 const formatRupiah = (val) => {
+L139: level 4 -> 3 |                     return 'Rp ' + parseFloat(val).toLocaleS
+L153: level 3 -> 4 |                 if (harianEl) harianEl.textContent = formatR
+L155: level 4 -> 5 |                 if (hotelEl) hotelEl.textContent = formatRup
+L159: level 5 -> 4 |                     const unpaidVal = parseFloat(data.total_
+L160: level 4 -> 3 |                     if (unpaidVal > 0) {
+L165: level 3 -> 4 |                 }
+L168: level 4 -> 5 |                 const lumpsumNominal = 0.30 * plafonHotel;
+L170: level 5 -> 6 |                 const rows = document.querySelectorAll('.inl
+L178: level 6 -> 7 |                             nominalInput.style.backgroundCol
+L181: level 7 -> 6 |                             const malamInput = row.querySele
+L188: level 6 -> 7 |                         } else if (selectText.includes('FULL
+L193: level 7 -> 6 |                         } else {
+L194: level 6 -> 5 |                             if (nominalInput.readOnly) {
+L195: level 5 -> 4 |                                 nominalInput.readOnly = fals
+L196: level 4 -> 3 |                                 nominalInput.style.backgroun
+L197: level 3 -> 2 |                                 nominalInput.style.cursor = 
+L199: level 2 -> 1 |                             }
+L211: level 1 -> 2 |         '#id_tujuan_provinsi',
+L213: level 2 -> 3 |         '#id_jenis_transportasi',
+L216: level 3 -> 2 |         '#id_pegawai'
+L217: level 2 -> 1 |     ];
+L222: level 1 -> 2 |             el.addEventListener('input', updateAdminEstimasi
+L225: level 2 -> 3 | 
+L226: level 3 -> 4 |     const jenisPerjalananSelect = document.querySelector('#i
+L229: level 4 -> 5 |     function checkAdminFullboard() {
+L231: level 5 -> 6 |         const val = jenisPerjalananSelect.value;
+L233: level 6 -> 5 |             if (groupPenginapan) {
+L234: level 5 -> 4 |                 groupPenginapan.style.display = 'none';
+L235: level 4 -> 3 |                 const rows = groupPenginapan.querySelectorAl
+L237: level 3 -> 4 |                     const deleteInput = row.querySelector('i
+L239: level 4 -> 3 |                         deleteInput.checked = true;
+L240: level 3 -> 2 |                     }
+L241: level 2 -> 1 |                 });
+L243: level 1 -> 2 |         } else {
+L244: level 2 -> 3 |             if (groupPenginapan) {
+L246: level 3 -> 2 |             }
+L248: level 2 -> 1 |     }
+L250: level 1 -> 2 |     if (jenisPerjalananSelect) {
+L256: level 2 -> 3 | 
+L258: level 3 -> 2 |     document.addEventListener('change', function (e) {
+L259: level 2 -> 1 |         if (e.target.matches('input[name$="-nominal"]') || 
+L260: level 1 -> 2 |             e.target.matches('select[name$="-jenis_berkas"]'
+L261: level 2 -> 3 |             e.target.matches('input[name$="-DELETE"]') || 
+L263: level 3 -> 2 |             e.target.matches('select[name$="-provinsi"]') ||
+L264: level 2 -> 1 |             e.target.matches('select[name$="-jenis_harian"]'
+L268: level 1 -> 2 |     document.addEventListener('input', function (e) {
+L269: level 2 -> 3 |         if (e.target.matches('input[name$="-nominal"]') || e
+L272: level 3 -> 4 |     });
+L277: level 4 -> 5 |     if (form) {
+L278: level 5 -> 5 |         form.addEventListener('submit', function (e) {
+L279: level 5 -> 4 |             let flightCount = 0;
+L280: level 4 -> 3 |             const rows = document.querySelectorAll('.inline-
+L281: level 3 -> 4 |             rows.forEach(row => {
+L285: level 4 -> 3 |                 const select = row.querySelector('select[nam
+L287: level 3 -> 4 |                     flightCount++;
+L292: level 4 -> 5 |                 alert("Tiket pesawat hanya dapat diinput mak
+L293: level 5 -> 6 |                 return false;
+L296: level 6 -> 7 |             rows.forEach(row => {
+L299: level 7 -> 8 | 
+L300: level 8 -> 9 |                 const select = row.querySelector('select[nam
+L304: level 9 -> 8 |                         const descInput = row.querySelector(
+L305: level 8 -> 7 |                         if (tagHidden && descInput) {
+L306: level 7 -> 6 |                             const tagVal = tagHidden.value;
+L310: level 6 -> 7 |                                     descInput.value = `${tag
+L313: level 7 -> 8 |                                 }
+L314: level 8 -> 9 |                             }
+L318: level 9 -> 8 |                         const descInput = row.querySelector(
+L319: level 8 -> 7 |                         if (tagHidden && descInput) {
+L320: level 7 -> 6 |                             const tagVal = tagHidden.value;
+L321: level 6 -> 5 |                             const descVal = descInput.value.
+L322: level 5 -> 4 |                             if (tagVal) {
+L323: level 4 -> 3 |                                 if (descVal) {
+L324: level 3 -> 2 |                                     descInput.value = `${tag
+L325: level 2 -> 1 |                                 } else {
+L335: level 1 -> 2 | 
+L342: level 2 -> 1 |             left: 0;
+L344: level 1 -> 2 |             width: 100%;
+L348: level 2 -> 1 |             font-family: -apple-system, BlinkMacSystemFont, 
+L350: level 1 -> 2 |         .admin-ticket-modal-content {
+L354: level 2 -> 1 |             width: 90%;
+L356: level 1 -> 2 |             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25
+L365: level 2 -> 1 |             justify-content: space-between;
+L367: level 1 -> 2 |         }
+L370: level 2 -> 3 |             margin: 0;
+L371: level 3 -> 4 |             font-weight: 700;
+L378: level 4 -> 3 |             font-weight: 300;
+L379: level 3 -> 2 |             cursor: pointer;
+L381: level 2 -> 1 |         .admin-ticket-modal-close:hover {
+L383: level 1 -> 2 |         }
+L386: level 2 -> 3 |         }
+L392: level 3 -> 4 |             font-size: 0.875rem;
+L394: level 4 -> 3 |             margin-bottom: 0.375rem;
+L395: level 3 -> 2 |             color: #334155;
+L397: level 2 -> 1 | 
+L399: level 1 -> 2 |             width: 100% !important;
+L402: level 2 -> 3 |             padding: 0.375rem 2.5rem 0.375rem 0.75rem !impor
+L403: level 3 -> 4 |             font-size: 0.9rem !important;
+L410: level 4 -> 3 |             -webkit-appearance: none !important;
+L411: level 3 -> 2 |             -moz-appearance: none !important;
+L413: level 2 -> 1 |             line-height: 1.5 !important;
+L415: level 1 -> 2 |         }
+L434: level 2 -> 3 |         .admin-ticket-sbm-preview span {
+L436: level 3 -> 2 |             font-weight: 600;
+L437: level 2 -> 3 |         }
+L439: level 3 -> 2 |             display: flex;
+L440: level 2 -> 3 |             gap: 0.75rem;
+L442: level 3 -> 2 |         .admin-ticket-btn {
+L445: level 2 -> 1 |             font-size: 0.875rem;
+L447: level 1 -> 2 |             cursor: pointer;
+L460: level 2 -> 3 |             background: #e2e8f0;
+L462: level 3 -> 2 |         }
+L465: level 2 -> 3 |             margin-top: 0.375rem;
+L470: level 3 -> 2 |             padding: 0.25rem 0.5rem;
+L479: level 2 -> 3 |         }
+L486: level 3 -> 2 |             font-size: 0.75rem;
+L489: level 2 -> 1 |         /* Adjust padding to prevent overlapping with badge 
+L491: level 1 -> 2 |         .inline-related tr.form-row.has-hotel-route td {
+L493: level 2 -> 3 |             position: relative !important;
+L496: level 3 -> 4 |         /* Styled badge for active ticket route */
+L500: level 4 -> 5 |             left: 10px !important;
+L502: level 5 -> 4 |             padding: 2px 6px !important;
+L504: level 4 -> 3 |             border: 1px solid #bfdbfe !important;
+L505: level 3 -> 2 |             border-radius: 4px !important;
+L507: level 2 -> 1 |             font-size: 11px !important;
+L509: level 1 -> 2 |             white-space: nowrap !important;
+L521: level 2 -> 3 |             border: none !important;
+L524: level 3 -> 2 |             margin-left: 4px !important;
+L527: level 2 -> 3 |             align-items: center !important;
+L528: level 3 -> 4 |             justify-content: center !important;
+L530: level 4 -> 3 |         }
+L531: level 3 -> 2 |         .admin-ticket-route-edit-btn:hover {
+L533: level 2 -> 3 |         }
+L538: level 3 -> 2 |     let penginapanBerkasIds = [];
+L541: level 2 -> 1 | 
+L543: level 1 -> 2 |         'luar_kota': 'Luar Kota',
+L551: level 2 -> 2 |     function isTicketPesawat(selectElement) {
+L552: level 2 -> 3 |         if (!selectElement || !selectElement.value) return f
+L555: level 3 -> 2 |     }
+L557: level 2 -> 2 |     function isPenginapanBerkas(selectElement) {
+L558: level 2 -> 3 |         if (!selectElement || !selectElement.value) return f
+L559: level 3 -> 4 |         const val = parseInt(selectElement.value, 10);
+L561: level 4 -> 3 |     }
+L562: level 3 -> 2 | 
+L563: level 2 -> 2 |     function formatTglIndo(tglStr) {
+L564: level 2 -> 3 |         if (!tglStr) return '';
+L569: level 3 -> 2 |         const month = months[parseInt(parts[1]) - 1];
+L572: level 2 -> 1 |     }
+L574: level 1 -> 2 |     function parsePenginapanKeterangan(keteranganVal) {
+L586: level 2 -> 3 |         }
+L590: level 3 -> 2 |     function countFlightTickets(currentRow = null) {
+L593: level 2 -> 3 |         rows.forEach(r => {
+L600: level 3 -> 2 |                 count++;
+L601: level 2 -> 1 |             }
+L603: level 1 -> 2 |         return count;
+L606: level 2 -> 2 |     function parseTicketKeterangan(keteranganVal) {
+L607: level 2 -> 3 |         if (!keteranganVal) return null;
+L610: level 3 -> 2 |             return {
+L612: level 2 -> 3 |                 tujuanId: parseInt(match[2]),
+L614: level 3 -> 2 |                 namaAsal: match[4].trim(),
+L616: level 2 -> 3 |                 userDesc: match[6] ? match[6].trim() : ""
+L622: level 3 -> 3 |     function injectAdminTicketModal() {
+L624: level 3 -> 2 | 
+L625: level 2 -> 1 |         // Inject Styles
+L627: level 1 -> 2 |         style.textContent = modalStyles;
+L652: level 2 -> 3 |                             <label>Kelas Tiket</label>
+L654: level 3 -> 4 |                                 <option value="">-- Pilih Ke
+L656: level 4 -> 3 |                         </div>
+L657: level 3 -> 2 |                         <div id="admin-ticket-sbm-preview" c
+L663: level 2 -> 1 |                             <button type="button" id="admin-
+L665: level 1 -> 2 |                     </div>
+L669: level 2 -> 3 |         const div = document.createElement('div');
+L670: level 3 -> 4 |         div.innerHTML = modalHtml;
+L674: level 4 -> 3 |         document.getElementById('admin-close-ticket-modal').
+L675: level 3 -> 4 |         document.getElementById('admin-btn-cancel-ticket').a
+L680: level 4 -> 3 | 
+L681: level 3 -> 3 |         asalSelect.addEventListener('change', function () {
+L682: level 3 -> 4 |             populateAdminDestinations(this.value);
+L684: level 4 -> 4 |         tujuanSelect.addEventListener('change', function () 
+L686: level 4 -> 3 |         });
+L687: level 3 -> 4 |         kelasSelect.addEventListener('change', function () {
+L691: level 4 -> 3 |         document.getElementById('admin-btn-save-ticket').add
+L692: level 3 -> 2 |     }
+L693: level 2 -> 1 | 
+L694: level 1 -> 1 |     function openAdminTicketModal(row) {
+L695: level 1 -> 2 |         activeTicketRow = row;
+L701: level 2 -> 3 |         const tujuanSelect = document.getElementById('admin-
+L705: level 3 -> 4 | 
+L709: level 4 -> 3 |         });
+L710: level 3 -> 2 | 
+L712: level 2 -> 3 |         originMap.forEach((nama, id) => {
+L718: level 3 -> 4 | 
+L726: level 4 -> 3 |         if (parsed) {
+L731: level 3 -> 2 |             kelasSelect.value = parsed.kelas;
+L732: level 2 -> 1 |             updateAdminSBMPrice();
+L734: level 1 -> 2 | 
+L738: level 2 -> 2 |     function closeAdminTicketModal() {
+L741: level 2 -> 3 |             const tagHidden = activeTicketRow.querySelector(
+L742: level 3 -> 4 |             const select = activeTicketRow.querySelector('se
+L749: level 4 -> 3 |                 }
+L750: level 3 -> 4 |                 updateAdminEstimasi();
+L752: level 4 -> 5 |         }
+L755: level 5 -> 4 | 
+L756: level 4 -> 4 |     function populateAdminDestinations(originId) {
+L758: level 4 -> 3 |         const kelasSelect = document.getElementById('admin-t
+L765: level 3 -> 4 |         sbmPreview.style.display = 'none';
+L773: level 4 -> 3 |         const destMap = new Map();
+L775: level 3 -> 4 |             if (r.kota_asal_id == originId) {
+L777: level 4 -> 5 |             }
+L780: level 5 -> 4 |         destMap.forEach((nama, id) => {
+L783: level 4 -> 3 |             opt.textContent = nama;
+L790: level 3 -> 3 |     function populateAdminClasses(originId, destId) {
+L793: level 3 -> 2 |         const saveBtn = document.getElementById('admin-btn-s
+L794: level 2 -> 1 | 
+L796: level 1 -> 2 |         sbmPreview.style.display = 'none';
+L807: level 2 -> 3 |                 classes.push({ value: r.kelas, text: r.kelas
+L812: level 3 -> 2 |             const opt = document.createElement('option');
+L815: level 2 -> 3 |             kelasSelect.appendChild(opt);
+L820: level 3 -> 2 | 
+L821: level 2 -> 2 |     function updateAdminSBMPrice() {
+L823: level 2 -> 3 |         const tujuanSelect = document.getElementById('admin-
+L827: level 3 -> 2 |         const saveBtn = document.getElementById('admin-btn-s
+L830: level 2 -> 3 |         const destId = tujuanSelect.value;
+L834: level 3 -> 2 |             sbmPreview.style.display = 'none';
+L836: level 2 -> 3 |             return;
+L838: level 3 -> 2 | 
+L839: level 2 -> 3 |         const route = ticketRoutes.find(r => r.kota_asal_id 
+L841: level 3 -> 2 |             sbmAmount.textContent = 'Rp ' + route.nominal.to
+L844: level 2 -> 3 |         } else {
+L847: level 3 -> 4 |         }
+L850: level 4 -> 4 |     function updateAdminRowRouteLayout(row, isActive, origin
+L865: level 4 -> 3 |             pElement.className = 'admin-ticket-route-badge-a
+L870: level 3 -> 2 |             pElement.innerHTML = pElement.dataset.originalTe
+L871: level 2 -> 1 |         }
+L873: level 1 -> 2 | 
+L874: level 2 -> 2 |     function saveAdminTicketRoute() {
+L875: level 2 -> 3 |         if (!activeTicketRow) return;
+L877: level 3 -> 2 |         const asalSelect = document.getElementById('admin-ti
+L878: level 2 -> 1 |         const tujuanSelect = document.getElementById('admin-
+L880: level 1 -> 2 | 
+L883: level 2 -> 3 |         const kelas = kelasSelect.value;
+L885: level 3 -> 4 |         const originName = asalSelect.options[asalSelect.sel
+L892: level 4 -> 5 |         const tagVal = `[SBM-TIKET:${originId}-${destId}-${k
+L895: level 5 -> 6 | 
+L901: level 6 -> 5 |             if (nominalInput) {
+L902: level 5 -> 4 |                 nominalInput.value = route.nominal.toLocaleS
+L903: level 4 -> 3 |             }
+L904: level 3 -> 2 |         }
+L907: level 2 -> 1 |         activeTicketRow = null;
+L909: level 1 -> 2 |         updateAdminEstimasi();
+L912: level 2 -> 2 |     function toggleAdminHotelInputs(row, isBadgeActive) {
+L915: level 2 -> 3 |         
+L916: level 3 -> 4 |         if (isBadgeActive) {
+L919: level 4 -> 3 |                 malamInput.style.backgroundColor = '#f1f5f9'
+L920: level 3 -> 2 |                 malamInput.style.cursor = 'not-allowed';
+L922: level 2 -> 1 |             if (keteranganInput) {
+L924: level 1 -> 2 |                 keteranganInput.style.backgroundColor = '#f1
+L927: level 2 -> 3 |             }
+L932: level 3 -> 4 |                 malamInput.style.cursor = '';
+L934: level 4 -> 5 |             if (keteranganInput) {
+L936: level 5 -> 6 |                 keteranganInput.style.backgroundColor = '';
+L938: level 6 -> 5 |             }
+L939: level 5 -> 4 |         }
+L940: level 4 -> 3 |     }
+L941: level 3 -> 2 | 
+L942: level 2 -> 2 |     function updateAdminRowHotelLayout(row, isActive, provin
+L943: level 2 -> 1 |         const jenisBerkasCell = row.querySelector('.field-je
+L945: level 1 -> 2 |         const select = jenisBerkasCell.querySelector('select
+L951: level 2 -> 3 |             hElement.style.cssText = 'background-color: #ecf
+L957: level 3 -> 4 |         }
+L961: level 4 -> 3 |             hElement.innerHTML = `🏨 ${provinsiNama} <br><sma
+L962: level 3 -> 2 |             hElement.style.display = 'block';
+L964: level 2 -> 1 |             let btn = hElement.querySelector('.edit-hotel-bt
+L966: level 1 -> 2 |                 btn = document.createElement('button');
+L980: level 2 -> 1 | 
+L981: level 1 -> 1 |     function handleAdminJenisChange(row) {
+L982: level 1 -> 2 |         const select = row.querySelector('select[name$="-jen
+L996: level 2 -> 3 |             }
+L1002: level 3 -> 2 |                 }
+L1005: level 2 -> 3 |             }
+L1006: level 3 -> 4 |             if (hotelTagHidden) hotelTagHidden.value = '';
+L1012: level 4 -> 3 |             if (currentNights >= maxNights) {
+L1013: level 3 -> 2 |                 alert(`Total malam menginap yang diklaim sud
+L1021: level 2 -> 3 | 
+L1024: level 3 -> 2 |                 if (parsed) {
+L1025: level 2 -> 3 |                     updateAdminRowHotelLayout(row, true, par
+L1028: level 3 -> 2 |             } else {
+L1030: level 2 -> 3 |             }
+L1038: level 3 -> 2 |             toggleAdminHotelInputs(row, false);
+L1043: level 2 -> 3 |     function setupAdminRow(row) {
+L1045: level 3 -> 2 |         row.classList.add('ticket-setup-done');
+L1048: level 2 -> 1 |         if (!select) return;
+L1050: level 1 -> 2 |         const originalCell = row.querySelector('td.original'
+L1052: level 2 -> 3 | 
+L1055: level 3 -> 4 |         if (!tagHidden) {
+L1060: level 4 -> 3 |         }
+L1061: level 3 -> 2 | 
+L1063: level 2 -> 1 |         if (!hotelTagHidden) {
+L1065: level 1 -> 2 |             hotelTagHidden.type = 'hidden';
+L1074: level 2 -> 3 |             pElement.className = 'ticket-badge';
+L1077: level 3 -> 2 | 
+L1078: level 2 -> 3 |         // Get or create p element for hotel route badge
+L1081: level 3 -> 2 |             hElement = document.createElement('p');
+L1089: level 2 -> 3 |         }
+L1092: level 3 -> 2 |         }
+L1093: level 2 -> 3 | 
+L1096: level 3 -> 2 |         if (descInput) {
+L1101: level 2 -> 3 |                 tagHidden.value = tagVal;
+L1104: level 3 -> 2 |                 const kelasDisplay = parsedTicket.kelas === 
+L1108: level 2 -> 3 |                 hotelTagHidden.value = tagVal;
+L1109: level 3 -> 4 |                 descInput.value = parsedHotel.userDesc;
+L1112: level 4 -> 3 |                 toggleAdminHotelInputs(row, true);
+L1113: level 3 -> 2 |             } else {
+L1117: level 2 -> 3 |             }
+L1124: level 3 -> 4 | 
+L1125: level 4 -> 4 |     function initializeAdminTicketRows() {
+L1126: level 4 -> 5 |         const rows = document.querySelectorAll('.inline-rela
+L1128: level 5 -> 6 |             setupAdminRow(row);
+L1130: level 6 -> 5 |     }
+L1131: level 5 -> 4 | 
+L1132: level 4 -> 3 |     function getAdminTransitDays() {
+L1133: level 3 -> 2 |         const harian = [];
+L1135: level 2 -> 3 |         if (harianGroup) {
+L1138: level 3 -> 2 |                 const provSelect = row.querySelector('select
+L1150: level 2 -> 3 |                         provinsi_id: provSelect.value,
+L1152: level 3 -> 2 |                         jenis_harian: jenisSelect.value || '
+L1155: level 2 -> 3 |             });
+L1157: level 3 -> 2 |         harian.sort((a, b) => a.hari_ke - b.hari_ke);
+L1161: level 2 -> 2 |     function getAdminMaxNights() {
+L1163: level 2 -> 3 |         const tanggalKembali = document.querySelector('#id_t
+L1166: level 3 -> 4 |         let maxNights = 0;
+L1170: level 4 -> 5 |                 maxNights = Math.max(0, Math.ceil(diffTime /
+L1172: level 5 -> 4 |         }
+L1174: level 4 -> 3 |     }
+L1175: level 3 -> 4 | 
+L1176: level 4 -> 4 |     function getAdminCurrentClaimedNights() {
+L1178: level 4 -> 3 |         const rows = document.querySelectorAll('.inline-rela
+L1181: level 3 -> 2 |             const deleteInput = r.querySelector('input[name$
+L1185: level 2 -> 1 |                 const tagHidden = r.querySelector('.admin-ho
+L1187: level 1 -> 2 |                     const parsed = parsePenginapanKeterangan
+L1191: level 2 -> 3 |                 }
+L1195: level 3 -> 2 |     }
+L1197: level 2 -> 3 |     function updateAdminHotelNightsPreview() {
+L1199: level 3 -> 2 |         const checkOutVal = document.getElementById('admin-h
+L1200: level 2 -> 1 |         const previewEl = document.getElementById('admin-hot
+L1206: level 1 -> 2 |             const timeDiff = checkOutDate - checkInDate;
+L1208: level 2 -> 3 |             
+L1210: level 3 -> 4 |                 countEl.textContent = `${daysDiff} Malam`;
+L1212: level 4 -> 5 |                 return;
+L1215: level 5 -> 6 |         previewEl.style.display = 'none';
+L1218: level 6 -> 6 |     function injectAdminHotelModal() {
+L1219: level 6 -> 5 |         if (document.getElementById('adminHotelModal')) retu
+L1220: level 5 -> 4 | 
+L1221: level 4 -> 3 |         // Inject HTML
+L1222: level 3 -> 2 |         const modalHtml = `
+L1223: level 2 -> 1 |             <div id="adminHotelModal" class="admin-ticket-mo
+L1225: level 1 -> 2 |                     <div class="admin-ticket-modal-header">
+L1226: level 2 -> 3 |                         <h2>Pilih Segment & Tanggal Menginap
+L1229: level 3 -> 4 |                     <div class="admin-ticket-modal-body">
+L1232: level 4 -> 3 |                             <select id="admin-hotel-province
+L1233: level 3 -> 2 |                                 <!-- Will be populated dynam
+L1234: level 2 -> 1 |                             </select>
+L1236: level 1 -> 2 |                         <div style="display: flex; gap: 1rem
+L1238: level 2 -> 3 |                                 <label>Tanggal Check-in</lab
+L1241: level 3 -> 4 |                             <div class="admin-ticket-form-gr
+L1244: level 4 -> 3 |                             </div>
+L1245: level 3 -> 2 |                         </div>
+L1248: level 2 -> 3 |                             <span id="admin-hotel-nights-cou
+L1251: level 3 -> 4 |                             <label>Nama Hotel / Keterangan T
+L1254: level 4 -> 3 |                         <div class="admin-ticket-btn-group">
+L1255: level 3 -> 2 |                             <button type="button" id="admin-
+L1256: level 2 -> 1 |                             <button type="button" id="admin-
+L1258: level 1 -> 2 |                     </div>
+L1259: level 2 -> 3 |                 </div>
+L1261: level 3 -> 4 |         `;
+L1262: level 4 -> 5 |         const div = document.createElement('div');
+L1266: level 5 -> 4 |         // Bind events
+L1267: level 4 -> 3 |         document.getElementById('admin-close-hotel-modal').a
+L1268: level 3 -> 4 |         document.getElementById('admin-btn-cancel-hotel').ad
+L1270: level 4 -> 3 |         
+L1271: level 3 -> 2 |         document.getElementById('admin-hotel-check-in').addE
+L1272: level 2 -> 1 |         document.getElementById('admin-hotel-check-out').add
+L1274: level 1 -> 2 | 
+L1275: level 2 -> 2 |     function openAdminHotelModal(row) {
+L1277: level 2 -> 3 |         const tagHidden = row.querySelector('.admin-hotel-ta
+L1279: level 3 -> 4 |         const parsed = parsePenginapanKeterangan(tagVal);
+L1280: level 4 -> 5 | 
+L1283: level 5 -> 4 | 
+L1284: level 4 -> 3 |         // Get destination province
+L1285: level 3 -> 2 |         const destProvId = document.querySelector('#id_tujua
+L1290: level 2 -> 3 |         // Add main destination province first
+L1293: level 3 -> 4 |             opt.value = destProvId;
+L1297: level 4 -> 5 |         }
+L1301: level 5 -> 6 |         harian.forEach(day => {
+L1306: level 6 -> 5 |                 provinceSelect.appendChild(opt);
+L1307: level 5 -> 4 |                 addedProvinceIds.add(day.provinsi_id);
+L1309: level 4 -> 3 |         });
+L1318: level 3 -> 4 |         if (tanggalBerangkat) {
+L1327: level 4 -> 3 |         // Populate current values
+L1331: level 3 -> 4 |             checkOutInput.value = parsed.checkOut;
+L1334: level 4 -> 3 |             checkInInput.value = tanggalBerangkat || '';
+L1339: level 3 -> 4 | 
+L1341: level 4 -> 3 |         if (descInput) {
+L1342: level 3 -> 4 |             descInput.value = parsed ? parsed.userDesc : '';
+L1343: level 4 -> 3 |         }
+L1346: level 3 -> 4 |     }
+L1348: level 4 -> 3 |     function closeAdminHotelModal() {
+L1349: level 3 -> 4 |         document.getElementById('adminHotelModal').style.dis
+L1351: level 4 -> 3 |             const tagHidden = activeHotelRow.querySelector('
+L1353: level 3 -> 4 |             if (select && isPenginapanBerkas(select) && (!ta
+L1355: level 4 -> 5 |                 updateAdminRowHotelLayout(activeHotelRow, fa
+L1357: level 5 -> 4 |                 updateAdminEstimasi();
+L1359: level 4 -> 3 |         }
+L1360: level 3 -> 2 |         activeHotelRow = null;
+L1363: level 2 -> 2 |     function saveAdminHotelRoute() {
+L1371: level 2 -> 1 | 
+L1373: level 1 -> 2 |             alert("Silakan pilih provinsi terlebih dahulu.")
+L1377: level 2 -> 1 |             alert("Silakan isi tanggal check-in dan check-ou

@@ -264,7 +264,7 @@ class StandarBiayaAdmin(admin.ModelAdmin):
 
 
     class Media:
-        js = ('js/rupiah_input.js?v=6',)
+        js = ('js/rupiah_input.js',)
 
 @admin.register(StandarBiayaHarian)
 class StandarBiayaHarianAdmin(admin.ModelAdmin):
@@ -298,7 +298,7 @@ class StandarBiayaHarianAdmin(admin.ModelAdmin):
     fmt_diklat.admin_order_field = 'uang_harian_diklat'
 
     class Media:
-        js = ('js/rupiah_input.js?v=6',)
+        js = ('js/rupiah_input.js',)
 @admin.register(Anggaran)
 class AnggaranAdmin(admin.ModelAdmin):
     list_display = ('kode_dipa', 'nama_kegiatan', 'fmt_pagu', 'fmt_sisa_pagu')
@@ -318,7 +318,7 @@ class AnggaranAdmin(admin.ModelAdmin):
     fmt_sisa_pagu.admin_order_field = 'sisa_pagu'
 
     class Media:
-        js = ('js/rupiah_input.js?v=6',)
+        js = ('js/rupiah_input.js',)
 
 
 @admin.register(StandarBiayaTiket)
@@ -345,7 +345,7 @@ class StandarBiayaTiketAdmin(admin.ModelAdmin):
     nominal_rupiah.admin_order_field = 'nominal'
 
     class Media:
-        js = ('js/rupiah_input.js?v=6',)
+        js = ('js/rupiah_input.js',)
 
 
 @admin.register(DokumenSBM)
