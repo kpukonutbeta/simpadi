@@ -3,6 +3,38 @@ from django.utils.safestring import mark_safe
 from .models import Pegawai, Provinsi, Kota, StandarBiaya, StandarBiayaHarian, Anggaran, JenisBerkas, PejabatPenandatangan, StandarBiayaTiket, DokumenSBM
 from core.models import User
 from django import forms
+from django.forms import TextInput
+from decimal import Decimal
+import re
+
+
+class RupiahInput(TextInput):
+    """Text input that renders values with dot thousand separators.
+
+    It also adds inline input handlers so formatting still works even if the
+    external static JS is not loaded for some reason.
+    """
+
+    def __init__(self, attrs=None):
+        base_attrs = {
+            'inputmode': 'numeric',
+            'autocomplete': 'off',
+            'class': 'rupiah',
+            'data-rupiah': '1',
+            'oninput': "this.value=this.value.replace(/\\./g,'').replace(/\\D/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');",
+            'onblur': "this.value=this.value.replace(/\\./g,'').replace(/\\D/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');",
+        }
+        if attrs:
+            base_attrs.update(attrs)
+        super().__init__(base_attrs)
+
+    def format_value(self, value):
+        if value in (None, ''):
+            return ''
+        digits = re.sub(r'\D', '', str(value))
+        if not digits:
+            return ''
+        return f"{int(digits):,}".replace(',', '.')
 
 @admin.register(JenisBerkas)
 class JenisBerkasAdmin(admin.ModelAdmin):
@@ -98,6 +130,100 @@ class KotaAdmin(admin.ModelAdmin):
     search_fields = ('nama', 'provinsi__nama')
     ordering = ('provinsi__nama', 'nama')
 
+
+class StandarBiayaForm(forms.ModelForm):
+    """Custom form for StandarBiaya that displays formatted rupiah but
+    stores numeric values. Uses CharField widgets for input display and
+    converts to Decimal on clean.
+    """
+    plafon_penginapan = forms.CharField(widget=RupiahInput(), required=True)
+    biaya_taksi = forms.CharField(widget=RupiahInput(), required=True)
+    uang_representasi = forms.CharField(widget=RupiahInput(), required=True)
+
+    class Meta:
+        model = StandarBiaya
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    def clean(self):
+        cleaned = super().clean()
+        # Convert formatted string with dots into Decimal values
+        for fname in ('plafon_penginapan', 'biaya_taksi', 'uang_representasi'):
+            raw = cleaned.get(fname)
+            if raw is None:
+                continue
+            # remove any non-digit characters (dots, spaces, etc.)
+            digits = re.sub(r"\D", "", str(raw))
+            if digits == "":
+                cleaned[fname] = Decimal(0)
+            else:
+                cleaned[fname] = Decimal(digits)
+        return cleaned
+
+
+# --- Forms for other admin classes to display formatted rupiah ---
+class StandarBiayaHarianForm(forms.ModelForm):
+    uang_harian = forms.CharField(widget=RupiahInput(), required=True)
+    uang_harian_dalam_kota = forms.CharField(widget=RupiahInput(), required=True)
+    uang_harian_diklat = forms.CharField(widget=RupiahInput(), required=True)
+
+    class Meta:
+        model = StandarBiayaHarian
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    def clean(self):
+        cleaned = super().clean()
+        for fname in ('uang_harian', 'uang_harian_dalam_kota', 'uang_harian_diklat'):
+            raw = cleaned.get(fname)
+            if raw is None:
+                continue
+            digits = re.sub(r"\D", "", str(raw))
+            cleaned[fname] = Decimal(digits) if digits != "" else Decimal(0)
+        return cleaned
+
+
+class AnggaranForm(forms.ModelForm):
+    pagu = forms.CharField(widget=RupiahInput(), required=True)
+    sisa_pagu = forms.CharField(widget=RupiahInput(), required=True)
+
+    class Meta:
+        model = Anggaran
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    def clean(self):
+        cleaned = super().clean()
+        for fname in ('pagu', 'sisa_pagu'):
+            raw = cleaned.get(fname)
+            if raw is None:
+                continue
+            digits = re.sub(r"\D", "", str(raw))
+            cleaned[fname] = Decimal(digits) if digits != "" else Decimal(0)
+        return cleaned
+
+
+class StandarBiayaTiketForm(forms.ModelForm):
+    nominal = forms.CharField(widget=RupiahInput(), required=True)
+
+    class Meta:
+        model = StandarBiayaTiket
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        raw = cleaned.get('nominal')
+        if raw is not None:
+            digits = re.sub(r"\D", "", str(raw))
+            cleaned['nominal'] = Decimal(digits) if digits != "" else Decimal(0)
+        return cleaned
+
 @admin.register(StandarBiaya)
 class StandarBiayaAdmin(admin.ModelAdmin):
     list_display = (
@@ -106,6 +232,7 @@ class StandarBiayaAdmin(admin.ModelAdmin):
     )
     list_filter = ('provinsi', 'golongan', 'posisi_jabatan', 'tahun')
     fields = ('provinsi', 'tahun', 'golongan', 'posisi_jabatan', 'plafon_penginapan', 'biaya_taksi', 'uang_representasi')
+    form = StandarBiayaForm
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == 'tahun':
@@ -135,12 +262,13 @@ class StandarBiayaAdmin(admin.ModelAdmin):
     fmt_uang_representasi.admin_order_field = 'uang_representasi'
 
     class Media:
-        js = ('js/rupiah_input.js?v=5',)
+        js = ('js/rupiah_input.js?v=6',)
 
 @admin.register(StandarBiayaHarian)
 class StandarBiayaHarianAdmin(admin.ModelAdmin):
     list_display = ('provinsi', 'tahun', 'fmt_uang_harian', 'fmt_dalam_kota', 'fmt_diklat')
     list_filter = ('provinsi', 'tahun')
+    form = StandarBiayaHarianForm
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == 'tahun':
@@ -168,11 +296,12 @@ class StandarBiayaHarianAdmin(admin.ModelAdmin):
     fmt_diklat.admin_order_field = 'uang_harian_diklat'
 
     class Media:
-        js = ('js/rupiah_input.js?v=5',)
+        js = ('js/rupiah_input.js?v=6',)
 @admin.register(Anggaran)
 class AnggaranAdmin(admin.ModelAdmin):
     list_display = ('kode_dipa', 'nama_kegiatan', 'fmt_pagu', 'fmt_sisa_pagu')
     search_fields = ('kode_dipa', 'nama_kegiatan')
+    form = AnggaranForm
 
     @staticmethod
     def _rupiah(val):
@@ -187,7 +316,7 @@ class AnggaranAdmin(admin.ModelAdmin):
     fmt_sisa_pagu.admin_order_field = 'sisa_pagu'
 
     class Media:
-        js = ('js/rupiah_input.js?v=5',)
+        js = ('js/rupiah_input.js?v=6',)
 
 
 @admin.register(StandarBiayaTiket)
@@ -197,6 +326,7 @@ class StandarBiayaTiketAdmin(admin.ModelAdmin):
     search_fields = ('kota_asal__nama', 'kota_tujuan__nama')
     ordering = ('kota_asal__nama', 'kota_tujuan__nama', 'kelas', 'posisi_jabatan', 'tahun')
     autocomplete_fields = ('kota_asal', 'kota_tujuan')
+    form = StandarBiayaTiketForm
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == 'tahun':
@@ -213,7 +343,7 @@ class StandarBiayaTiketAdmin(admin.ModelAdmin):
     nominal_rupiah.admin_order_field = 'nominal'
 
     class Media:
-        js = ('js/rupiah_input.js?v=5',)
+        js = ('js/rupiah_input.js?v=6',)
 
 
 @admin.register(DokumenSBM)

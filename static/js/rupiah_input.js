@@ -7,7 +7,13 @@
 (function() {
     'use strict';
 
-    console.log("SIMPADI Rupiah Input JS loaded successfully - Version 5");
+    console.log('SIMPADI Rupiah Input JS loaded successfully - Version 6');
+
+    var RUPIAH_FIELD_PATTERNS = [
+        'uang_harian', 'uang_representasi', 'plafon_penginapan',
+        'uang_harian_fullboard',
+        'nominal', 'pagu', 'sisa_pagu', 'biaya_taksi', 'taksi'
+    ];
 
     function toRibuan(val) {
         var digits = String(val).replace(/\./g, '').replace(/\D/g, '');
@@ -19,73 +25,95 @@
         return String(val).replace(/\./g, '');
     }
 
-    function initRupiahInput(input) {
-        if (input.dataset.rupiahInit) return;
-        input.dataset.rupiahInit = '1';
-        
-        console.log("Initializing formatting for input:", input.name || input.id);
-        
+    function isRupiahInput(input) {
+        if (!input || input.tagName !== 'INPUT') return false;
+        var name = (input.name || input.id || '').toLowerCase();
+        return Boolean(
+            (typeof input.dataset.rupiah !== 'undefined') ||
+            input.hasAttribute('data-rupiah') ||
+            (input.classList && input.classList.contains('rupiah')) ||
+            RUPIAH_FIELD_PATTERNS.some(function(pat) { return name.indexOf(pat) !== -1; })
+        );
+    }
+
+    function normalizeInput(input) {
+        if (!isRupiahInput(input)) return;
+
         try {
             input.type = 'text';
             input.setAttribute('inputmode', 'numeric');
+            input.setAttribute('autocomplete', 'off');
         } catch (e) {
-            console.error("Failed to set input type to text:", e);
+            console.error('Failed to set rupiah input attrs:', e);
         }
 
-        // Format initial value
-        if (input.value) {
-            input.value = toRibuan(input.value);
-        }
-
-        input.addEventListener('input', function() {
-            var pos = input.selectionStart;
-            var prevLen = input.value.length;
-            var raw = fromRibuan(input.value);
-            var formatted = toRibuan(raw);
-            input.value = formatted;
-            var newPos = pos + (formatted.length - prevLen);
-            try { input.setSelectionRange(newPos, newPos); } catch(e) {}
-        });
-
-        input.addEventListener('blur', function() {
-            input.value = toRibuan(fromRibuan(input.value));
-        });
-
-        // Before form submit: strip dots so Django gets plain integer
-        var form = input.closest('form');
-        if (form && !form.dataset.rupiahSubmitBound) {
-            form.dataset.rupiahSubmitBound = '1';
-            form.addEventListener('submit', function() {
-                form.querySelectorAll('[data-rupiah-init]').forEach(function(el) {
-                    el.value = fromRibuan(el.value);
-                });
-            });
+        if (input.dataset.rupiahInit !== '1') {
+            input.dataset.rupiahInit = '1';
+            if (input.value) {
+                input.value = toRibuan(input.value);
+            }
         }
     }
 
-    var RUPIAH_FIELD_PATTERNS = [
-        'uang_harian', 'uang_representasi', 'plafon_penginapan',
-        'uang_harian_fullboard',
-        'nominal', 'pagu', 'sisa_pagu', 'biaya_taksi', 'taksi'
-    ];
+    function formatInput(input) {
+        if (!isRupiahInput(input)) return;
+        var raw = fromRibuan(input.value);
+        var formatted = toRibuan(raw);
+        if (input.value !== formatted) {
+            input.value = formatted;
+        }
+    }
 
-    function applyToMatchingInputs() {
-        var inputs = document.querySelectorAll('input');
-        console.log("Total input elements found on page:", inputs.length);
-        inputs.forEach(function(input) {
-            var name = (input.name || input.id || '').toLowerCase();
-            var match = RUPIAH_FIELD_PATTERNS.some(function(pat) {
-                return name.indexOf(pat) !== -1;
-            });
-            if (match) {
-                initRupiahInput(input);
+    function stripAllRupiahValues(root) {
+        (root || document).querySelectorAll('input').forEach(function(input) {
+            if (isRupiahInput(input)) {
+                input.value = fromRibuan(input.value);
             }
         });
     }
 
+    function bindDelegatedEvents() {
+        document.addEventListener('input', function(e) {
+            if (isRupiahInput(e.target)) {
+                formatInput(e.target);
+            }
+        }, true);
+
+        document.addEventListener('blur', function(e) {
+            if (isRupiahInput(e.target)) {
+                formatInput(e.target);
+            }
+        }, true);
+
+        document.addEventListener('focus', function(e) {
+            if (isRupiahInput(e.target)) {
+                normalizeInput(e.target);
+            }
+        }, true);
+
+        document.addEventListener('submit', function(e) {
+            stripAllRupiahValues(e.target);
+        }, true);
+    }
+
+    function initAllRupiahInputs() {
+        document.querySelectorAll('input').forEach(function(input) {
+            normalizeInput(input);
+        });
+    }
+
+    function boot() {
+        initAllRupiahInputs();
+        bindDelegatedEvents();
+
+        // Fallback pass in case Django admin or related widgets render a bit later.
+        setTimeout(initAllRupiahInputs, 150);
+        setTimeout(initAllRupiahInputs, 600);
+    }
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', applyToMatchingInputs);
+        document.addEventListener('DOMContentLoaded', boot);
     } else {
-        applyToMatchingInputs();
+        boot();
     }
 })();
