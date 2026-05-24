@@ -7,6 +7,60 @@
 
 {% block header_actions %}{% endblock %}
 
+{% block sidebar_content %}
+{% if is_admin %}
+    <!-- Legenda Status (Moved to Left Sidebar for Admin) -->
+    <div class="info-box" id="legend-box-left" style="margin: 0 0.5rem 1.5rem 0.5rem; background: none; border: none; padding: 0; box-shadow: none;">
+        <div class="info-title" style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-info-circle"></i>
+            <span>Legenda Status</span>
+        </div>
+        <div class="legend-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div class="legend-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                <div class="legend-color event-draft" style="width: 1rem; height: 1rem; border-radius: 0.25rem;"></div>
+                <span>Draft (Belum Diajukan)</span>
+            </div>
+            <div class="legend-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                <div class="legend-color event-pending" style="width: 1rem; height: 1rem; border-radius: 0.25rem;"></div>
+                <span>Menunggu Verifikasi</span>
+            </div>
+            <div class="legend-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                <div class="legend-color event-approved" style="width: 1rem; height: 1rem; border-radius: 0.25rem;"></div>
+                <span>Disetujui</span>
+            </div>
+            <div class="legend-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                <div class="legend-color event-processed" style="width: 1rem; height: 1rem; border-radius: 0.25rem;"></div>
+                <span>Selesai Diproses</span>
+            </div>
+            <div class="legend-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                <div class="legend-color event-overlap" style="width: 1rem; height: 1rem; border-radius: 0.25rem;"></div>
+                <span style="font-weight: 700; color: #be123c;">⚠️ Beririsan (Bentrok)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Pegawai in Left Sidebar (Moved below Logo) -->
+    <div class="info-box" id="filter-pegawai-box" style="margin: 0 0.5rem; background: none; border: none; padding: 0; box-shadow: none; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+        <div class="info-title" style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-filter"></i>
+            <span>Filter Pegawai</span>
+        </div>
+        <div style="margin-bottom: 0.75rem;">
+            <input type="text" id="pegawai-search" placeholder="Cari nama pegawai..." class="form-control" style="font-size: 0.8rem; padding: 0.4rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); width: 100%;">
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <button type="button" id="btn-select-all-pegawai" class="btn btn-sm" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; background: var(--glass-bg); border: 1px solid var(--border); color: var(--text-main); width: 50%; font-weight: 600;">Pilih Semua</button>
+            <button type="button" id="btn-clear-pegawai" class="btn btn-sm" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; background: var(--glass-bg); border: 1px solid var(--border); color: var(--text-main); width: 50%; font-weight: 600;">Hapus Filter</button>
+        </div>
+        <div id="pegawai-filter-list" style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--glass-bg); scrollbar-width: thin;">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+{% else %}
+    {{ block.super }}
+{% endif %}
+{% endblock %}
+
 {% block extra_css %}
 <style>
     .calendar-container {
@@ -393,7 +447,7 @@
             </p>
             <div style="margin-top: 0.5rem;">
                 {% for o in overlaps %}
-                <div class="warning-item" style="border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(255, 255, 255, 0.9); padding: 0.75rem; border-radius: 0.75rem; margin-bottom: 0.75rem;">
+                <div class="warning-item" data-pegawai-id="{{ o.pegawai_id }}" style="border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(255, 255, 255, 0.9); padding: 0.75rem; border-radius: 0.75rem; margin-bottom: 0.75rem;">
                     <div style="font-weight: 700; font-size: 0.8rem; color: #991b1b; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
                         <i class="fas fa-user-circle"></i>
                         <span>{% if is_admin %}{{ o.pegawai_nama }}{% else %}Jadwal Anda{% endif %}</span>
@@ -479,6 +533,7 @@
         {% endif %}
 
         <!-- Legend / Info Box -->
+        {% if not is_admin %}
         <div class="info-box">
             <div class="info-title">
                 <i class="fas fa-info-circle"></i>
@@ -507,6 +562,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
@@ -519,6 +575,7 @@
     // Deserialize trips data from Django
     const trips = JSON.parse('{{ trips_json|escapejs }}');
     const isAdmin = {{ is_admin|yesno:"true,false" }};
+    const selectedPegawaiIds = new Set();
 
     let currentDate = new Date();
 
@@ -528,6 +585,147 @@
     ];
 
     const tooltip = document.getElementById('calendar-tooltip');
+
+    function initPegawaiFilter() {
+        if (!isAdmin) return;
+        
+        const filterListContainer = document.getElementById('pegawai-filter-list');
+        if (!filterListContainer) return;
+        
+        // Get unique employees who have trips
+        const employees = [];
+        const seen = new Set();
+        
+        trips.forEach(t => {
+            if (t.pegawai_id && !seen.has(t.pegawai_id)) {
+                seen.add(t.pegawai_id);
+                employees.push({
+                    id: t.pegawai_id,
+                    nama: t.pegawai_nama
+                });
+            }
+        });
+        
+        // Sort by name
+        employees.sort((a, b) => a.nama.localeCompare(b.nama));
+        
+        // By default, select all
+        employees.forEach(emp => {
+            selectedPegawaiIds.add(String(emp.id));
+        });
+        
+        // Render checkboxes
+        renderPegawaiFilterCheckboxes(employees);
+        
+        // Setup search event
+        const searchInput = document.getElementById('pegawai-search');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const items = filterListContainer.getElementsByClassName('pegawai-filter-item');
+            Array.from(items).forEach(item => {
+                const name = item.dataset.nama.toLowerCase();
+                if (name.includes(query)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Select All button
+        document.getElementById('btn-select-all-pegawai').addEventListener('click', () => {
+            employees.forEach(emp => {
+                selectedPegawaiIds.add(String(emp.id));
+                const cb = document.getElementById(`filter-peg-${emp.id}`);
+                if (cb) cb.checked = true;
+            });
+            onPegawaiFilterChange();
+        });
+        
+        // Clear button
+        document.getElementById('btn-clear-pegawai').addEventListener('click', () => {
+            selectedPegawaiIds.clear();
+            employees.forEach(emp => {
+                const cb = document.getElementById(`filter-peg-${emp.id}`);
+                if (cb) cb.checked = false;
+            });
+            onPegawaiFilterChange();
+        });
+    }
+    
+    function renderPegawaiFilterCheckboxes(employees) {
+        const filterListContainer = document.getElementById('pegawai-filter-list');
+        filterListContainer.innerHTML = '';
+        
+        employees.forEach(emp => {
+            const item = document.createElement('label');
+            item.className = 'pegawai-filter-item';
+            item.dataset.nama = emp.nama;
+            item.style.display = 'flex';
+            item.style.alignItems = 'center';
+            item.style.gap = '0.5rem';
+            item.style.fontSize = '0.75rem';
+            item.style.color = 'var(--text-main)';
+            item.style.cursor = 'pointer';
+            item.style.padding = '0.15rem 0';
+            
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.id = `filter-peg-${emp.id}`;
+            cb.value = emp.id;
+            cb.checked = true;
+            cb.style.cursor = 'pointer';
+            
+            cb.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    selectedPegawaiIds.add(String(emp.id));
+                } else {
+                    selectedPegawaiIds.delete(String(emp.id));
+                }
+                onPegawaiFilterChange();
+            });
+            
+            const span = document.createElement('span');
+            span.textContent = emp.nama;
+            span.title = emp.nama;
+            span.style.textOverflow = 'ellipsis';
+            span.style.overflow = 'hidden';
+            span.style.whiteSpace = 'nowrap';
+            
+            item.appendChild(cb);
+            item.appendChild(span);
+            filterListContainer.appendChild(item);
+        });
+    }
+    
+    function onPegawaiFilterChange() {
+        // 1. Re-render calendar
+        renderCalendar();
+        
+        // 2. Hide/show overlap warnings on sidebar based on selection
+        const warningItems = document.querySelectorAll('.warning-item[data-pegawai-id]');
+        let visibleWarningsCount = 0;
+        
+        warningItems.forEach(item => {
+            const pegId = item.getAttribute('data-pegawai-id');
+            if (selectedPegawaiIds.has(String(pegId))) {
+                item.style.display = 'block';
+                visibleWarningsCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Hide the warning card entirely if no warnings are visible
+        const warningCard = document.querySelector('.warning-card');
+        if (warningCard) {
+            if (visibleWarningsCount > 0) {
+                warningCard.style.display = 'block';
+            } else {
+                warningCard.style.display = 'none';
+            }
+        }
+    }
 
     function getActiveTripMonths() {
         const activeMonths = new Set();
@@ -553,6 +751,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
+        initPegawaiFilter();
         renderCalendar();
 
         document.getElementById('prev-month-btn').addEventListener('click', () => {
@@ -681,12 +880,20 @@
 
         // Find travels happening on this date
         const activeTrips = trips.filter(t => {
-            return dateStr >= t.tanggal_berangkat && dateStr <= t.tanggal_kembali;
+            const dateMatch = dateStr >= t.tanggal_berangkat && dateStr <= t.tanggal_kembali;
+            if (!dateMatch) return false;
+            if (isAdmin) {
+                return selectedPegawaiIds.has(String(t.pegawai_id));
+            }
+            return true;
         });
 
-        // Check if there is an active overlap on this cell
-        const hasOverlap = activeTrips.some(t => t.has_overlap);
-        if (hasOverlap) {
+        // Check if there is an active unresolved overlap on this cell
+        const hasUnresolvedOverlap = activeTrips.some(t => {
+            const dateInfo = t.dates_info && t.dates_info[dateStr];
+            return dateInfo && dateInfo.is_unresolved_clash;
+        });
+        if (hasUnresolvedOverlap) {
             const warningBadge = document.createElement('div');
             warningBadge.className = 'cell-overlap-badge';
             warningBadge.innerHTML = '<i class="fas fa-exclamation-circle" title="Jadwal Beririsan (Bentrok)"></i>';
@@ -700,7 +907,11 @@
             
             // Add status coloring
             let statusClass = `event-${t.status.toLowerCase()}`;
-            if (t.has_overlap) {
+            
+            // Check if this trip has overlap on this specific date
+            const dateInfo = t.dates_info && t.dates_info[dateStr];
+            const isOverlapOnDate = dateInfo ? dateInfo.is_overlap : false;
+            if (isOverlapOnDate) {
                 statusClass = 'event-overlap';
             }
             ev.className += ` ${statusClass}`;
@@ -713,7 +924,7 @@
             
             // Tooltip events
             ev.addEventListener('mouseenter', (e) => {
-                showTooltip(e, t);
+                showTooltip(e, t, dateStr);
             });
             ev.addEventListener('mouseleave', () => {
                 hideTooltip();
@@ -725,15 +936,22 @@
         return cell;
     }
 
-    function showTooltip(e, trip) {
+    function showTooltip(e, trip, dateStr) {
         const rect = e.target.getBoundingClientRect();
         
+        const dateInfo = trip.dates_info && trip.dates_info[dateStr];
+        const isOverlapOnDate = dateInfo ? dateInfo.is_overlap : false;
+        
         let overlapHtml = '';
-        if (trip.has_overlap) {
+        if (isOverlapOnDate) {
+            let warningText = 'Peringatan: Jadwal Beririsan (Bentrok)!';
+            if (dateInfo && dateInfo.jenis_harian === 'tidak_dibayai') {
+                warningText = 'Peringatan: Bentrok Resolved (Tidak Dibiayai)!';
+            }
             overlapHtml = `
                 <div class="tooltip-overlap-warning">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <span>Peringatan: Jadwal Beririsan (Bentrok)!</span>
+                    <span>${warningText}</span>
                 </div>
             `;
         }

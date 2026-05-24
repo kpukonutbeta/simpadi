@@ -7,6 +7,8 @@
 (function() {
     'use strict';
 
+    console.log("SIMPADI Rupiah Input JS loaded successfully - Version 5");
+
     function toRibuan(val) {
         var digits = String(val).replace(/\./g, '').replace(/\D/g, '');
         if (!digits) return '';
@@ -20,8 +22,15 @@
     function initRupiahInput(input) {
         if (input.dataset.rupiahInit) return;
         input.dataset.rupiahInit = '1';
-        input.type = 'text';
-        input.setAttribute('inputmode', 'numeric');
+        
+        console.log("Initializing formatting for input:", input.name || input.id);
+        
+        try {
+            input.type = 'text';
+            input.setAttribute('inputmode', 'numeric');
+        } catch (e) {
+            console.error("Failed to set input type to text:", e);
+        }
 
         // Format initial value
         if (input.value) {
@@ -56,12 +65,14 @@
 
     var RUPIAH_FIELD_PATTERNS = [
         'uang_harian', 'uang_representasi', 'plafon_penginapan',
-        'plafon_transportasi', 'uang_harian_fullboard',
-        'nominal', 'pagu', 'sisa_pagu'
+        'uang_harian_fullboard',
+        'nominal', 'pagu', 'sisa_pagu', 'biaya_taksi', 'taksi'
     ];
 
     function applyToMatchingInputs() {
-        document.querySelectorAll('input').forEach(function(input) {
+        var inputs = document.querySelectorAll('input');
+        console.log("Total input elements found on page:", inputs.length);
+        inputs.forEach(function(input) {
             var name = (input.name || input.id || '').toLowerCase();
             var match = RUPIAH_FIELD_PATTERNS.some(function(pat) {
                 return name.indexOf(pat) !== -1;

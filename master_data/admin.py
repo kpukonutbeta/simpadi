@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Pegawai, Provinsi, Kota, StandarBiaya, Anggaran, JenisBerkas, PejabatPenandatangan, StandarBiayaTiket
+from django.utils.safestring import mark_safe
+from .models import Pegawai, Provinsi, Kota, StandarBiaya, StandarBiayaHarian, Anggaran, JenisBerkas, PejabatPenandatangan, StandarBiayaTiket, DokumenSBM
 from core.models import User
 from django import forms
 
@@ -46,7 +47,7 @@ class PegawaiForm(forms.ModelForm):
 
     class Meta:
         model = Pegawai
-        fields = ('nip', 'nama', 'email', 'golongan', 'jabatan')
+        fields = ('nip', 'nama', 'email', 'golongan', 'posisi_jabatan', 'jabatan')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -57,9 +58,9 @@ class PegawaiForm(forms.ModelForm):
 @admin.register(Pegawai)
 class PegawaiAdmin(admin.ModelAdmin):
     form = PegawaiForm
-    list_display = ('nip', 'nama', 'email', 'golongan', 'jabatan', 'has_user_account')
+    list_display = ('nip', 'nama', 'email', 'golongan', 'posisi_jabatan', 'jabatan', 'has_user_account')
     search_fields = ('nip', 'nama', 'email')
-    list_filter = ('golongan',)
+    list_filter = ('golongan', 'posisi_jabatan')
     
     def has_user_account(self, obj):
         return obj.user is not None
@@ -100,43 +101,74 @@ class KotaAdmin(admin.ModelAdmin):
 @admin.register(StandarBiaya)
 class StandarBiayaAdmin(admin.ModelAdmin):
     list_display = (
-        'provinsi', 'golongan', 'tahun',
-        'fmt_uang_harian', 'fmt_fullboard_luar', 'fmt_fullboard_dalam',
-        'fmt_plafon_penginapan', 'fmt_plafon_transportasi', 'fmt_uang_representasi'
+        'provinsi', 'golongan', 'posisi_jabatan', 'tahun',
+        'fmt_plafon_penginapan', 'fmt_biaya_taksi', 'fmt_uang_representasi'
     )
-    list_filter = ('provinsi', 'golongan', 'tahun')
+    list_filter = ('provinsi', 'golongan', 'posisi_jabatan', 'tahun')
+    fields = ('provinsi', 'tahun', 'golongan', 'posisi_jabatan', 'plafon_penginapan', 'biaya_taksi', 'uang_representasi')
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'tahun':
+            from .models import DokumenSBM
+            docs = DokumenSBM.objects.all().order_by('-tahun')
+            if docs.exists():
+                choices = [(doc.tahun, str(doc.tahun)) for doc in docs]
+                kwargs['widget'] = forms.Select(choices=choices)
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     @staticmethod
     def _rupiah(val):
         return f"Rp{val:,.0f}".replace(',', '.')
 
-    def fmt_uang_harian(self, obj): return self._rupiah(obj.uang_harian)
-    fmt_uang_harian.short_description = "Uang Harian"
-    fmt_uang_harian.admin_order_field = 'uang_harian'
-
-    def fmt_fullboard_luar(self, obj): return self._rupiah(obj.uang_harian_fullboard_luar)
-    fmt_fullboard_luar.short_description = "Fullboard Luar Kota"
-    fmt_fullboard_luar.admin_order_field = 'uang_harian_fullboard_luar'
-
-    def fmt_fullboard_dalam(self, obj): return self._rupiah(obj.uang_harian_fullboard_dalam)
-    fmt_fullboard_dalam.short_description = "Fullboard Dalam Kota"
-    fmt_fullboard_dalam.admin_order_field = 'uang_harian_fullboard_dalam'
 
     def fmt_plafon_penginapan(self, obj): return self._rupiah(obj.plafon_penginapan)
     fmt_plafon_penginapan.short_description = "Plafon Penginapan"
     fmt_plafon_penginapan.admin_order_field = 'plafon_penginapan'
 
-    def fmt_plafon_transportasi(self, obj): return self._rupiah(obj.plafon_transportasi)
-    fmt_plafon_transportasi.short_description = "Plafon Transportasi"
-    fmt_plafon_transportasi.admin_order_field = 'plafon_transportasi'
+
+    def fmt_biaya_taksi(self, obj): return self._rupiah(obj.biaya_taksi)
+    fmt_biaya_taksi.short_description = "Taksi Bandara"
+    fmt_biaya_taksi.admin_order_field = 'biaya_taksi'
 
     def fmt_uang_representasi(self, obj): return self._rupiah(obj.uang_representasi)
     fmt_uang_representasi.short_description = "Uang Representasi"
     fmt_uang_representasi.admin_order_field = 'uang_representasi'
 
     class Media:
-        js = ('js/rupiah_input.js',)
+        js = ('js/rupiah_input.js?v=5',)
 
+@admin.register(StandarBiayaHarian)
+class StandarBiayaHarianAdmin(admin.ModelAdmin):
+    list_display = ('provinsi', 'tahun', 'fmt_uang_harian', 'fmt_dalam_kota', 'fmt_diklat')
+    list_filter = ('provinsi', 'tahun')
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'tahun':
+            from .models import DokumenSBM
+            docs = DokumenSBM.objects.all().order_by('-tahun')
+            if docs.exists():
+                choices = [(doc.tahun, str(doc.tahun)) for doc in docs]
+                kwargs['widget'] = forms.Select(choices=choices)
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
+
+    @staticmethod
+    def _rupiah(val):
+        return f"Rp{val:,.0f}".replace(',', '.')
+
+    def fmt_uang_harian(self, obj): return self._rupiah(obj.uang_harian)
+    fmt_uang_harian.short_description = "Luar Kota"
+    fmt_uang_harian.admin_order_field = 'uang_harian'
+
+    def fmt_dalam_kota(self, obj): return self._rupiah(obj.uang_harian_dalam_kota)
+    fmt_dalam_kota.short_description = "Dalam Kota (> 8 Jam)"
+    fmt_dalam_kota.admin_order_field = 'uang_harian_dalam_kota'
+
+    def fmt_diklat(self, obj): return self._rupiah(obj.uang_harian_diklat)
+    fmt_diklat.short_description = "Diklat"
+    fmt_diklat.admin_order_field = 'uang_harian_diklat'
+
+    class Media:
+        js = ('js/rupiah_input.js?v=5',)
 @admin.register(Anggaran)
 class AnggaranAdmin(admin.ModelAdmin):
     list_display = ('kode_dipa', 'nama_kegiatan', 'fmt_pagu', 'fmt_sisa_pagu')
@@ -155,16 +187,25 @@ class AnggaranAdmin(admin.ModelAdmin):
     fmt_sisa_pagu.admin_order_field = 'sisa_pagu'
 
     class Media:
-        js = ('js/rupiah_input.js',)
+        js = ('js/rupiah_input.js?v=5',)
 
 
 @admin.register(StandarBiayaTiket)
 class StandarBiayaTiketAdmin(admin.ModelAdmin):
-    list_display = ('kota_asal', 'kota_tujuan', 'kelas', 'nominal_rupiah')
-    list_filter = ('kelas', 'kota_asal__provinsi')
+    list_display = ('kota_asal', 'kota_tujuan', 'kelas', 'posisi_jabatan', 'tahun', 'nominal_rupiah')
+    list_filter = ('tahun', 'kelas', 'posisi_jabatan', 'kota_asal__provinsi')
     search_fields = ('kota_asal__nama', 'kota_tujuan__nama')
-    ordering = ('kota_asal__nama', 'kota_tujuan__nama', 'kelas')
+    ordering = ('kota_asal__nama', 'kota_tujuan__nama', 'kelas', 'posisi_jabatan', 'tahun')
     autocomplete_fields = ('kota_asal', 'kota_tujuan')
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'tahun':
+            from .models import DokumenSBM
+            docs = DokumenSBM.objects.all().order_by('-tahun')
+            if docs.exists():
+                choices = [(doc.tahun, str(doc.tahun)) for doc in docs]
+                kwargs['widget'] = forms.Select(choices=choices)
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     def nominal_rupiah(self, obj):
         return f"Rp{obj.nominal:,.0f}".replace(',', '.')
@@ -172,4 +213,16 @@ class StandarBiayaTiketAdmin(admin.ModelAdmin):
     nominal_rupiah.admin_order_field = 'nominal'
 
     class Media:
-        js = ('js/rupiah_input.js',)
+        js = ('js/rupiah_input.js?v=5',)
+
+
+@admin.register(DokumenSBM)
+class DokumenSBMAdmin(admin.ModelAdmin):
+    list_display = ('tahun', 'file_pdf_link')
+    search_fields = ('tahun',)
+
+    def file_pdf_link(self, obj):
+        if obj.file_pdf:
+            return mark_safe(f'<a href="{obj.file_pdf.url}" target="_blank">Unduh PDF (SBM {obj.tahun})</a>')
+        return "-"
+    file_pdf_link.short_description = "File PDF SBM"

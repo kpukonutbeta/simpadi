@@ -39,6 +39,13 @@ class SuratTugasAdmin(admin.ModelAdmin):
     )
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'tahun_sbm':
+            from django import forms
+            from master_data.models import DokumenSBM
+            docs = DokumenSBM.objects.all().order_by('-tahun')
+            if docs.exists():
+                choices = [(doc.tahun, f"SBM {doc.tahun}") for doc in docs]
+                kwargs['widget'] = forms.Select(choices=choices)
         formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
         if isinstance(db_field, models.FileField) and formfield:
             formfield.widget = AdminFileWidgetNewTab(attrs=formfield.widget.attrs)

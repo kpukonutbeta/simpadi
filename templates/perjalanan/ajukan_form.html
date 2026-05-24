@@ -136,7 +136,7 @@
                                 {{ surat_tugas.tempat_berangkat }} <i class="fas fa-arrow-right" style="font-size: 0.75rem; color: #94a3b8; margin: 0 0.25rem;"></i> {{ surat_tugas.tempat_tujuan }}
                             </div>
                             <div style="font-size: 0.75rem; color: #64748b;">
-                                Provinsi SBM: <strong>{{ surat_tugas.tujuan_provinsi.nama }}</strong> (SBM {{ surat_tugas.tahun_sbm }})
+                                Provinsi SBM: <strong>{{ surat_tugas.tujuan_provinsi.nama }}</strong> (SBM {{ surat_tugas.tahun_sbm }}{% if sbm_dokumen %} - <a href="{{ sbm_dokumen.file_pdf.url }}" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none; border-bottom: 1px dashed var(--primary);"><i class="fas fa-file-pdf"></i> PDF</a>{% endif %})
                             </div>
                         </div>
                     </div>
@@ -1625,7 +1625,7 @@
         }
 
         // Fetch ticket routes and initialize tags/badges
-        fetch("{% url 'perjalanan:get_standar_biaya_tiket_ajax' %}")
+        fetch("{% url 'perjalanan:get_standar_biaya_tiket_ajax' %}?tahun_sbm={{ surat_tugas.tahun_sbm }}&pegawai_id={{ perjadin.pegawai.id }}")
             .then(res => res.json())
             .then(data => {
                 ticketRoutes = data.routes || [];

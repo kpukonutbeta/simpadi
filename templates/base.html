@@ -19,6 +19,7 @@
             <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/KPU_Logo.svg" alt="KPU Logo" style="height: 55px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));">
             <span style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #f43f5e, #9f1239); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SIMPADI</span>
         </div>
+        {% block sidebar_content %}
         <ul class="nav-links">
             <li class="nav-item">
                 <a href="{% url 'core:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
@@ -43,7 +44,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{% url 'perjalanan:kalender_perjadin' %}" class="nav-link {% if request.resolver_match.url_name == 'kalender_perjadin' %}active{% endif %}">
+                <a href="{% url 'perjalanan:kalender_perjadin' %}" target="_blank" class="nav-link {% if request.resolver_match.url_name == 'kalender_perjadin' %}active{% endif %}">
                     <i class="fas fa-calendar-alt"></i> Kalender Perjadin
                 </a>
             </li>
@@ -78,6 +79,7 @@
                 <div style="font-size: 0.75rem; color: var(--text-muted);">{% if request.user.is_staff %}Administrator{% else %}Pegawai{% endif %}</div>
             </div>
         </div>
+        {% endblock %}
     </aside>
 
     <!-- Main Content -->

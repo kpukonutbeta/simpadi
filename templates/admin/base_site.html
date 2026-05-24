@@ -230,4 +230,10 @@
         &copy; {% now "Y" %} SIMPADI | By Subag Keuangan KPU Provinsi Sulawesi Tenggara
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const links = document.querySelectorAll('a[href*="/perjalanan/kalender/"]');
+        links.forEach(l => l.setAttribute('target', '_blank'));
+    });
+</script>
 {% endblock %}

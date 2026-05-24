@@ -1,13 +1,61 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from master_data.models import Pegawai, Provinsi, StandarBiaya, Anggaran, JenisBerkas, StandarBiayaTiket
+from master_data.models import Pegawai, Provinsi, StandarBiaya, StandarBiayaHarian, Anggaran, JenisBerkas, StandarBiayaTiket
 from decimal import Decimal
 from datetime import timedelta
 
 import uuid
 import os
 import re
+
+from django.db.models import Q
+
+def get_eligible_sbm_filter(pegawai):
+    q_conditions = Q()
+    
+    # 1. Direct Golongan match and its Eselon equivalent
+    if pegawai.golongan:
+        q_conditions |= Q(golongan=pegawai.golongan)
+        if pegawai.golongan == 'IV':
+            q_conditions |= Q(posisi_jabatan='ES_III')
+        elif pegawai.golongan == 'III':
+            q_conditions |= Q(posisi_jabatan='ES_IV')
+            
+    # 2. Direct Eselon match and its Golongan equivalent
+    if pegawai.posisi_jabatan and pegawai.posisi_jabatan != 'NON_ESELON':
+        q_conditions |= Q(posisi_jabatan=pegawai.posisi_jabatan)
+        if pegawai.posisi_jabatan == 'ES_III':
+            q_conditions |= Q(golongan='IV')
+        elif pegawai.posisi_jabatan == 'ES_IV':
+            q_conditions |= Q(golongan='III')
+            
+    # 3. Fallback: match generic SBM records where both are null or empty
+    q_conditions |= Q(golongan__isnull=True, posisi_jabatan__isnull=True)
+    q_conditions |= Q(golongan='', posisi_jabatan__isnull=True)
+    q_conditions |= Q(golongan__isnull=True, posisi_jabatan='')
+    q_conditions |= Q(golongan='', posisi_jabatan='')
+    
+    return q_conditions
+
+def get_eligible_tiket_filter(pegawai):
+    """Filter for StandarBiayaTiket — only uses posisi_jabatan (no golongan) and filters by eligible ticket class."""
+    # Determine eligible class based on posisi_jabatan:
+    # Eselon I and II get bisnis, all others (ES_III, ES_IV, NON_ESELON) get ekonomi
+    if pegawai.posisi_jabatan in ['ES_I', 'ES_II']:
+        kelas_filter = Q(kelas='bisnis')
+    else:
+        kelas_filter = Q(kelas='ekonomi')
+
+    posisi_conditions = Q()
+    if pegawai.posisi_jabatan and pegawai.posisi_jabatan != 'NON_ESELON':
+        posisi_conditions |= Q(posisi_jabatan=pegawai.posisi_jabatan)
+
+    # Fallback: match generic records where posisi_jabatan is null or empty
+    posisi_conditions |= Q(posisi_jabatan__isnull=True)
+    posisi_conditions |= Q(posisi_jabatan='')
+
+    return kelas_filter & posisi_conditions
 
 def parse_tiket_keterangan(keterangan_val):
     if not keterangan_val:
@@ -72,7 +120,6 @@ class SuratTugas(models.Model):
     tempat_tujuan = models.CharField(max_length=255, verbose_name="Tempat Tujuan", blank=True, null=True)
     tujuan_provinsi = models.ForeignKey(Provinsi, on_delete=models.PROTECT, verbose_name="Provinsi (SBM)", null=True, blank=True)
     tahun_sbm = models.IntegerField(
-        choices=[(2023, '2023 (Tahun Lalu)'), (2024, '2024 (Tahun Ini)')],
         default=2024, 
         verbose_name="Tahun SBM"
     )
@@ -366,19 +413,40 @@ class BiayaPerjalanan(models.Model):
     total_dibayarkan = models.DecimalField(max_digits=15, decimal_places=0, editable=False, default=0)
 
     def calculate_breakdown(self, mock_berkas=None, mock_harian=None):
-        # Fetch SBM
-        try:
-            sbm = StandarBiaya.objects.get(
-                provinsi=self.perjalanan.tujuan_provinsi,
-                golongan=self.perjalanan.pegawai.golongan,
+        # Helper to find the most favorable SBM based on Eselon and Golongan
+        def find_favorable_sbm(prov_id):
+            if not prov_id:
+                return None
+            pegawai = self.perjalanan.pegawai
+            q_filter = get_eligible_sbm_filter(pegawai)
+            sbms = StandarBiaya.objects.filter(
+                q_filter,
+                provinsi_id=prov_id,
                 tahun=self.perjalanan.tahun_sbm
-            )
+            ).order_by('-plafon_penginapan')
+            return sbms.first()
+
+        # Helper to find SBM Harian (universal, no golongan/eselon)
+        sbm_harian_cache = {}
+        def find_sbm_harian(prov_id):
+            if not prov_id:
+                return None
+            if prov_id not in sbm_harian_cache:
+                sbm_harian_cache[prov_id] = StandarBiayaHarian.objects.filter(
+                    provinsi_id=prov_id,
+                    tahun=self.perjalanan.tahun_sbm
+                ).first()
+            return sbm_harian_cache[prov_id]
+
+        # Fetch SBM
+        tujuan_prov_id = self.perjalanan.tujuan_provinsi.id if self.perjalanan.tujuan_provinsi else None
+        sbm = find_favorable_sbm(tujuan_prov_id)
+        sbm_harian = find_sbm_harian(tujuan_prov_id)
+        if sbm:
             plafon_hotel = sbm.plafon_penginapan
-            plafon_transport = getattr(sbm, 'plafon_transportasi', Decimal('0'))
-        except StandarBiaya.DoesNotExist:
-            sbm = None
+        else:
             plafon_hotel = Decimal('0')
-            plafon_transport = Decimal('0')
+        plafon_transport = Decimal('0')
 
         # Calculate real hotel and transport from BerkasPerjalanan based on jenis_berkas.kategori_biaya
         total_hotel_input = Decimal('0')
@@ -452,15 +520,15 @@ class BiayaPerjalanan(models.Model):
                         if nominal:
                             asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(keterangan)
                             if asal_id and tujuan_id and kelas:
-                                try:
-                                    sbm_tiket = StandarBiayaTiket.objects.get(
-                                        kota_asal_id=asal_id,
-                                        kota_tujuan_id=tujuan_id,
-                                        kelas=kelas
-                                    )
-                                    plafon_tiket = sbm_tiket.nominal
-                                except StandarBiayaTiket.DoesNotExist:
-                                    plafon_tiket = None
+                                sbm_tikets = StandarBiayaTiket.objects.filter(
+                                    get_eligible_tiket_filter(self.perjalanan.pegawai),
+                                    kota_asal_id=asal_id,
+                                    kota_tujuan_id=tujuan_id,
+                                    kelas=kelas,
+                                    tahun=self.perjalanan.tahun_sbm
+                                ).order_by('-nominal')
+                                sbm_tiket = sbm_tikets.first()
+                                plafon_tiket = sbm_tiket.nominal if sbm_tiket else None
                                 flight_tickets_details.append({
                                     'nominal': nominal,
                                     'plafon': plafon_tiket,
@@ -506,15 +574,15 @@ class BiayaPerjalanan(models.Model):
                             if nominal:
                                 asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(keterangan)
                                 if asal_id and tujuan_id and kelas:
-                                    try:
-                                        sbm_tiket = StandarBiayaTiket.objects.get(
-                                            kota_asal_id=asal_id,
-                                            kota_tujuan_id=tujuan_id,
-                                            kelas=kelas
-                                        )
-                                        plafon_tiket = sbm_tiket.nominal
-                                    except StandarBiayaTiket.DoesNotExist:
-                                        plafon_tiket = None
+                                    sbm_tikets = StandarBiayaTiket.objects.filter(
+                                        get_eligible_tiket_filter(self.perjalanan.pegawai),
+                                        kota_asal_id=asal_id,
+                                        kota_tujuan_id=tujuan_id,
+                                        kelas=kelas,
+                                        tahun=self.perjalanan.tahun_sbm
+                                    ).order_by('-nominal')
+                                    sbm_tiket = sbm_tikets.first()
+                                    plafon_tiket = sbm_tiket.nominal if sbm_tiket else None
                                     flight_tickets_details.append({
                                         'nominal': nominal,
                                         'plafon': plafon_tiket,
@@ -672,14 +740,7 @@ class BiayaPerjalanan(models.Model):
         sbm_cache = {}
         def get_sbm_for_province(prov_id):
             if prov_id not in sbm_cache:
-                try:
-                    sbm_cache[prov_id] = StandarBiaya.objects.get(
-                        provinsi_id=prov_id,
-                        golongan=self.perjalanan.pegawai.golongan,
-                        tahun=self.perjalanan.tahun_sbm
-                    )
-                except StandarBiaya.DoesNotExist:
-                    sbm_cache[prov_id] = None
+                sbm_cache[prov_id] = find_favorable_sbm(prov_id)
             return sbm_cache[prov_id]
 
         provinsi_cache = {}
@@ -712,30 +773,25 @@ class BiayaPerjalanan(models.Model):
 
             prov_obj = get_provinsi(prov_id)
             sbm_day = get_sbm_for_province(prov_id)
+            sbm_harian_day = find_sbm_harian(prov_id)
 
-            if sbm_day:
+            if sbm_harian_day:
                 if jenis_harian == 'tidak_dibayai':
                     rate = Decimal('0')
                 elif jenis_harian == 'luar_kota':
-                    rate = sbm_day.uang_harian
+                    rate = sbm_harian_day.uang_harian
                 elif jenis_harian == 'dalam_kota':
-                    rate = (sbm_day.uang_harian * Decimal('0.40')).quantize(Decimal('1'))
+                    rate = sbm_harian_day.uang_harian_dalam_kota
                 elif jenis_harian == 'diklat':
-                    rate = (sbm_day.uang_harian * Decimal('0.30')).quantize(Decimal('1'))
-                elif jenis_harian == 'halfday':
-                    rate = getattr(sbm_day, 'uang_harian_fullboard_dalam', Decimal('0'))
-                elif jenis_harian == 'fullday':
-                    rate = getattr(sbm_day, 'uang_harian_fullboard_dalam', Decimal('0'))
-                elif jenis_harian == 'fullboard':
-                    # Fullboard Luar Kota if selected province is outside home province (Sultra), else Fullboard Dalam Kota
-                    is_home = (prov_obj.nama.upper() == 'SULAWESI TENGGARA') if prov_obj else True
-                    if is_home:
-                        rate = getattr(sbm_day, 'uang_harian_fullboard_dalam', Decimal('0'))
-                    else:
-                        rate = getattr(sbm_day, 'uang_harian_fullboard_luar', Decimal('0'))
+                    rate = sbm_harian_day.uang_harian_diklat
+                elif jenis_harian in ['halfday', 'fullday', 'fullboard']:
+                    rate = Decimal('0')
                 else:
-                    rate = sbm_day.uang_harian
+                    rate = sbm_harian_day.uang_harian
+            else:
+                rate = Decimal('0')
 
+            if sbm_day:
                 if jenis_harian == 'tidak_dibayai':
                     rep_rate = Decimal('0')
                 elif self.perjalanan.jenis_perjalanan in ['fullboard_luar', 'fullboard_dalam']:
@@ -745,7 +801,6 @@ class BiayaPerjalanan(models.Model):
                 else:
                     rep_rate = Decimal('0')
             else:
-                rate = Decimal('0')
                 rep_rate = Decimal('0')
 
             uang_harian_riil += rate
@@ -786,14 +841,7 @@ class BiayaPerjalanan(models.Model):
             if not prov_id:
                 return None
             if prov_id not in doc_sbm_cache:
-                try:
-                    doc_sbm_cache[prov_id] = StandarBiaya.objects.get(
-                        provinsi_id=prov_id,
-                        golongan=self.perjalanan.pegawai.golongan,
-                        tahun=self.perjalanan.tahun_sbm
-                    )
-                except StandarBiaya.DoesNotExist:
-                    doc_sbm_cache[prov_id] = None
+                doc_sbm_cache[prov_id] = find_favorable_sbm(prov_id)
             return doc_sbm_cache[prov_id]
 
         for hb in hotel_bills:
@@ -1183,7 +1231,7 @@ class BiayaPerjalanan(models.Model):
             'over_limit_msg': over_limit_msg,
             
             # SBM values for UI info
-            'sbm_uang_harian': sbm.uang_harian if sbm else Decimal('0'),
+            'sbm_uang_harian': sbm_harian.uang_harian if sbm_harian else Decimal('0'),
             'sbm_uang_representasi': sbm.uang_representasi if sbm else Decimal('0'),
             'sbm_plafon_hotel': plafon_hotel,
             'sbm_plafon_transport': plafon_transport,

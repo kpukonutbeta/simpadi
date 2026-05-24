@@ -50,6 +50,18 @@ def _ordered_get_app_list(self, request, app_label=None):
         for model in app.get('models', []):
             if model.get('object_name') == 'PerjalananDinas':
                 model['name'] = 'Manajemen SPD'
+        if app.get('app_label') == 'master_data':
+            model_order = [
+                'Pegawai', 'Provinsi', 'Kota', 'Anggaran', 'JenisBerkas', 'PejabatPenandatangan',
+                'DokumenSBM', 'StandarBiaya', 'StandarBiayaTiket'
+            ]
+            def model_sort_key(model_dict):
+                obj_name = model_dict.get('object_name')
+                try:
+                    return model_order.index(obj_name)
+                except ValueError:
+                    return len(model_order)
+            app['models'] = sorted(app['models'], key=model_sort_key)
     def sort_key(app):
         label = app.get('app_label', '').lower()
         try:

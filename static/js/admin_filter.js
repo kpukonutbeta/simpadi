@@ -1487,7 +1487,8 @@ function initAdminFilter() {
     }
 
     function fetchTicketRoutes() {
-        fetch('/perjalanan/api/get-standar-biaya-tiket/')
+        const tahunSbm = document.querySelector('#id_tahun_sbm')?.value || '';
+        fetch(`/perjalanan/api/get-standar-biaya-tiket/?tahun_sbm=${tahunSbm}`)
             .then(res => res.json())
             .then(data => {
                 ticketRoutes = data.routes || [];

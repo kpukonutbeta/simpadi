@@ -1,10 +1,18 @@
 from django.db import models
+from django.core.validators import FileExtensionValidator
 
 class Golongan(models.TextChoices):
     I = 'I', 'Golongan I'
     II = 'II', 'Golongan II'
     III = 'III', 'Golongan III'
     IV = 'IV', 'Golongan IV'
+    NON_GOLONGAN = 'NON_GOLONGAN', 'Non Golongan'
+
+class PosisiEselon(models.TextChoices):
+    NON_ESELON = 'NON_ESELON', 'Non Posisi Eselon'
+    ES_IV = 'ES_IV', 'Eselon IV'
+    ES_III = 'ES_III', 'Eselon III'
+    ES_II = 'ES_II', 'Eselon II'
 
 from django.conf import settings
 
@@ -13,7 +21,13 @@ class Pegawai(models.Model):
     nip = models.CharField(max_length=20, unique=True, verbose_name="NIP")
     nama = models.CharField(max_length=100, verbose_name="Nama Lengkap")
     email = models.EmailField(unique=True, verbose_name="Email", null=True, blank=True)
-    golongan = models.CharField(max_length=5, choices=Golongan.choices, verbose_name="Golongan")
+    golongan = models.CharField(max_length=15, choices=Golongan.choices, verbose_name="Golongan")
+    posisi_jabatan = models.CharField(
+        max_length=15,
+        choices=PosisiEselon.choices,
+        default=PosisiEselon.NON_ESELON,
+        verbose_name="Posisi Jabatan"
+    )
     jabatan = models.CharField(max_length=100, verbose_name="Jabatan")
 
     def __str__(self):
@@ -46,28 +60,70 @@ class Kota(models.Model):
         verbose_name = "Kota/Kabupaten"
         verbose_name_plural = "Data Kota/Kabupaten"
 
+class DokumenSBM(models.Model):
+    tahun = models.IntegerField(unique=True, verbose_name="Tahun SBM")
+    file_pdf = models.FileField(
+        upload_to='sbm_dokumen/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])],
+        verbose_name="File PDF SBM"
+    )
+
+    class Meta:
+        verbose_name = "Tahun Standar Biaya Masukan (SBM)"
+        verbose_name_plural = "Tahun Standar Biaya Masukan (SBM)"
+        ordering = ['-tahun']
+
+    def __str__(self):
+        return f"SBM Tahun {self.tahun}"
+
+class StandarBiayaHarian(models.Model):
+    provinsi = models.ForeignKey(Provinsi, on_delete=models.CASCADE)
+    tahun = models.IntegerField(default=2024, verbose_name="Tahun")
+    uang_harian = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Uang Harian Luar Kota")
+    uang_harian_dalam_kota = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Harian Dalam Kota (> 8 Jam)")
+    uang_harian_diklat = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Harian Diklat")
+
+    def __str__(self):
+        return f"SBM Harian {self.provinsi} - {self.tahun}"
+
+    class Meta:
+        unique_together = ('provinsi', 'tahun')
+        verbose_name = "Standar Biaya Masukan (SBM) Uang Harian"
+        verbose_name_plural = "Standar Biaya Masukan (SBM) Uang Harian"
+
 class StandarBiaya(models.Model):
     provinsi = models.ForeignKey(Provinsi, on_delete=models.CASCADE)
-    golongan = models.CharField(max_length=5, choices=Golongan.choices)
-    uang_harian = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Uang Harian")
-    uang_harian_fullboard_luar = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Harian Fullboard Luar Kota")
-    uang_harian_fullboard_dalam = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Harian Fullboard Dalam Kota")
+    golongan = models.CharField(max_length=15, choices=Golongan.choices, null=True, blank=True)
+    posisi_jabatan = models.CharField(
+        max_length=15,
+        choices=PosisiEselon.choices,
+        null=True,
+        blank=True,
+        verbose_name="Posisi Jabatan"
+    )
+
     plafon_penginapan = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Plafon Penginapan")
     uang_representasi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Uang Representasi")
-    plafon_transportasi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Plafon Transportasi")
+    biaya_taksi = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Taksi Bandara")
     tahun = models.IntegerField(
-        choices=[(2023, '2023 (Tahun Lalu)'), (2024, '2024 (Tahun Ini)')],
         default=2024,
         verbose_name="Tahun"
     )
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        if not self.golongan and not self.posisi_jabatan:
+            raise ValidationError("Salah satu dari Golongan atau Posisi Jabatan harus diisi.")
+
     def __str__(self):
-        return f"SBM {self.provinsi} - {self.golongan}"
+        classification = self.golongan or self.posisi_jabatan or "Umum"
+        return f"SBM {self.provinsi} - {classification}"
 
     class Meta:
-        unique_together = ('provinsi', 'golongan', 'tahun')
-        verbose_name = "Standar Biaya Masukan (SBM) / Provinsi"
-        verbose_name_plural = "Standar Biaya Masukan (SBM) / Provinsi"
+        unique_together = ('provinsi', 'golongan', 'posisi_jabatan', 'tahun')
+        verbose_name = "Standar Biaya Masukan (SBM) Golongan/Pejabat Eselon"
+        verbose_name_plural = "Standar Biaya Masukan (SBM) Golongan/Pejabat Eselon"
 
 class Anggaran(models.Model):
     kode_dipa = models.CharField(max_length=50, unique=True, verbose_name="Kode DIPA")
@@ -160,17 +216,31 @@ class StandarBiayaTiket(models.Model):
         choices=KelasTiket.choices,
         verbose_name="Kelas Tiket"
     )
+    posisi_jabatan = models.CharField(
+        max_length=15,
+        choices=PosisiEselon.choices,
+        null=True,
+        blank=True,
+        verbose_name="Posisi Jabatan"
+    )
     nominal = models.DecimalField(
         max_digits=14,
         decimal_places=0,
         verbose_name="Nominal Biaya (PP)"
     )
+    tahun = models.IntegerField(
+        default=2024,
+        verbose_name="Tahun"
+    )
 
     def __str__(self):
-        return f"{self.kota_asal} → {self.kota_tujuan} ({self.get_kelas_display()})"
+        class_str = ""
+        if self.posisi_jabatan:
+            class_str += f" - {self.get_posisi_jabatan_display()}"
+        return f"{self.kota_asal} → {self.kota_tujuan} ({self.get_kelas_display()}){class_str} - {self.tahun}"
 
     class Meta:
-        unique_together = ('kota_asal', 'kota_tujuan', 'kelas')
-        ordering = ['kota_asal__nama', 'kota_tujuan__nama', 'kelas']
+        unique_together = ('kota_asal', 'kota_tujuan', 'kelas', 'posisi_jabatan', 'tahun')
+        ordering = ['kota_asal__nama', 'kota_tujuan__nama', 'kelas', 'posisi_jabatan', 'tahun']
         verbose_name = "Standar Biaya Masukan (SBM) Tiket Pesawat Dalam Negeri"
         verbose_name_plural = "Standar Biaya Masukan (SBM) Tiket Pesawat Dalam Negeri"

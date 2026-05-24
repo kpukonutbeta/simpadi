@@ -5,7 +5,7 @@ from decimal import Decimal
 import datetime
 import json
 
-from master_data.models import Pegawai, Provinsi, Kota, StandarBiaya, Anggaran, JenisBerkas, StandarBiayaTiket
+from master_data.models import Pegawai, Provinsi, Kota, StandarBiaya, StandarBiayaHarian, Anggaran, JenisBerkas, StandarBiayaTiket, Golongan, DokumenSBM
 from perjalanan.models import PerjalananDinas, SuratTugas, BiayaPerjalanan, BerkasPerjalanan, parse_tiket_keterangan
 
 User = get_user_model()
@@ -43,12 +43,17 @@ class TiketPesawatTestCase(TestCase):
             provinsi=self.provinsi_tujuan,
             golongan="III/a",
             tahun=2024,
-            uang_harian=Decimal("370000"),
-            uang_harian_fullboard_luar=Decimal("130000"),
-            uang_harian_fullboard_dalam=Decimal("90000"),
             plafon_penginapan=Decimal("1000000"),
-            uang_representasi=Decimal("150000"),
-            plafon_transportasi=Decimal("500000")
+            uang_representasi=Decimal("150000")
+        )
+
+        # Standar Biaya Harian (universal)
+        self.sbm_harian = StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi_tujuan,
+            tahun=2024,
+            uang_harian=Decimal("370000"),
+            uang_harian_dalam_kota=Decimal("148000"),
+            uang_harian_diklat=Decimal("111000")
         )
 
         # Anggaran
@@ -171,10 +176,10 @@ class TiketPesawatTestCase(TestCase):
         )
 
         self.perjadin.biaya.refresh_from_db()
-        # Total riil transport = 3,000,000 + 500,000 = 3,500,000
-        # Total dana pribadi transport = 500,000 + 100,000 = 600,000
-        self.assertEqual(self.perjadin.biaya.biaya_transportasi_riil, Decimal("3500000"))
-        self.assertEqual(self.perjadin.biaya.transportasi_dana_pribadi, Decimal("600000"))
+        # Total riil transport = 3,000,000 (tiket capped) + 600,000 (taxi, no plafon cap) = 3,600,000
+        # Total dana pribadi transport = 500,000 (tiket over SBM) + 0 = 500,000
+        self.assertEqual(self.perjadin.biaya.biaya_transportasi_riil, Decimal("3600000"))
+        self.assertEqual(self.perjadin.biaya.transportasi_dana_pribadi, Decimal("500000"))
 
     def test_api_get_standar_biaya_tiket(self):
         self.client.force_login(self.user)
@@ -359,12 +364,8 @@ class TransitHarianOverrideTestCase(TestCase):
             provinsi=self.provinsi_asal,
             golongan="III/a",
             tahun=2024,
-            uang_harian=Decimal("340000"),  # Sultra rate
-            uang_harian_fullboard_luar=Decimal("120000"),
-            uang_harian_fullboard_dalam=Decimal("80000"),
             plafon_penginapan=Decimal("800000"),
-            uang_representasi=Decimal("0"),
-            plafon_transportasi=Decimal("300000")
+            uang_representasi=Decimal("0")
         )
 
         # Standar Biaya SBM for Jakarta
@@ -372,12 +373,22 @@ class TransitHarianOverrideTestCase(TestCase):
             provinsi=self.provinsi_tujuan,
             golongan="III/a",
             tahun=2024,
-            uang_harian=Decimal("370000"),  # Jakarta rate
-            uang_harian_fullboard_luar=Decimal("130000"),
-            uang_harian_fullboard_dalam=Decimal("90000"),
             plafon_penginapan=Decimal("1000000"),
-            uang_representasi=Decimal("150000"),
-            plafon_transportasi=Decimal("500000")
+            uang_representasi=Decimal("150000")
+        )
+
+        # Standar Biaya Harian (universal)
+        StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi_asal, tahun=2024,
+            uang_harian=Decimal("340000"),
+            uang_harian_dalam_kota=Decimal("136000"),
+            uang_harian_diklat=Decimal("102000")
+        )
+        StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi_tujuan, tahun=2024,
+            uang_harian=Decimal("370000"),
+            uang_harian_dalam_kota=Decimal("148000"),
+            uang_harian_diklat=Decimal("111000")
         )
 
         # Anggaran
@@ -575,27 +586,25 @@ class TransitHarianOverrideTestCase(TestCase):
         day4.save()
         
         self.perjadin.biaya.refresh_from_db()
-        # Expected total: 370k (Luar Kota) + 148k (Dalam Kota) + 111k (Diklat) + 90k (Halfday) = 719,000
-        self.assertEqual(self.perjadin.biaya.uang_harian_riil, Decimal("719000"))
+        # Expected total: 370k (Luar Kota) + 148k (Dalam Kota) + 111k (Diklat) + 0 (Halfday) = 629,000
+        self.assertEqual(self.perjadin.biaya.uang_harian_riil, Decimal("629000"))
         
-        # Also test Fullboard (Luar Kota if outside Sultra, else Dalam Kota)
-        # Sultra is home (SULAWESI TENGGARA), Jakarta is outside (DKI JAKARTA)
-        # So fullboard for Jakarta should be fullboard_luar = 130k
+        # Also test Fullboard (should be Rp 0 as cost is covered by organizer)
         day4.jenis_harian = HarianPerjalanan.JenisHarian.FULLBOARD
         day4.provinsi = self.provinsi_tujuan  # DKI JAKARTA (luar)
         day4.save()
         
         self.perjadin.biaya.refresh_from_db()
-        # Expected total: 370k (Luar Kota) + 148k (Dalam Kota) + 111k (Diklat) + 130k (Fullboard Luar) = 759,000
-        self.assertEqual(self.perjadin.biaya.uang_harian_riil, Decimal("759000"))
+        # Expected total: 370k (Luar Kota) + 148k (Dalam Kota) + 111k (Diklat) + 0 (Fullboard) = 629,000
+        self.assertEqual(self.perjadin.biaya.uang_harian_riil, Decimal("629000"))
         
-        # Fullboard for Sultra (home) should be fullboard_dalam = 80k
+        # Fullboard for Sultra (home) should also be Rp 0
         day4.provinsi = self.provinsi_asal  # SULAWESI TENGGARA (home)
         day4.save()
         
         self.perjadin.biaya.refresh_from_db()
-        # Expected total: 370k (Luar Kota) + 148k (Dalam Kota) + 111k (Diklat) + 80k (Fullboard Dalam) = 709,000
-        self.assertEqual(self.perjadin.biaya.uang_harian_riil, Decimal("709000"))
+        # Expected total: 370k (Luar Kota) + 148k (Dalam Kota) + 111k (Diklat) + 0 (Fullboard) = 629,000
+        self.assertEqual(self.perjadin.biaya.uang_harian_riil, Decimal("629000"))
 
 
 class HotelSBMCappingTestCase(TestCase):
@@ -621,12 +630,8 @@ class HotelSBMCappingTestCase(TestCase):
             provinsi=self.provinsi_asal,
             golongan="III/a",
             tahun=2024,
-            uang_harian=Decimal("340000"),
-            uang_harian_fullboard_luar=Decimal("120000"),
-            uang_harian_fullboard_dalam=Decimal("80000"),
             plafon_penginapan=Decimal("800000"),
-            uang_representasi=Decimal("0"),
-            plafon_transportasi=Decimal("300000")
+            uang_representasi=Decimal("0")
         )
 
         # Standar Biaya SBM for Jakarta
@@ -634,12 +639,8 @@ class HotelSBMCappingTestCase(TestCase):
             provinsi=self.provinsi_tujuan,
             golongan="III/a",
             tahun=2024,
-            uang_harian=Decimal("370000"),
-            uang_harian_fullboard_luar=Decimal("130000"),
-            uang_harian_fullboard_dalam=Decimal("90000"),
             plafon_penginapan=Decimal("1000000"),
-            uang_representasi=Decimal("150000"),
-            plafon_transportasi=Decimal("500000")
+            uang_representasi=Decimal("150000")
         )
 
         # Standar Biaya SBM for Jabar (Transit)
@@ -647,12 +648,28 @@ class HotelSBMCappingTestCase(TestCase):
             provinsi=self.provinsi_transit,
             golongan="III/a",
             tahun=2024,
-            uang_harian=Decimal("350000"),
-            uang_harian_fullboard_luar=Decimal("110000"),
-            uang_harian_fullboard_dalam=Decimal("70000"),
             plafon_penginapan=Decimal("600000"),  # Jabar plafon hotel is 600.000 (lower than Jakarta's 1.000.000)
-            uang_representasi=Decimal("0"),
-            plafon_transportasi=Decimal("400000")
+            uang_representasi=Decimal("0")
+        )
+
+        # Standar Biaya Harian (universal)
+        StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi_asal, tahun=2024,
+            uang_harian=Decimal("340000"),
+            uang_harian_dalam_kota=Decimal("136000"),
+            uang_harian_diklat=Decimal("102000")
+        )
+        StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi_tujuan, tahun=2024,
+            uang_harian=Decimal("370000"),
+            uang_harian_dalam_kota=Decimal("148000"),
+            uang_harian_diklat=Decimal("111000")
+        )
+        StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi_transit, tahun=2024,
+            uang_harian=Decimal("350000"),
+            uang_harian_dalam_kota=Decimal("140000"),
+            uang_harian_diklat=Decimal("105000")
         )
 
         # Anggaran
@@ -1104,7 +1121,12 @@ class PerjalananKalenderTestCase(TestCase):
             provinsi=self.provinsi,
             golongan=self.pegawai.golongan,
             tahun=2024,
-            defaults={'uang_harian': Decimal('400000'), 'plafon_penginapan': Decimal('500000'), 'plafon_transportasi': Decimal('300000')}
+            defaults={'plafon_penginapan': Decimal('500000')}
+        )
+        StandarBiayaHarian.objects.get_or_create(
+            provinsi=self.provinsi,
+            tahun=2024,
+            defaults={'uang_harian': Decimal('400000'), 'uang_harian_dalam_kota': Decimal('160000'), 'uang_harian_diklat': Decimal('120000')}
         )
 
         # Setup JenisBerkas
@@ -1234,6 +1256,431 @@ class PerjalananKalenderTestCase(TestCase):
         response = self.client.post(url, post_data)
         # Should redirect to login / admin login since they aren't staff
         self.assertEqual(response.status_code, 302)
+
+    def test_calendar_daily_overlap_properties(self):
+        # Create admin user
+        admin_user = User.objects.create_superuser(email="admin@kpu.go.id", username="adminuser", password="password123")
+        self.client.force_login(admin_user)
+
+        # Trip A (pd1): May 1 to May 3
+        st1 = SuratTugas.objects.create(
+            nomor_surat="001/ST/2026", perihal="Rakornas", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 1), tanggal_kembali=datetime.date(2026, 5, 3),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st1.pegawai.add(self.pegawai)
+        pd1 = PerjalananDinas.objects.create(surat_tugas=st1, pegawai=self.pegawai, status=PerjalananDinas.Status.APPROVED)
+
+        # Trip B (pd2): May 2 to May 4 (overlaps on May 2 & 3)
+        st2 = SuratTugas.objects.create(
+            nomor_surat="002/ST/2026", perihal="Bimtek", tgl_surat=datetime.date(2026, 4, 30),
+            tanggal_berangkat=datetime.date(2026, 5, 2), tanggal_kembali=datetime.date(2026, 5, 4),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2024, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM
+        )
+        st2.pegawai.add(self.pegawai)
+        pd2 = PerjalananDinas.objects.create(surat_tugas=st2, pegawai=self.pegawai, status=PerjalananDinas.Status.PENDING)
+
+        pd1.sync_harian_details()
+        pd2.sync_harian_details()
+
+        # Step 1: Before resolution (unresolved clash)
+        url = reverse('perjalanan:kalender_perjadin')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        trips_data = {t['id']: t for t in json.loads(response.context['trips_json'])}
+        
+        # Verify both trips have 'dates_info'
+        self.assertIn('dates_info', trips_data[pd1.id])
+        self.assertIn('dates_info', trips_data[pd2.id])
+        self.assertEqual(trips_data[pd1.id]['pegawai_id'], str(self.pegawai.id))
+        self.assertEqual(trips_data[pd2.id]['pegawai_id'], str(self.pegawai.id))
+        
+        # On May 1: pd1 has no overlap
+        self.assertFalse(trips_data[pd1.id]['dates_info']['2026-05-01']['is_overlap'])
+        self.assertFalse(trips_data[pd1.id]['dates_info']['2026-05-01']['is_unresolved_clash'])
+
+        # On May 2 (unresolved): both pd1 and pd2 must show overlap/unresolved
+        self.assertTrue(trips_data[pd1.id]['dates_info']['2026-05-02']['is_overlap'])
+        self.assertTrue(trips_data[pd1.id]['dates_info']['2026-05-02']['is_unresolved_clash'])
+        self.assertTrue(trips_data[pd2.id]['dates_info']['2026-05-02']['is_overlap'])
+        self.assertTrue(trips_data[pd2.id]['dates_info']['2026-05-02']['is_unresolved_clash'])
+
+        # Step 2: Resolve conflict choosing pd1 for May 2 & 3
+        # Which sets pd2 to tidak_dibayai on May 2 & 3
+        resolusi_url = reverse('perjalanan:resolusi_konflik')
+        post_data = {
+            'pegawai_id': self.pegawai.id,
+            'chosen_2026-05-02': pd1.id,
+            'chosen_2026-05-03': pd1.id,
+        }
+        self.client.post(resolusi_url, post_data)
+
+        # Refresh from calendar view
+        response = self.client.get(url)
+        trips_data = {t['id']: t for t in json.loads(response.context['trips_json'])}
+
+        # After resolution:
+        # On May 2:
+        # pd1 (financed) should NOT show overlap warning
+        self.assertFalse(trips_data[pd1.id]['dates_info']['2026-05-02']['is_overlap'])
+        self.assertFalse(trips_data[pd1.id]['dates_info']['2026-05-02']['is_unresolved_clash'])
+        
+        # pd2 (tidak_dibayai) MUST show overlap warning
+        self.assertTrue(trips_data[pd2.id]['dates_info']['2026-05-02']['is_overlap'])
+        # but the clash is resolved, so it's not unresolved
+        self.assertFalse(trips_data[pd2.id]['dates_info']['2026-05-02']['is_unresolved_clash'])
+
+        # On May 4 (outside conflict date for pd2): normal
+        self.assertFalse(trips_data[pd2.id]['dates_info']['2026-05-04']['is_overlap'])
+
+
+class DynamicSBMTestCase(TestCase):
+    def setUp(self):
+        # Create standard setup
+        self.provinsi = Provinsi.objects.create(nama="Provinsi Sulawesi Tenggara")
+        self.anggaran = Anggaran.objects.create(
+            kode_dipa="001", nama_kegiatan="DIPA KPU", pagu=Decimal("50000000"), sisa_pagu=Decimal("50000000")
+        )
+        self.user = User.objects.create_user(email="pegawai@kpu.go.id", username="pegawai", password="password123")
+        self.pegawai = Pegawai.objects.create(
+            user=self.user, nip="12345", nama="Muhammad Akbar Yasin", email="pegawai@kpu.go.id",
+            golongan=Golongan.III, jabatan="Staf"
+        )
+        # Create custom mock SBM PDF file
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.pdf_file = SimpleUploadedFile("sbm_2025.pdf", b"pdf content", content_type="application/pdf")
+        self.sbm_doc = DokumenSBM.objects.create(
+            tahun=2025,
+            file_pdf=self.pdf_file
+        )
+
+    def tearDown(self):
+        if self.sbm_doc.file_pdf:
+            self.sbm_doc.file_pdf.delete(save=False)
+
+    def test_create_standar_biaya_with_dynamic_year(self):
+        # Admin can create StandarBiaya for year 2025 (which is not hardcoded)
+        sb = StandarBiaya.objects.create(
+            provinsi=self.provinsi,
+            golongan=Golongan.III,
+            plafon_penginapan=Decimal('550000'),
+            tahun=2025
+        )
+        StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi, tahun=2025,
+            uang_harian=Decimal('430000'),
+            uang_harian_dalam_kota=Decimal('172000'),
+            uang_harian_diklat=Decimal('129000')
+        )
+        self.assertEqual(sb.tahun, 2025)
+
+    def test_surat_tugas_with_dynamic_year_and_pdf_context(self):
+        # Admin creates SuratTugas for year 2025
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        dummy_st_file = SimpleUploadedFile("dummy_st.pdf", b"dummy st content", content_type="application/pdf")
+        st = SuratTugas.objects.create(
+            nomor_surat="100/ST/2026", perihal="Bimtek Pilkada", tgl_surat=datetime.date(2026, 5, 20),
+            tanggal_berangkat=datetime.date(2026, 5, 25), tanggal_kembali=datetime.date(2026, 5, 27),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2025, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM,
+            file_path=dummy_st_file
+        )
+        st.pegawai.add(self.pegawai)
+
+        # Log in as the employee assigned to this ST
+        self.client.force_login(self.user)
+
+        # Get the ajukan form
+        url = reverse('perjalanan:ajukan_perjadin', args=[st.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Verify sbm_dokumen is in context
+        self.assertIn('sbm_dokumen', response.context)
+        self.assertEqual(response.context['sbm_dokumen'], self.sbm_doc)
+        self.assertContains(response, self.sbm_doc.file_pdf.url)
+
+    def test_ticket_sbm_by_year(self):
+        # Authenticate client
+        self.client.force_login(self.user)
+        # Create Kota asal and tujuan
+        from master_data.models import Kota
+        kota_kdi = Kota.objects.create(provinsi=self.provinsi, nama="Kendari")
+        kota_jkt = Kota.objects.create(provinsi=self.provinsi, nama="Jakarta")
+
+        # Create ticket SBM for year 2024
+        sbm_2024 = StandarBiayaTiket.objects.create(
+            kota_asal=kota_kdi,
+            kota_tujuan=kota_jkt,
+            kelas=StandarBiayaTiket.KelasTiket.EKONOMI,
+            nominal=Decimal('3000000'),
+            tahun=2024
+        )
+
+        # Create ticket SBM for year 2025
+        sbm_2025 = StandarBiayaTiket.objects.create(
+            kota_asal=kota_kdi,
+            kota_tujuan=kota_jkt,
+            kelas=StandarBiayaTiket.KelasTiket.EKONOMI,
+            nominal=Decimal('4000000'),
+            tahun=2025
+        )
+
+        # Test AJAX filter for SBM year 2024
+        url = reverse('perjalanan:get_standar_biaya_tiket_ajax')
+        response = self.client.get(f"{url}?tahun_sbm=2024")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        routes = data.get('routes', [])
+        self.assertEqual(len(routes), 1)
+        self.assertEqual(routes[0]['nominal'], 3000000.0)
+
+        # Test AJAX filter for SBM year 2025
+        response = self.client.get(f"{url}?tahun_sbm=2025")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        routes = data.get('routes', [])
+        self.assertEqual(len(routes), 1)
+        self.assertEqual(routes[0]['nominal'], 4000000.0)
+
+    def test_favorable_sbm_selection_case_1(self):
+        # Case 1: Pegawai has Golongan IV and Eselon IV (PosisiEselon.ES_IV).
+        # We set up two SBM records with different plafon_penginapan.
+        # It should select the one with higher plafon_penginapan (Golongan IV).
+        # Uang harian is now universal (same for all golongan/eselon).
+        
+        # 1. Update test pegawai to Golongan IV and Eselon IV
+        from master_data.models import PosisiEselon
+        self.pegawai.golongan = Golongan.IV
+        self.pegawai.posisi_jabatan = PosisiEselon.ES_IV
+        self.pegawai.save()
+
+        # 2. Create universal harian rate for year 2025
+        StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi, tahun=2025,
+            uang_harian=Decimal('500000'),
+            uang_harian_dalam_kota=Decimal('200000'),
+            uang_harian_diklat=Decimal('150000')
+        )
+
+        # 3. Create the two SBM rates for year 2025 (different plafon_penginapan)
+        # Higher plafon for Golongan IV
+        sbm_higher = StandarBiaya.objects.create(
+            provinsi=self.provinsi,
+            golongan=Golongan.IV,
+            posisi_jabatan=None,
+            plafon_penginapan=Decimal('1200000'),
+            tahun=2025
+        )
+        # Lower plafon for ES_IV
+        sbm_lower = StandarBiaya.objects.create(
+            provinsi=self.provinsi,
+            golongan=None,
+            posisi_jabatan=PosisiEselon.ES_IV,
+            plafon_penginapan=Decimal('800000'),
+            tahun=2025
+        )
+
+        # 4. Create Perjalanan Dinas for this pegawai
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        st = SuratTugas.objects.create(
+            nomor_surat="200/ST/2026", perihal="Kunjungan Kerja", tgl_surat=datetime.date(2026, 5, 20),
+            tanggal_berangkat=datetime.date(2026, 5, 25), tanggal_kembali=datetime.date(2026, 5, 27),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2025, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM,
+            file_path=SimpleUploadedFile("dummy_st_1.pdf", b"dummy content")
+        )
+        st.pegawai.add(self.pegawai)
+
+        perjadin = PerjalananDinas.objects.create(
+            surat_tugas=st,
+            pegawai=self.pegawai,
+            status=PerjalananDinas.Status.DRAFT
+        )
+
+        # 5. Verify: uang harian is universal (3 days * 500k = 1,500,000)
+        self.assertEqual(perjadin.biaya.uang_harian_riil, Decimal('1500000'))
+        
+        # Verify plafon hotel picks the more favorable (higher) one
+        breakdown = perjadin.biaya.calculate_breakdown()
+        self.assertEqual(breakdown['sbm_plafon_hotel'], Decimal('1200000'))
+
+    def test_favorable_sbm_selection_case_2(self):
+        # Case 2: Pegawai has Golongan III and Eselon III (PosisiEselon.ES_III).
+        # Eselon III has higher plafon_penginapan than Golongan III.
+        # It should select the Eselon III record (higher plafon).
+        
+        # 1. Update test pegawai to Golongan III and Eselon III
+        from master_data.models import PosisiEselon
+        self.pegawai.golongan = Golongan.III
+        self.pegawai.posisi_jabatan = PosisiEselon.ES_III
+        self.pegawai.save()
+
+        # 2. Create universal harian rate for year 2025
+        StandarBiayaHarian.objects.create(
+            provinsi=self.provinsi, tahun=2025,
+            uang_harian=Decimal('500000'),
+            uang_harian_dalam_kota=Decimal('200000'),
+            uang_harian_diklat=Decimal('150000')
+        )
+
+        # 3. Create the two SBM rates for year 2025
+        # Higher plafon for Eselon III
+        sbm_higher = StandarBiaya.objects.create(
+            provinsi=self.provinsi,
+            golongan=None,
+            posisi_jabatan=PosisiEselon.ES_III,
+            plafon_penginapan=Decimal('1200000'),
+            tahun=2025
+        )
+        # Lower plafon for Golongan III
+        sbm_lower = StandarBiaya.objects.create(
+            provinsi=self.provinsi,
+            golongan=Golongan.III,
+            posisi_jabatan=None,
+            plafon_penginapan=Decimal('800000'),
+            tahun=2025
+        )
+
+        # 4. Create Perjalanan Dinas for this pegawai
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        st = SuratTugas.objects.create(
+            nomor_surat="300/ST/2026", perihal="Bimbingan Teknis", tgl_surat=datetime.date(2026, 5, 20),
+            tanggal_berangkat=datetime.date(2026, 5, 25), tanggal_kembali=datetime.date(2026, 5, 27),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2025, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM,
+            file_path=SimpleUploadedFile("dummy_st_2.pdf", b"dummy content")
+        )
+        st.pegawai.add(self.pegawai)
+
+        perjadin = PerjalananDinas.objects.create(
+            surat_tugas=st,
+            pegawai=self.pegawai,
+            status=PerjalananDinas.Status.DRAFT
+        )
+
+        # 5. Verify: uang harian is universal (3 days * 500k = 1,500,000)
+        self.assertEqual(perjadin.biaya.uang_harian_riil, Decimal('1500000'))
+        
+        # Verify plafon hotel picks the more favorable (higher) one
+        breakdown = perjadin.biaya.calculate_breakdown()
+        self.assertEqual(breakdown['sbm_plafon_hotel'], Decimal('1200000'))
+
+    def test_tiket_sbm_favorable_selection_by_classification(self):
+        # Setup route destinations
+        from master_data.models import Kota, PosisiEselon
+        kota_kdi = Kota.objects.create(provinsi=self.provinsi, nama="Kendari")
+        kota_jkt = Kota.objects.create(provinsi=self.provinsi, nama="Jakarta")
+
+        # 1. Update test pegawai to Golongan IV and Eselon IV (PosisiEselon.ES_IV)
+        self.pegawai.golongan = Golongan.IV
+        self.pegawai.posisi_jabatan = PosisiEselon.ES_IV
+        self.pegawai.save()
+
+        # 2. Create StandarBiayaTiket records:
+        # Fallback (no classification)
+        sbm_fallback = StandarBiayaTiket.objects.create(
+            kota_asal=kota_kdi, kota_tujuan=kota_jkt, kelas=StandarBiayaTiket.KelasTiket.EKONOMI,
+            posisi_jabatan=None, nominal=Decimal('3000000'), tahun=2025
+        )
+        # Specific lower rate for Eselon IV
+        sbm_lower = StandarBiayaTiket.objects.create(
+            kota_asal=kota_kdi, kota_tujuan=kota_jkt, kelas=StandarBiayaTiket.KelasTiket.EKONOMI,
+            posisi_jabatan=PosisiEselon.ES_IV, nominal=Decimal('4000000'), tahun=2025
+        )
+
+        # 3. Test AJAX endpoint filters to the single highest / most favorable route
+        self.client.force_login(self.user)
+        url = reverse('perjalanan:get_standar_biaya_tiket_ajax')
+        response = self.client.get(f"{url}?tahun_sbm=2025&pegawai_id={self.pegawai.id}")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        routes = data.get('routes', [])
+        self.assertEqual(len(routes), 1)
+        # Should pick Rp 4.000.000 (ES_IV specific, more favorable than fallback)
+        self.assertEqual(routes[0]['nominal'], 4000000.0)
+
+        # 4. Test calculate_breakdown on BiayaPerjalanan matches the Rp 5.000.000 limit
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        st = SuratTugas.objects.create(
+            nomor_surat="400/ST/2026", perihal="Bimtek Tiket", tgl_surat=datetime.date(2026, 5, 20),
+            tanggal_berangkat=datetime.date(2026, 5, 25), tanggal_kembali=datetime.date(2026, 5, 27),
+            tempat_berangkat="Kendari", tempat_tujuan="Jakarta", tujuan_provinsi=self.provinsi,
+            tahun_sbm=2025, anggaran=self.anggaran, jenis_perjalanan=SuratTugas.JenisPerjalanan.LUAR_KOTA,
+            jenis_transportasi=SuratTugas.JenisTransportasi.UMUM,
+            file_path=SimpleUploadedFile("dummy_st_3.pdf", b"dummy content")
+        )
+        st.pegawai.add(self.pegawai)
+
+        perjadin = PerjalananDinas.objects.create(
+            surat_tugas=st,
+            pegawai=self.pegawai,
+            status=PerjalananDinas.Status.DRAFT
+        )
+
+        # Create travel ticket bill with high nominal (e.g. 6 million)
+        from master_data.models import JenisBerkas
+        from perjalanan.models import BerkasPerjalanan
+        jenis_tiket = JenisBerkas.objects.create(nama="TIKET PESAWAT", kategori_biaya='transportasi_pesawat', nominal_biaya=True)
+        
+        # We need to construct a description with metadata: [SBM-TIKET:kota_asal_id-kota_tujuan_id-kelas:nama_asal:nama_tujuan]
+        keterangan = f"[SBM-TIKET:{kota_kdi.id}-{kota_jkt.id}-ekonomi:Kendari:Jakarta]"
+        
+        berkas = BerkasPerjalanan.objects.create(
+            perjalanan=perjadin,
+            jenis_berkas=jenis_tiket,
+            nominal=Decimal('6000000'),
+            keterangan=keterangan,
+            file=SimpleUploadedFile("tiket.pdf", b"pdf content")
+        )
+
+        # Recalculate and verify: ticket real cost capped at Rp 5.000.000, 1.000.000 is personal expense
+        breakdown = perjadin.biaya.calculate_breakdown()
+        self.assertEqual(breakdown['biaya_transportasi_riil'], Decimal('4000000'))
+        self.assertEqual(breakdown['transportasi_dana_pribadi'], Decimal('2000000'))
+
+    def test_tiket_sbm_class_eligibility_by_eselon(self):
+        from master_data.models import PosisiEselon
+        from perjalanan.models import get_eligible_tiket_filter
+
+        # 1. Non Eselon
+        self.pegawai.posisi_jabatan = PosisiEselon.NON_ESELON
+        self.pegawai.save()
+        filt_non_es = get_eligible_tiket_filter(self.pegawai)
+        self.assertIn("('kelas', 'ekonomi')", str(filt_non_es))
+        self.assertNotIn("('kelas', 'bisnis')", str(filt_non_es))
+
+        # 2. Eselon IV
+        self.pegawai.posisi_jabatan = PosisiEselon.ES_IV
+        self.pegawai.save()
+        filt_es_iv = get_eligible_tiket_filter(self.pegawai)
+        self.assertIn("('kelas', 'ekonomi')", str(filt_es_iv))
+        self.assertNotIn("('kelas', 'bisnis')", str(filt_es_iv))
+
+        # 3. Eselon III
+        self.pegawai.posisi_jabatan = PosisiEselon.ES_III
+        self.pegawai.save()
+        filt_es_iii = get_eligible_tiket_filter(self.pegawai)
+        self.assertIn("('kelas', 'ekonomi')", str(filt_es_iii))
+        self.assertNotIn("('kelas', 'bisnis')", str(filt_es_iii))
+
+        # 4. Eselon II
+        self.pegawai.posisi_jabatan = PosisiEselon.ES_II
+        self.pegawai.save()
+        filt_es_ii = get_eligible_tiket_filter(self.pegawai)
+        self.assertIn("('kelas', 'bisnis')", str(filt_es_ii))
+        self.assertNotIn("('kelas', 'ekonomi')", str(filt_es_ii))
+
+
+
 
 
 

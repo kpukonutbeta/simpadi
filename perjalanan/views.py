@@ -140,6 +140,9 @@ def ajukan_perjadin(request, surat_tugas_id):
         except Exception:
             pass
 
+    from master_data.models import DokumenSBM
+    sbm_dokumen = DokumenSBM.objects.filter(tahun=surat_tugas.tahun_sbm).first()
+
     context = {
         'surat_tugas': surat_tugas,
         'perjadin': perjadin_instance,
@@ -155,7 +158,8 @@ def ajukan_perjadin(request, surat_tugas_id):
         'jenis_berkas_fb_dalam': jenis_berkas_fb_dalam,
         'jenis_berkas_tiket_pesawat': jenis_berkas_tiket_pesawat,
         'jenis_berkas_transportasi': jenis_berkas_transportasi,
-        'breakdown_initial': breakdown_initial
+        'breakdown_initial': breakdown_initial,
+        'sbm_dokumen': sbm_dokumen
     }
     return render(request, 'perjalanan/ajukan_form.html', context)
 
@@ -359,9 +363,39 @@ def hitung_estimasi_ajax(request):
 @login_required
 def get_standar_biaya_tiket_ajax(request):
     from master_data.models import StandarBiayaTiket, JenisBerkas
+    tahun_sbm = request.GET.get('tahun_sbm')
+    pegawai_id = request.GET.get('pegawai_id')
+    
     tiket_qs = StandarBiayaTiket.objects.select_related('kota_asal', 'kota_tujuan').all()
-    data = []
+    if tahun_sbm:
+        try:
+            tiket_qs = tiket_qs.filter(tahun=int(tahun_sbm))
+        except ValueError:
+            pass
+
+    if pegawai_id:
+        try:
+            from master_data.models import Pegawai
+            pegawai = Pegawai.objects.get(id=pegawai_id)
+            from perjalanan.models import get_eligible_tiket_filter
+            tiket_qs = tiket_qs.filter(get_eligible_tiket_filter(pegawai))
+        except (ValueError, Pegawai.DoesNotExist):
+            pass
+
+    # Order by route fields and -nominal so that deduplication picks the highest rate first
+    tiket_qs = tiket_qs.order_by('kota_asal__nama', 'kota_tujuan__nama', 'kelas', '-nominal')
+
+    # Deduplicate route limits
+    seen = set()
+    dedup_tickets = []
     for t in tiket_qs:
+        key = (t.kota_asal_id, t.kota_tujuan_id, t.kelas)
+        if key not in seen:
+            seen.add(key)
+            dedup_tickets.append(t)
+
+    data = []
+    for t in dedup_tickets:
         data.append({
             'id': t.id,
             'kota_asal_id': t.kota_asal.id,
@@ -405,6 +439,13 @@ def kalender_perjadin(request):
     
     from collections import defaultdict
     from datetime import timedelta
+    from .models import HarianPerjalanan
+    
+    # Pre-fetch HarianPerjalanan to avoid N+1 queries
+    harian_qs = HarianPerjalanan.objects.filter(perjalanan__in=trips)
+    harian_map = {}
+    for h in harian_qs:
+        harian_map[(h.perjalanan_id, h.tanggal.isoformat())] = h.jenis_harian
     
     # 1. Group travels by pegawai_id
     pegawai_trips = defaultdict(list)
@@ -412,6 +453,7 @@ def kalender_perjadin(request):
         pegawai_trips[t.pegawai_id].append(t)
         
     # 2. Find overlaps per employee grouped by date
+    clash_map = {}
     for peg_id, p_trips in pegawai_trips.items():
         date_trips = defaultdict(list)
         for t in p_trips:
@@ -427,6 +469,21 @@ def kalender_perjadin(request):
         for dt, ts in date_trips.items():
             if len(ts) > 1:
                 conflict_dates[dt] = ts
+                
+                # Check resolution: resolved if at most one trip is financed (not 'tidak_dibayai')
+                dt_str = dt.isoformat()
+                financed_trips = []
+                for t in ts:
+                    j_harian = harian_map.get((t.id, dt_str), 'luar_kota')
+                    if j_harian != 'tidak_dibayai':
+                        financed_trips.append(t.id)
+                is_resolved = len(financed_trips) <= 1
+                clash_map[(peg_id, dt_str)] = {
+                    'is_clash': True,
+                    'is_resolved': is_resolved,
+                    'trips': [t.id for t in ts],
+                    'financed_trip_ids': financed_trips
+                }
         
         if conflict_dates:
             peg_nama = p_trips[0].pegawai.nama
@@ -437,10 +494,8 @@ def kalender_perjadin(request):
                 trips_details = []
                 any_financed = False
                 for t in trips_on_date:
-                    h_day = t.harian_details.filter(tanggal=dt).first()
-                    is_financed = True
-                    if h_day and h_day.jenis_harian == 'tidak_dibayai':
-                        is_financed = False
+                    j_harian = harian_map.get((t.id, dt.isoformat()), 'luar_kota')
+                    is_financed = j_harian != 'tidak_dibayai'
                     
                     overlapping_ids.add(t.id)
                     
@@ -470,18 +525,45 @@ def kalender_perjadin(request):
                 
     serialized_trips = []
     for t in trips:
+        dates_info = {}
+        curr = t.tanggal_berangkat
+        if curr and t.tanggal_kembali:
+            while curr <= t.tanggal_kembali:
+                dt_str = curr.isoformat()
+                j_harian = harian_map.get((t.id, dt_str), 'luar_kota')
+                clash_info = clash_map.get((t.pegawai_id, dt_str))
+                
+                is_overlap = False
+                is_unresolved_clash = False
+                if clash_info:
+                    if not clash_info['is_resolved']:
+                        is_overlap = True
+                        is_unresolved_clash = True
+                    else:
+                        if j_harian == 'tidak_dibayai':
+                            is_overlap = True
+                
+                dates_info[dt_str] = {
+                    'jenis_harian': j_harian,
+                    'is_overlap': is_overlap,
+                    'is_unresolved_clash': is_unresolved_clash
+                }
+                curr += timedelta(days=1)
+
         serialized_trips.append({
             'id': t.id,
             'nomor_spd': t.nomor_spd or 'Draft SPD',
             'nomor_surat': t.surat_tugas.nomor_surat,
             'perihal': t.surat_tugas.perihal,
             'pegawai_nama': t.pegawai.nama,
+            'pegawai_id': str(t.pegawai.id),
             'tanggal_berangkat': t.tanggal_berangkat.isoformat() if t.tanggal_berangkat else None,
             'tanggal_kembali': t.tanggal_kembali.isoformat() if t.tanggal_kembali else None,
             'tujuan': t.tujuan_provinsi.nama,
             'status': t.status,
             'status_display': t.get_status_display(),
-            'has_overlap': t.id in overlapping_ids
+            'has_overlap': t.id in overlapping_ids,
+            'dates_info': dates_info
         })
         
     context = {
