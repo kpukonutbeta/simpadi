@@ -1574,12 +1574,52 @@ function initAdminFilter() {
         });
     }
 
-    function setupAdminAccordion() {
-        const harianGroup = document.querySelector('#harian_details-group');
-        if (!harianGroup) return;
+    function setupAdminAccordion(groupSelector, defaultExpanded = false) {
+        // Try to find the group using the selector first
+        let group = document.querySelector(groupSelector);
 
-        const h2 = harianGroup.querySelector('h2');
-        if (!h2) return;
+        // Fallback: if selector is like '#<prefix>-group' but not present in DOM
+        // try to locate the inline container that contains inputs with the same prefix
+        if (!group && typeof groupSelector === 'string' && groupSelector.startsWith('#') && groupSelector.endsWith('-group')) {
+            const prefix = groupSelector.slice(1, -6); // remove leading # and trailing -group
+            const inlineCandidates = document.querySelectorAll('.inline-related, .inline-group');
+            for (let cand of inlineCandidates) {
+                // look for any input/select/textarea that starts with prefix-
+                if (cand.querySelector(`[name^="${prefix}-"]`)) {
+                    group = cand;
+                    break;
+                }
+            }
+        }
+
+        if (!group) return;
+
+        // Try to find existing heading or create one from verbose_name if necessary
+        let h2 = group.querySelector('h2');
+        if (!h2) {
+            // If no h2 found, try to create a header element using the first fieldset legend or the group's data
+            h2 = document.createElement('h2');
+            // Use any available caption/legend text, falling back to formset prefix
+            const legend = group.querySelector('legend');
+            if (legend && legend.textContent.trim()) {
+                h2.textContent = legend.textContent.trim();
+            } else {
+                // Derive title from the group's id or form input names
+                const id = group.id || '';
+                if (id) {
+                    h2.textContent = id.replace(/[-_]/g, ' ').replace(/group$/i, '').trim();
+                } else {
+                    const anyInput = group.querySelector('input[name], select[name], textarea[name]');
+                    if (anyInput) {
+                        const nm = anyInput.getAttribute('name').split('-')[0];
+                        h2.textContent = nm.replace(/[-_]/g, ' ');
+                    } else {
+                        h2.textContent = 'Section';
+                    }
+                }
+            // Insert header at top of group
+            group.insertBefore(h2, group.firstChild);
+        }
 
         // Apply styles to h2 to make it clickable and style it like a premium accordion
         h2.style.cursor = 'pointer';
@@ -1588,15 +1628,19 @@ function initAdminFilter() {
         h2.style.alignItems = 'center';
         h2.style.userSelect = 'none';
 
-        // Create the chevron indicator
-        const chevron = document.createElement('span');
-        chevron.style.display = 'inline-block';
-        chevron.style.transition = 'transform 0.2s ease';
-        chevron.style.fontSize = '0.9rem';
-        chevron.style.marginRight = '12px';
-        chevron.style.color = '#ffffff';
-        chevron.innerHTML = '&#9656;'; // Closed by default: ▶
-        h2.appendChild(chevron);
+        // Avoid adding multiple chevrons
+        let chevron = h2.querySelector('span.admin-accordion-chevron');
+        if (!chevron) {
+            chevron = document.createElement('span');
+            chevron.className = 'admin-accordion-chevron';
+            chevron.style.display = 'inline-block';
+            chevron.style.transition = 'transform 0.2s ease';
+            chevron.style.fontSize = '0.9rem';
+            chevron.style.marginRight = '12px';
+            chevron.style.color = '#ffffff';
+            chevron.innerHTML = '&#9656;'; // Closed by default: ▶
+            h2.appendChild(chevron);
+        }
 
         // Gather all siblings of h2 within the group (these contain the tabular inline formset elements)
         const contentSiblings = [];
@@ -1606,9 +1650,9 @@ function initAdminFilter() {
             next = next.nextElementSibling;
         }
 
-        // Auto-expand if there are validation errors within the group
-        const hasErrors = harianGroup.querySelector('.errors, .errorlist') !== null;
-        let isExpanded = hasErrors;
+        // Auto-expand if there are validation errors within the group or if defaultExpanded is true
+        const hasErrors = group.querySelector('.errors, .errorlist') !== null;
+        let isExpanded = defaultExpanded || hasErrors;
 
         // Apply initial state (hidden by default unless there are errors)
         contentSiblings.forEach(el => {
@@ -1637,8 +1681,18 @@ function initAdminFilter() {
         });
     }
 
-    // Initialize Accordion for Uang Harian detail section
-    setupAdminAccordion();
+    // Initialize all accordions with collapse by default
+    // Detail Transit Perjalanan Dinas
+    setupAdminAccordion('#harian_details-group', false);
+
+    // Berkas Pendukung untuk Penginapan
+    setupAdminAccordion('#perjalanan_berkasperjalananpenginapan_set-group', false);
+
+    // Berkas Pendukung untuk Transportasi
+    setupAdminAccordion('#perjalanan_berkasperjalanantransportasi_set-group', false);
+
+    // Berkas Pendukung Tanpa Nominal Biaya
+    setupAdminAccordion('#perjalanan_berkasperjalanannonnominal_set-group', false);
 
     // Run initial estimation on load in Admin
     setTimeout(updateAdminEstimasi, 500);
