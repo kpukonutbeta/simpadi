@@ -1,0 +1,3228 @@
+<!DOCTYPE html>
+
+<html lang="id" dir="ltr">
+<head>
+<title>Ubah perjalanan dinas | SIMPADI Admin Portal</title>
+<link rel="stylesheet" href="/static/admin/css/base.css">
+
+  <link rel="stylesheet" href="/static/admin/css/dark_mode.css">
+  <script src="/static/admin/js/theme.js" defer></script>
+
+
+  <link rel="stylesheet" href="/static/admin/css/nav_sidebar.css">
+  <script src="/static/admin/js/nav_sidebar.js" defer></script>
+
+
+
+<style>
+    /* Styling overrides for django admin */
+    
+    /* Center the branding/header inside the login card */
+    body.login {
+        background: radial-gradient(circle at top left, #f8fafc, #e2e8f0) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+    
+    body.login #container {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
+        padding: 2.5rem !important;
+        width: 100%;
+        max-width: 420px !important;
+        margin: 0 !important;
+        box-sizing: border-box;
+    }
+    
+    body.login #header {
+        background: none !important;
+        color: #0f172a !important;
+        border: none !important;
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem !important;
+        padding: 0 !important;
+    }
+    
+    body.login #header a {
+        color: #0f172a !important;
+    }
+    
+    body.login .admin-branding-container {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        margin: 0 !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+    
+    body.login .admin-logo {
+        height: 75px !important;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15)) !important;
+    }
+    
+    body.login .admin-title-wrapper {
+        align-items: center !important;
+    }
+    
+    body.login #site-name a {
+        font-size: 2.2rem !important;
+        font-weight: 800 !important;
+        background: linear-gradient(to right, #79aec8, #417690);
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        display: inline-block !important;
+        line-height: 1.2 !important;
+    }
+    
+    body.login .admin-subtitle {
+        display: block !important;
+        font-size: 0.875rem !important;
+        color: #64748b !important;
+        margin-top: 0.25rem !important;
+        font-weight: 500 !important;
+        line-height: 1.4 !important;
+    }
+    
+    body.login .admin-badge {
+        display: block !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        color: var(--primary-button-bg, #417690) !important;
+        margin-top: 0.25rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+    }
+    
+    body.login #content-main {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    body.login .form-row {
+        float: none !important;
+        clear: both !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 0 0 1.25rem 0 !important;
+        border: none !important;
+        text-align: left !important;
+    }
+    
+    body.login .form-row label {
+        display: block !important;
+        float: none !important;
+        width: auto !important;
+        text-align: left !important;
+        padding: 0 !important;
+        margin: 0 0 0.5rem 0 !important;
+        color: #475569 !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+    }
+    
+    body.login .form-row input[type="text"],
+    body.login .form-row input[type="password"] {
+        display: block !important;
+        width: 100% !important;
+        float: none !important;
+        padding: 0.75rem 1rem !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        font-size: 0.875rem !important;
+        transition: all 0.2s;
+    }
+    
+    body.login .form-row input[type="text"]:focus,
+    body.login .form-row input[type="password"]:focus {
+        border-color: var(--primary-button-bg, #417690) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 4px rgba(65, 118, 144, 0.15) !important;
+    }
+    
+    body.login .submit-row {
+        background: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 1rem 0 0 0 !important;
+        float: none !important;
+        clear: both !important;
+    }
+    
+    body.login .submit-row input {
+        width: 100% !important;
+        padding: 0.75rem !important;
+        background: var(--primary-button-bg, #417690) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        margin: 0 !important;
+        float: none !important;
+    }
+    
+    body.login .submit-row input:hover {
+        background: var(--primary-button-hover-bg, #2b5062) !important;
+        transform: translateY(-1px);
+    }
+    
+    body.login .errornote {
+        background: rgba(239, 68, 68, 0.1) !important;
+        color: #ef4444 !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 12px !important;
+        font-size: 0.875rem !important;
+        margin: 0 0 1.5rem 0 !important;
+        border: 1px solid rgba(239, 68, 68, 0.2) !important;
+        text-align: left !important;
+        float: none !important;
+        clear: both !important;
+    }
+    
+    body.login ul.errorlist {
+        margin: 0 0 0.5rem 0 !important;
+        padding: 0 !important;
+        list-style: none !important;
+        color: #ef4444 !important;
+        font-size: 0.75rem !important;
+        text-align: left !important;
+    }
+    
+    body.login #footer {
+        margin-top: 1.5rem !important;
+        border-top: 1px solid #e2e8f0 !important;
+        padding-top: 1.5rem !important;
+        color: #64748b !important;
+        font-size: 0.75rem !important;
+        background: none !important;
+    }
+    
+    /* Navigation Sidebar & Header customization for logged-in admin */
+    #footer {
+        text-align: center;
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+        color: #666;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: 2rem;
+    }
+</style>
+<link rel="stylesheet" href="/static/admin/css/forms.css">
+
+
+<script src="/admin/jsi18n/"></script>
+<script src="/static/admin/js/vendor/jquery/jquery.js"></script>
+<script src="/static/js/rupiah_input.js"></script>
+<script src="/static/admin/js/jquery.init.js"></script>
+<script src="/static/js/admin_loader.js"></script>
+<script src="/static/admin/js/core.js"></script>
+<script src="/static/js/admin_accordion.js"></script>
+<script src="/static/admin/js/inlines.js"></script>
+<script src="/static/admin/js/admin/RelatedObjectLookups.js"></script>
+<script src="/static/admin/js/actions.js"></script>
+<script src="/static/admin/js/urlify.js"></script>
+<script src="/static/admin/js/prepopulate.js"></script>
+<script src="/static/admin/js/vendor/xregexp/xregexp.js"></script>
+
+
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="/static/admin/css/responsive.css">
+    
+
+<meta name="robots" content="NONE,NOARCHIVE">
+</head>
+
+<body class=" app-perjalanan model-perjalanandinas change-form"
+  data-admin-utc-offset="28800">
+<a href="#content-start" class="skip-to-content-link">Skip to main content</a>
+<!-- Container -->
+<div id="container">
+
+    
+    <!-- Header -->
+    
+    <div id="header">
+        <div id="branding">
+        
+<div class="admin-branding-container" style="display: flex; align-items: center; gap: 12px; margin: 5px 0;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/KPU_Logo.svg" alt="Logo KPU" style="height: 38px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" class="admin-logo">
+    <div class="admin-title-wrapper" style="display: flex; flex-direction: column;">
+        <h1 id="site-name" style="margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2;">
+            <a href="/admin/" style="color: white; text-decoration: none;">SIMPADI</a>
+        </h1>
+        <span class="admin-subtitle" style="display: none;">Sistem Informasi Manajemen Perjalanan Dinas</span>
+        <span class="admin-badge" style="color: rgba(255,255,255,0.8); font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">[Admin]</span>
+    </div>
+</div>
+
+        </div>
+        
+        
+        <div id="user-tools">
+            
+                Selamat datang,
+                <strong>admin@example.com</strong>.
+            
+            
+                
+                    <a href="/">Lihat situs</a> /
+                
+                
+                    
+                    
+                
+                
+                <a href="/admin/password_change/">Ganti sandi</a> /
+                
+                <form id="logout-form" method="post" action="/admin/logout/">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="wSMkWP76Lh0UgzlSO0MRcxEGO7ZerJxAoQiYJVpUtBcKClsG96gtbqoVVsrQjKNY">
+                    <button type="submit">Keluar</button>
+                </form>
+                
+<button class="theme-toggle">
+  <div class="visually-hidden theme-label-when-auto">Toggle theme (current theme: auto)</div>
+  <div class="visually-hidden theme-label-when-light">Toggle theme (current theme: light)</div>
+  <div class="visually-hidden theme-label-when-dark">Toggle theme (current theme: dark)</div>
+  <svg aria-hidden="true" class="theme-icon-when-auto">
+    <use xlink:href="#icon-auto" />
+  </svg>
+  <svg aria-hidden="true" class="theme-icon-when-dark">
+    <use xlink:href="#icon-moon" />
+  </svg>
+  <svg aria-hidden="true" class="theme-icon-when-light">
+    <use xlink:href="#icon-sun" />
+  </svg>
+</button>
+
+            
+        </div>
+        
+        
+        
+    </div>
+    
+    <!-- END Header -->
+    
+      <nav aria-label="Breadcrumbs">
+        
+<div class="breadcrumbs">
+<a href="/admin/">Beranda</a>
+&rsaquo; <a href="/admin/perjalanan/">Perjalanan Dinas</a>
+&rsaquo; <a href="/admin/perjalanan/perjalanandinas/">Perjalanan dinass</a>
+&rsaquo; 1/PPK-PROV.026/VII/2026 - Muhammad Akbar Yasin
+</div>
+
+      </nav>
+    
+    
+
+    <div class="main" id="main">
+      
+        
+          
+<button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="Alihkan navigasi"></button>
+<nav class="sticky" id="nav-sidebar" aria-label="Sidebar">
+  <input type="search" id="nav-filter"
+         placeholder="Mulai mengetik untuk menyaring..."
+         aria-label="Navigasi pencarian barang">
+  
+
+
+  
+    <div class="app-perjalanan module current-app">
+      <table>
+        <caption>
+          <a href="/admin/perjalanan/" class="section" title="Model pada aplikasi Perjalanan Dinas">Perjalanan Dinas</a>
+        </caption>
+        
+          <tr class="model-pengaturannomorspd">
+            
+              <th scope="row"><a href="/admin/perjalanan/pengaturannomorspd/">Konfigurasi Nomor SPD</a></th>
+            
+
+            
+              <td></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-surattugas">
+            
+              <th scope="row"><a href="/admin/perjalanan/surattugas/">Manajemen Surat Tugas</a></th>
+            
+
+            
+              <td><a href="/admin/perjalanan/surattugas/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-perjalanandinas current-model">
+            
+              <th scope="row"><a href="/admin/perjalanan/perjalanandinas/" aria-current="page">Manajemen SPD</a></th>
+            
+
+            
+              <td><a href="/admin/perjalanan/perjalanandinas/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-kalenderperjadin">
+            
+              <th scope="row"><a href="/perjalanan/kalender/">Kalender Perjadin</a></th>
+            
+
+            
+              <td></td>
+            
+
+            
+          </tr>
+        
+      </table>
+    </div>
+  
+    <div class="app-master_data module">
+      <table>
+        <caption>
+          <a href="/admin/master_data/" class="section" title="Model pada aplikasi Master_Data">Master_Data</a>
+        </caption>
+        
+          <tr class="model-pegawai">
+            
+              <th scope="row"><a href="/admin/master_data/pegawai/">Data Pegawai</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/pegawai/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-provinsi">
+            
+              <th scope="row"><a href="/admin/master_data/provinsi/">Data Provinsi</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/provinsi/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-kota">
+            
+              <th scope="row"><a href="/admin/master_data/kota/">Data Kota/Kabupaten</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/kota/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-anggaran">
+            
+              <th scope="row"><a href="/admin/master_data/anggaran/">Data Anggaran</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/anggaran/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-jenisberkas">
+            
+              <th scope="row"><a href="/admin/master_data/jenisberkas/">Jenis Berkas</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/jenisberkas/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-pejabatpenandatangan">
+            
+              <th scope="row"><a href="/admin/master_data/pejabatpenandatangan/">Pejabat Penandatangan</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/pejabatpenandatangan/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-dokumensbm">
+            
+              <th scope="row"><a href="/admin/master_data/dokumensbm/">Tahun Standar Biaya Masukan (SBM)</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/dokumensbm/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-standarbiaya">
+            
+              <th scope="row"><a href="/admin/master_data/standarbiaya/">Standar Biaya Masukan (SBM) Golongan/Pejabat Eselon</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/standarbiaya/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-standarbiayatiket">
+            
+              <th scope="row"><a href="/admin/master_data/standarbiayatiket/">Standar Biaya Masukan (SBM) Tiket Pesawat Dalam Negeri</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/standarbiayatiket/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-standarbiayaharian">
+            
+              <th scope="row"><a href="/admin/master_data/standarbiayaharian/">Standar Biaya Masukan (SBM) Uang Harian</a></th>
+            
+
+            
+              <td><a href="/admin/master_data/standarbiayaharian/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+      </table>
+    </div>
+  
+    <div class="app-core module">
+      <table>
+        <caption>
+          <a href="/admin/core/" class="section" title="Model pada aplikasi Core">Core</a>
+        </caption>
+        
+          <tr class="model-globalconfig">
+            
+              <th scope="row"><a href="/admin/core/globalconfig/">Pengaturan Global</a></th>
+            
+
+            
+              <td><a href="/admin/core/globalconfig/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+          <tr class="model-user">
+            
+              <th scope="row"><a href="/admin/core/user/">Pengguna</a></th>
+            
+
+            
+              <td><a href="/admin/core/user/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+      </table>
+    </div>
+  
+    <div class="app-auth module">
+      <table>
+        <caption>
+          <a href="/admin/auth/" class="section" title="Model pada aplikasi Autentikasi dan Otorisasi">Autentikasi dan Otorisasi</a>
+        </caption>
+        
+          <tr class="model-group">
+            
+              <th scope="row"><a href="/admin/auth/group/">Grup</a></th>
+            
+
+            
+              <td><a href="/admin/auth/group/add/" class="addlink">Tambah</a></td>
+            
+
+            
+          </tr>
+        
+      </table>
+    </div>
+  
+
+
+</nav>
+
+        
+      
+      <div id="content-start" class="content" tabindex="-1">
+        
+          
+        
+        <!-- Content -->
+        <div id="content" class="colM">
+          
+          <h1>Ubah perjalanan dinas</h1>
+          <h2>1/PPK-PROV.026/VII/2026 - Muhammad Akbar Yasin</h2>
+          <div id="content-main">
+
+
+  <ul class="object-tools">
+    
+      
+
+<li>
+    
+    <a href="/admin/perjalanan/perjalanandinas/23/history/" class="historylink">Riwayat</a>
+</li>
+
+
+
+    
+  </ul>
+
+
+<form enctype="multipart/form-data" method="post" id="perjalanandinas_form" novalidate><input type="hidden" name="csrfmiddlewaretoken" value="wSMkWP76Lh0UgzlSO0MRcxEGO7ZerJxAoQiYJVpUtBcKClsG96gtbqoVVsrQjKNY">
+<div>
+
+
+
+
+
+
+
+  <fieldset class="module aligned ">
+    <h2>Informasi Utama SPD</h2>
+    
+    
+        <div class="form-row field-nomor_spd">
+            
+            
+                <div>
+                    
+                        <div class="flex-container">
+                            
+                                <label>Nomor SPD:</label>
+                                
+                                    <div class="readonly">1/PPK-PROV.026/VII/2026</div>
+                                
+                            
+                        </div>
+                    
+                </div>
+            
+            
+        </div>
+    
+        <div class="form-row field-surat_tugas">
+            
+            
+                <div>
+                    
+                        <div class="flex-container">
+                            
+                                <label>Surat Tugas:</label>
+                                
+                                    <div class="readonly"><a href="/admin/perjalanan/surattugas/ce80efb5-d64d-48af-89ae-3146c66673a5/change/">ST01 - Diklatsar CPNS Klasikal di Pus...</a></div>
+                                
+                            
+                        </div>
+                    
+                </div>
+            
+            
+        </div>
+    
+        <div class="form-row field-pegawai">
+            
+            
+                <div>
+                    
+                        <div class="flex-container">
+                            
+                                <label>Pegawai:</label>
+                                
+                                    <div class="readonly"><a href="/admin/master_data/pegawai/1/change/">Muhammad Akbar Yasin (199108302025061005)</a></div>
+                                
+                            
+                        </div>
+                    
+                </div>
+            
+            
+        </div>
+    
+        <div class="form-row field-status">
+            
+            
+                <div>
+                    
+                        <div class="flex-container">
+                            
+                                <label class="required" for="id_status">Status:</label>
+                                
+                                    <select name="status" id="id_status">
+  <option value="DRAFT" selected>Draft</option>
+
+  <option value="PENDING">Menunggu Verifikasi</option>
+
+  <option value="APPROVED">Disetujui</option>
+
+  <option value="REJECTED">Ditolak</option>
+
+  <option value="PROCESSED">Selesai Diproses</option>
+
+</select>
+                                
+                            
+                        </div>
+                    
+                </div>
+            
+            
+        </div>
+    
+</fieldset>
+
+
+  <fieldset class="module aligned ">
+    <h2>Rincian Perjalanan Dinas</h2>
+    
+    
+        <div class="form-row field-get_detail_perjalanan_table">
+            
+            
+                <div>
+                    
+                        <div class="flex-container">
+                            
+                                <label>Rincian Perjalanan Dinas:</label>
+                                
+                                    <div class="readonly">
+        <style>
+            .field-get_detail_perjalanan_table label {
+                display: none !important;
+            }
+            .field-get_detail_perjalanan_table .readonly {
+                display: block !important;
+                margin-left: 0 !important;
+                float: none !important;
+                width: 100% !important;
+                padding-left: 0 !important;
+            }
+        </style>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; width: 20%; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tanggal Berangkat</td>
+                <td style="padding: 10px 14px; color: #1e293b; width: 30%; border-right: 1px solid #e2e8f0;">31-05-2026</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; width: 20%; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tanggal Kembali</td>
+                <td style="padding: 10px 14px; color: #1e293b; width: 30%;">07-06-2026</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tempat Berangkat</td>
+                <td style="padding: 10px 14px; color: #1e293b; border-right: 1px solid #e2e8f0;">KPU Kab. Konawe Utara</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tempat Tujuan</td>
+                <td style="padding: 10px 14px; color: #1e293b;">Pusdiklat BPSDM SULTRA</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Provinsi (SBM)</td>
+                <td style="padding: 10px 14px; color: #1e293b; border-right: 1px solid #e2e8f0;">Sulawesi Tenggara</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Tahun SBM</td>
+                <td style="padding: 10px 14px; color: #1e293b;">2025</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Jenis Perjalanan Dinas</td>
+                <td style="padding: 10px 14px; color: #1e293b; border-right: 1px solid #e2e8f0;">Diklat</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Jenis Transportasi</td>
+                <td style="padding: 10px 14px; color: #1e293b;">Mobil Dinas</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Maksud Perjalanan</td>
+                <td colspan="3" style="padding: 10px 14px; color: #1e293b;">Diklatsar CPNS Klasikal di Pusdiklat BPSDM SULTRA</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px 14px; font-weight: 700; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0;">Sumber Anggaran</td>
+                <td colspan="3" style="padding: 10px 14px; color: #1e293b;">
+                    <strong>524111</strong> - Perjalanan Dinas Biasa (Luar Kota)
+                </td>
+            </tr>
+        </table>
+        </div>
+                                
+                            
+                        </div>
+                    
+                </div>
+            
+            
+        </div>
+    
+</fieldset>
+
+
+
+
+
+
+
+
+    
+<div class="js-inline-admin-formset inline-group" id="harian_details-group"
+     data-inline-type="tabular"
+     data-inline-formset="{&quot;name&quot;: &quot;#harian_details&quot;, &quot;options&quot;: {&quot;prefix&quot;: &quot;harian_details&quot;, &quot;addText&quot;: &quot;Tambahkan Detail Transit Perjalanan Dinas lagi&quot;, &quot;deleteText&quot;: &quot;Hapus&quot;}}">
+  <div class="tabular inline-related ">
+<input type="hidden" name="harian_details-TOTAL_FORMS" value="8" id="id_harian_details-TOTAL_FORMS"><input type="hidden" name="harian_details-INITIAL_FORMS" value="8" id="id_harian_details-INITIAL_FORMS"><input type="hidden" name="harian_details-MIN_NUM_FORMS" value="0" id="id_harian_details-MIN_NUM_FORMS"><input type="hidden" name="harian_details-MAX_NUM_FORMS" value="1000" id="id_harian_details-MAX_NUM_FORMS">
+<fieldset class="module ">
+   
+     <h2>Detail Transit Perjalanan Dinas</h2>
+   
+   
+   <table>
+     <thead><tr>
+       <th class="original"></th>
+     
+       <th class="column-tanggal_display">Tanggal
+       
+       </th>
+     
+       <th class="column-tanggal required hidden">Tanggal
+       
+       </th>
+     
+       <th class="column-provinsi required">Provinsi
+       
+       </th>
+     
+       <th class="column-jenis_harian required">Jenis Perjalanan Dinas
+       
+       </th>
+     
+     
+     </tr></thead>
+
+     <tbody>
+     
+        
+        <tr class="form-row has_original"
+             id="harian_details-0">
+        <td class="original">
+          <p>
+          
+          HarianPerjalanan object (28)
+          
+          
+          
+            </p>
+          <input type="hidden" name="harian_details-0-id" value="28" id="id_harian_details-0-id">
+          <input type="hidden" name="harian_details-0-perjalanan" value="23" id="id_harian_details-0-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>31 Mei 2026</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-0-tanggal" value="2026-05-31" id="id_harian_details-0-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-0-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-0-provinsi">
+  <option value="">---------</option>
+
+  <option value="1" selected>Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-0-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-0-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-0-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-0-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-0-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-0-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="harian_details-1">
+        <td class="original">
+          <p>
+          
+          HarianPerjalanan object (29)
+          
+          
+          
+            </p>
+          <input type="hidden" name="harian_details-1-id" value="29" id="id_harian_details-1-id">
+          <input type="hidden" name="harian_details-1-perjalanan" value="23" id="id_harian_details-1-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>01 Juni 2026</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-1-tanggal" value="2026-06-01" id="id_harian_details-1-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-1-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-1-provinsi">
+  <option value="">---------</option>
+
+  <option value="1" selected>Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-1-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-1-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-1-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-1-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-1-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-1-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="harian_details-2">
+        <td class="original">
+          <p>
+          
+          HarianPerjalanan object (30)
+          
+          
+          
+            </p>
+          <input type="hidden" name="harian_details-2-id" value="30" id="id_harian_details-2-id">
+          <input type="hidden" name="harian_details-2-perjalanan" value="23" id="id_harian_details-2-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>02 Juni 2026</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-2-tanggal" value="2026-06-02" id="id_harian_details-2-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-2-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-2-provinsi">
+  <option value="">---------</option>
+
+  <option value="1" selected>Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-2-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-2-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-2-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-2-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-2-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-2-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="harian_details-3">
+        <td class="original">
+          <p>
+          
+          HarianPerjalanan object (31)
+          
+          
+          
+            </p>
+          <input type="hidden" name="harian_details-3-id" value="31" id="id_harian_details-3-id">
+          <input type="hidden" name="harian_details-3-perjalanan" value="23" id="id_harian_details-3-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>03 Juni 2026</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-3-tanggal" value="2026-06-03" id="id_harian_details-3-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-3-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-3-provinsi">
+  <option value="">---------</option>
+
+  <option value="1" selected>Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-3-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-3-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-3-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-3-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-3-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-3-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="harian_details-4">
+        <td class="original">
+          <p>
+          
+          HarianPerjalanan object (32)
+          
+          
+          
+            </p>
+          <input type="hidden" name="harian_details-4-id" value="32" id="id_harian_details-4-id">
+          <input type="hidden" name="harian_details-4-perjalanan" value="23" id="id_harian_details-4-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>04 Juni 2026</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-4-tanggal" value="2026-06-04" id="id_harian_details-4-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-4-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-4-provinsi">
+  <option value="">---------</option>
+
+  <option value="1" selected>Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-4-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-4-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-4-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-4-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-4-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-4-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="harian_details-5">
+        <td class="original">
+          <p>
+          
+          HarianPerjalanan object (33)
+          
+          
+          
+            </p>
+          <input type="hidden" name="harian_details-5-id" value="33" id="id_harian_details-5-id">
+          <input type="hidden" name="harian_details-5-perjalanan" value="23" id="id_harian_details-5-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>05 Juni 2026</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-5-tanggal" value="2026-06-05" id="id_harian_details-5-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-5-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-5-provinsi">
+  <option value="">---------</option>
+
+  <option value="1" selected>Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-5-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-5-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-5-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-5-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-5-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-5-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="harian_details-6">
+        <td class="original">
+          <p>
+          
+          HarianPerjalanan object (34)
+          
+          
+          
+            </p>
+          <input type="hidden" name="harian_details-6-id" value="34" id="id_harian_details-6-id">
+          <input type="hidden" name="harian_details-6-perjalanan" value="23" id="id_harian_details-6-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>06 Juni 2026</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-6-tanggal" value="2026-06-06" id="id_harian_details-6-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-6-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-6-provinsi">
+  <option value="">---------</option>
+
+  <option value="1" selected>Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-6-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-6-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-6-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-6-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-6-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-6-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="harian_details-7">
+        <td class="original">
+          <p>
+          
+          HarianPerjalanan object (35)
+          
+          
+          
+            </p>
+          <input type="hidden" name="harian_details-7-id" value="35" id="id_harian_details-7-id">
+          <input type="hidden" name="harian_details-7-perjalanan" value="23" id="id_harian_details-7-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>07 Juni 2026</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-7-tanggal" value="2026-06-07" id="id_harian_details-7-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-7-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-7-provinsi">
+  <option value="">---------</option>
+
+  <option value="1" selected>Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-7-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-7-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-7-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-7-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-7-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-7-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+        
+        <tr class="form-row  empty-form"
+             id="harian_details-empty">
+        <td class="original">
+          
+          <input type="hidden" name="harian_details-__prefix__-id" id="id_harian_details-__prefix__-id">
+          <input type="hidden" name="harian_details-__prefix__-perjalanan" value="23" id="id_harian_details-__prefix__-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-tanggal_display">
+              
+                  <p>-</p>
+              
+              </td>
+            
+          
+            
+              <td class="field-tanggal hidden">
+              
+                  
+                  <input type="hidden" name="harian_details-__prefix__-tanggal" id="id_harian_details-__prefix__-tanggal">
+              
+              </td>
+            
+          
+            
+              <td class="field-provinsi">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Provinsi">
+    <select name="harian_details-__prefix__-provinsi" class="form-control harian-provinsi-select" id="id_harian_details-__prefix__-provinsi">
+  <option value="" selected>---------</option>
+
+  <option value="1">Sulawesi Tenggara</option>
+
+  <option value="2">Sulawesi Selatan</option>
+
+  <option value="3">DKI Jakarta</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_harian_details-__prefix__-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Provinsi yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_harian_details-__prefix__-provinsi"
+            data-popup="yes"
+            href="/admin/master_data/provinsi/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Provinsi yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link delete-related" id="delete_id_harian_details-__prefix__-provinsi"
+            data-href-template="/admin/master_data/provinsi/__fk__/delete/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Hapus Provinsi yang dipilih"><img src="/static/admin/img/icon-deletelink.svg" alt="Hapus"></a><a class="related-widget-wrapper-link view-related" id="view_id_harian_details-__prefix__-provinsi"
+             data-href-template="/admin/master_data/provinsi/__fk__/change/?_to_field=id"
+             title="Menampilkan Provinsi terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-jenis_harian">
+              
+                  
+                  <select name="harian_details-__prefix__-jenis_harian" class="form-control harian-jenis-select" id="id_harian_details-__prefix__-jenis_harian">
+  <option value="luar_kota" selected>Luar Kota</option>
+
+  <option value="dalam_kota">Dalam Kota (&gt; 8 Jam)</option>
+
+  <option value="diklat">Diklat</option>
+
+  <option value="halfday">Rapat/Pertemuan Halfday</option>
+
+  <option value="fullday">Rapat/Pertemuan Fullday</option>
+
+  <option value="fullboard">Rapat/Pertemuan Fullboard</option>
+
+  <option value="tidak_dibayai">Tidak Dibiayai (Bentrok)</option>
+
+</select>
+              
+              </td>
+            
+          
+        
+        
+        </tr>
+     
+     </tbody>
+   </table>
+</fieldset>
+  </div>
+</div>
+
+
+    
+<div class="js-inline-admin-formset inline-group" id="berkas-group"
+     data-inline-type="tabular"
+     data-inline-formset="{&quot;name&quot;: &quot;#berkas&quot;, &quot;options&quot;: {&quot;prefix&quot;: &quot;berkas&quot;, &quot;addText&quot;: &quot;Tambahkan Berkas Pendukung untuk Penginapan lagi&quot;, &quot;deleteText&quot;: &quot;Hapus&quot;}}">
+  <div class="tabular inline-related ">
+<input type="hidden" name="berkas-TOTAL_FORMS" value="2" id="id_berkas-TOTAL_FORMS"><input type="hidden" name="berkas-INITIAL_FORMS" value="1" id="id_berkas-INITIAL_FORMS"><input type="hidden" name="berkas-MIN_NUM_FORMS" value="0" id="id_berkas-MIN_NUM_FORMS"><input type="hidden" name="berkas-MAX_NUM_FORMS" value="1000" id="id_berkas-MAX_NUM_FORMS">
+<fieldset class="module ">
+   
+     <h2>Berkas Pendukung untuk Penginapan</h2>
+   
+   
+   <table>
+     <thead><tr>
+       <th class="original"></th>
+     
+       <th class="column-jenis_berkas">Jenis Berkas
+       
+       </th>
+     
+       <th class="column-nominal">Nominal Biaya
+       
+       </th>
+     
+       <th class="column-malam_menginap">Malam Menginap
+       
+       </th>
+     
+       <th class="column-keterangan">Keterangan
+       
+       </th>
+     
+       <th class="column-file">File
+       
+       </th>
+     
+       <th class="column-is_verified">Verifikasi?
+       
+       </th>
+     
+     <th>Hapus?</th>
+     </tr></thead>
+
+     <tbody>
+     
+        
+        <tr class="form-row has_original"
+             id="berkas-0">
+        <td class="original">
+          <p>
+          
+          FULLBOARD LUAR KOTA - 1/PPK-PROV.026/VII/2026 - Muhammad Akbar Yasin
+          
+          
+          
+            </p>
+          <input type="hidden" name="berkas-0-id" value="57" id="id_berkas-0-id">
+          <input type="hidden" name="berkas-0-perjalanan" value="23" id="id_berkas-0-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-0-jenis_berkas" id="id_berkas-0-jenis_berkas">
+  <option value="">---------</option>
+
+  <option value="20">TIDAK MENGINAP</option>
+
+  <option value="25">BILL/INVOICE HOTEL/PENGINAPAN</option>
+
+  <option value="26" selected>FULLBOARD LUAR KOTA</option>
+
+  <option value="27">FULLBOARD DALAM KOTA</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-0-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-0-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-0-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-nominal">
+              
+                  
+                  <input type="number" name="berkas-0-nominal" value="0" step="1" id="id_berkas-0-nominal">
+              
+              </td>
+            
+          
+            
+              <td class="field-malam_menginap">
+              
+                  
+                  <input type="number" name="berkas-0-malam_menginap" value="7" class="vIntegerField" id="id_berkas-0-malam_menginap">
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-0-keterangan" value="[SBM-PENGINAPAN:2026-05-31:2026-06-07:7:1:Sulawesi Tenggara] | Pusdiklat BPSDM SULTRA" class="vTextField" maxlength="255" id="id_berkas-0-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-0-file" id="id_berkas-0-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-0-is_verified" id="id_berkas-0-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"><input type="checkbox" name="berkas-0-DELETE" id="id_berkas-0-DELETE"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row "
+             id="berkas-1">
+        <td class="original">
+          
+          <input type="hidden" name="berkas-1-id" id="id_berkas-1-id">
+          <input type="hidden" name="berkas-1-perjalanan" value="23" id="id_berkas-1-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-1-jenis_berkas" id="id_berkas-1-jenis_berkas">
+  <option value="" selected>---------</option>
+
+  <option value="20">TIDAK MENGINAP</option>
+
+  <option value="25">BILL/INVOICE HOTEL/PENGINAPAN</option>
+
+  <option value="26">FULLBOARD LUAR KOTA</option>
+
+  <option value="27">FULLBOARD DALAM KOTA</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-1-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-1-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-1-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-nominal">
+              
+                  
+                  <input type="number" name="berkas-1-nominal" step="1" id="id_berkas-1-nominal">
+              
+              </td>
+            
+          
+            
+              <td class="field-malam_menginap">
+              
+                  
+                  <input type="number" name="berkas-1-malam_menginap" class="vIntegerField" id="id_berkas-1-malam_menginap">
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-1-keterangan" class="vTextField" maxlength="255" id="id_berkas-1-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-1-file" id="id_berkas-1-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-1-is_verified" id="id_berkas-1-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row  empty-form"
+             id="berkas-empty">
+        <td class="original">
+          
+          <input type="hidden" name="berkas-__prefix__-id" id="id_berkas-__prefix__-id">
+          <input type="hidden" name="berkas-__prefix__-perjalanan" value="23" id="id_berkas-__prefix__-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-__prefix__-jenis_berkas" id="id_berkas-__prefix__-jenis_berkas">
+  <option value="" selected>---------</option>
+
+  <option value="20">TIDAK MENGINAP</option>
+
+  <option value="25">BILL/INVOICE HOTEL/PENGINAPAN</option>
+
+  <option value="26">FULLBOARD LUAR KOTA</option>
+
+  <option value="27">FULLBOARD DALAM KOTA</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-__prefix__-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-__prefix__-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-__prefix__-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-nominal">
+              
+                  
+                  <input type="number" name="berkas-__prefix__-nominal" step="1" id="id_berkas-__prefix__-nominal">
+              
+              </td>
+            
+          
+            
+              <td class="field-malam_menginap">
+              
+                  
+                  <input type="number" name="berkas-__prefix__-malam_menginap" class="vIntegerField" id="id_berkas-__prefix__-malam_menginap">
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-__prefix__-keterangan" class="vTextField" maxlength="255" id="id_berkas-__prefix__-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-__prefix__-file" id="id_berkas-__prefix__-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-__prefix__-is_verified" id="id_berkas-__prefix__-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"></td>
+        
+        </tr>
+     
+     </tbody>
+   </table>
+</fieldset>
+  </div>
+</div>
+
+
+    
+<div class="js-inline-admin-formset inline-group" id="berkas-2-group"
+     data-inline-type="tabular"
+     data-inline-formset="{&quot;name&quot;: &quot;#berkas-2&quot;, &quot;options&quot;: {&quot;prefix&quot;: &quot;berkas-2&quot;, &quot;addText&quot;: &quot;Tambahkan Berkas Pendukung untuk Transportasi lagi&quot;, &quot;deleteText&quot;: &quot;Hapus&quot;}}">
+  <div class="tabular inline-related ">
+<input type="hidden" name="berkas-2-TOTAL_FORMS" value="3" id="id_berkas-2-TOTAL_FORMS"><input type="hidden" name="berkas-2-INITIAL_FORMS" value="2" id="id_berkas-2-INITIAL_FORMS"><input type="hidden" name="berkas-2-MIN_NUM_FORMS" value="0" id="id_berkas-2-MIN_NUM_FORMS"><input type="hidden" name="berkas-2-MAX_NUM_FORMS" value="1000" id="id_berkas-2-MAX_NUM_FORMS">
+<fieldset class="module ">
+   
+     <h2>Berkas Pendukung untuk Transportasi</h2>
+   
+   
+   <table>
+     <thead><tr>
+       <th class="original"></th>
+     
+       <th class="column-jenis_berkas">Jenis Berkas
+       
+       </th>
+     
+       <th class="column-nominal">Nominal Biaya
+       
+       </th>
+     
+       <th class="column-keterangan">Keterangan
+       
+       </th>
+     
+       <th class="column-file">File
+       
+       </th>
+     
+       <th class="column-is_verified">Verifikasi?
+       
+       </th>
+     
+     <th>Hapus?</th>
+     </tr></thead>
+
+     <tbody>
+     
+        
+        <tr class="form-row has_original"
+             id="berkas-2-0">
+        <td class="original">
+          <p>
+          
+          STRUK BBM - 1/PPK-PROV.026/VII/2026 - Muhammad Akbar Yasin
+          
+          
+          
+            </p>
+          <input type="hidden" name="berkas-2-0-id" value="58" id="id_berkas-2-0-id">
+          <input type="hidden" name="berkas-2-0-perjalanan" value="23" id="id_berkas-2-0-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-2-0-jenis_berkas" id="id_berkas-2-0-jenis_berkas">
+  <option value="">---------</option>
+
+  <option value="9">TIKET PERJALANAN</option>
+
+  <option value="10">STRUK TAKSI</option>
+
+  <option value="12" selected>STRUK BBM</option>
+
+  <option value="14">STRUK TOLL</option>
+
+  <option value="28">TIKET PESAWAT</option>
+
+  <option value="29">STRUK PARKIR</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-2-0-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-2-0-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-2-0-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-nominal">
+              
+                  
+                  <input type="number" name="berkas-2-0-nominal" value="100000" step="1" id="id_berkas-2-0-nominal">
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-2-0-keterangan" value="pergi" class="vTextField" maxlength="255" id="id_berkas-2-0-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-2-0-file" id="id_berkas-2-0-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-2-0-is_verified" id="id_berkas-2-0-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"><input type="checkbox" name="berkas-2-0-DELETE" id="id_berkas-2-0-DELETE"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="berkas-2-1">
+        <td class="original">
+          <p>
+          
+          STRUK BBM - 1/PPK-PROV.026/VII/2026 - Muhammad Akbar Yasin
+          
+          
+          
+            </p>
+          <input type="hidden" name="berkas-2-1-id" value="62" id="id_berkas-2-1-id">
+          <input type="hidden" name="berkas-2-1-perjalanan" value="23" id="id_berkas-2-1-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-2-1-jenis_berkas" id="id_berkas-2-1-jenis_berkas">
+  <option value="">---------</option>
+
+  <option value="9">TIKET PERJALANAN</option>
+
+  <option value="10">STRUK TAKSI</option>
+
+  <option value="12" selected>STRUK BBM</option>
+
+  <option value="14">STRUK TOLL</option>
+
+  <option value="28">TIKET PESAWAT</option>
+
+  <option value="29">STRUK PARKIR</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-2-1-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-2-1-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-2-1-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-nominal">
+              
+                  
+                  <input type="number" name="berkas-2-1-nominal" value="100000" step="1" id="id_berkas-2-1-nominal">
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-2-1-keterangan" value="pulang" class="vTextField" maxlength="255" id="id_berkas-2-1-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-2-1-file" id="id_berkas-2-1-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-2-1-is_verified" id="id_berkas-2-1-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"><input type="checkbox" name="berkas-2-1-DELETE" id="id_berkas-2-1-DELETE"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row "
+             id="berkas-2-2">
+        <td class="original">
+          
+          <input type="hidden" name="berkas-2-2-id" id="id_berkas-2-2-id">
+          <input type="hidden" name="berkas-2-2-perjalanan" value="23" id="id_berkas-2-2-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-2-2-jenis_berkas" id="id_berkas-2-2-jenis_berkas">
+  <option value="" selected>---------</option>
+
+  <option value="9">TIKET PERJALANAN</option>
+
+  <option value="10">STRUK TAKSI</option>
+
+  <option value="12">STRUK BBM</option>
+
+  <option value="14">STRUK TOLL</option>
+
+  <option value="28">TIKET PESAWAT</option>
+
+  <option value="29">STRUK PARKIR</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-2-2-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-2-2-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-2-2-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-nominal">
+              
+                  
+                  <input type="number" name="berkas-2-2-nominal" step="1" id="id_berkas-2-2-nominal">
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-2-2-keterangan" class="vTextField" maxlength="255" id="id_berkas-2-2-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-2-2-file" id="id_berkas-2-2-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-2-2-is_verified" id="id_berkas-2-2-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row  empty-form"
+             id="berkas-2-empty">
+        <td class="original">
+          
+          <input type="hidden" name="berkas-2-__prefix__-id" id="id_berkas-2-__prefix__-id">
+          <input type="hidden" name="berkas-2-__prefix__-perjalanan" value="23" id="id_berkas-2-__prefix__-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-2-__prefix__-jenis_berkas" id="id_berkas-2-__prefix__-jenis_berkas">
+  <option value="" selected>---------</option>
+
+  <option value="9">TIKET PERJALANAN</option>
+
+  <option value="10">STRUK TAKSI</option>
+
+  <option value="12">STRUK BBM</option>
+
+  <option value="14">STRUK TOLL</option>
+
+  <option value="28">TIKET PESAWAT</option>
+
+  <option value="29">STRUK PARKIR</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-2-__prefix__-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-2-__prefix__-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-2-__prefix__-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-nominal">
+              
+                  
+                  <input type="number" name="berkas-2-__prefix__-nominal" step="1" id="id_berkas-2-__prefix__-nominal">
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-2-__prefix__-keterangan" class="vTextField" maxlength="255" id="id_berkas-2-__prefix__-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-2-__prefix__-file" id="id_berkas-2-__prefix__-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-2-__prefix__-is_verified" id="id_berkas-2-__prefix__-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"></td>
+        
+        </tr>
+     
+     </tbody>
+   </table>
+</fieldset>
+  </div>
+</div>
+
+
+    
+<div class="js-inline-admin-formset inline-group" id="berkas-3-group"
+     data-inline-type="tabular"
+     data-inline-formset="{&quot;name&quot;: &quot;#berkas-3&quot;, &quot;options&quot;: {&quot;prefix&quot;: &quot;berkas-3&quot;, &quot;addText&quot;: &quot;Tambahkan Berkas Pendukung Tanpa Nominal Biaya lagi&quot;, &quot;deleteText&quot;: &quot;Hapus&quot;}}">
+  <div class="tabular inline-related ">
+<input type="hidden" name="berkas-3-TOTAL_FORMS" value="4" id="id_berkas-3-TOTAL_FORMS"><input type="hidden" name="berkas-3-INITIAL_FORMS" value="3" id="id_berkas-3-INITIAL_FORMS"><input type="hidden" name="berkas-3-MIN_NUM_FORMS" value="0" id="id_berkas-3-MIN_NUM_FORMS"><input type="hidden" name="berkas-3-MAX_NUM_FORMS" value="1000" id="id_berkas-3-MAX_NUM_FORMS">
+<fieldset class="module ">
+   
+     <h2>Berkas Pendukung Tanpa Nominal Biaya</h2>
+   
+   
+   <table>
+     <thead><tr>
+       <th class="original"></th>
+     
+       <th class="column-jenis_berkas">Jenis Berkas
+       
+       </th>
+     
+       <th class="column-keterangan">Keterangan
+       
+       </th>
+     
+       <th class="column-file">File
+       
+       </th>
+     
+       <th class="column-is_verified">Verifikasi?
+       
+       </th>
+     
+     <th>Hapus?</th>
+     </tr></thead>
+
+     <tbody>
+     
+        
+        <tr class="form-row has_original"
+             id="berkas-3-0">
+        <td class="original">
+          <p>
+          
+          SPD TELAH DITANDATANGANI - 1/PPK-PROV.026/VII/2026 - Muhammad Akbar Yasin
+          
+          
+          
+            </p>
+          <input type="hidden" name="berkas-3-0-id" value="59" id="id_berkas-3-0-id">
+          <input type="hidden" name="berkas-3-0-perjalanan" value="23" id="id_berkas-3-0-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-3-0-jenis_berkas" id="id_berkas-3-0-jenis_berkas">
+  <option value="">---------</option>
+
+  <option value="15">BOARDING PASS</option>
+
+  <option value="16" selected>SPD TELAH DITANDATANGANI</option>
+
+  <option value="17">LEMBAR VISUM</option>
+
+  <option value="18">SIM DRIVER MOBIL RENTAL</option>
+
+  <option value="19">STNK MOBIL RENTAL</option>
+
+  <option value="21">LAPORAN PERJADIN</option>
+
+  <option value="22">FOTO TEMPAT PENGINAPAN</option>
+
+  <option value="23">KTP TEMPAT MENGINAP</option>
+
+  <option value="30">PERNYATAAN TIDAK MENGINAP</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-3-0-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-3-0-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-3-0-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-3-0-keterangan" class="vTextField" maxlength="255" id="id_berkas-3-0-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-3-0-file" id="id_berkas-3-0-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-3-0-is_verified" id="id_berkas-3-0-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"><input type="checkbox" name="berkas-3-0-DELETE" id="id_berkas-3-0-DELETE"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="berkas-3-1">
+        <td class="original">
+          <p>
+          
+          LEMBAR VISUM - 1/PPK-PROV.026/VII/2026 - Muhammad Akbar Yasin
+          
+          
+          
+            </p>
+          <input type="hidden" name="berkas-3-1-id" value="60" id="id_berkas-3-1-id">
+          <input type="hidden" name="berkas-3-1-perjalanan" value="23" id="id_berkas-3-1-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-3-1-jenis_berkas" id="id_berkas-3-1-jenis_berkas">
+  <option value="">---------</option>
+
+  <option value="15">BOARDING PASS</option>
+
+  <option value="16">SPD TELAH DITANDATANGANI</option>
+
+  <option value="17" selected>LEMBAR VISUM</option>
+
+  <option value="18">SIM DRIVER MOBIL RENTAL</option>
+
+  <option value="19">STNK MOBIL RENTAL</option>
+
+  <option value="21">LAPORAN PERJADIN</option>
+
+  <option value="22">FOTO TEMPAT PENGINAPAN</option>
+
+  <option value="23">KTP TEMPAT MENGINAP</option>
+
+  <option value="30">PERNYATAAN TIDAK MENGINAP</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-3-1-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-3-1-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-3-1-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-3-1-keterangan" class="vTextField" maxlength="255" id="id_berkas-3-1-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-3-1-file" id="id_berkas-3-1-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-3-1-is_verified" id="id_berkas-3-1-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"><input type="checkbox" name="berkas-3-1-DELETE" id="id_berkas-3-1-DELETE"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row has_original"
+             id="berkas-3-2">
+        <td class="original">
+          <p>
+          
+          LAPORAN PERJADIN - 1/PPK-PROV.026/VII/2026 - Muhammad Akbar Yasin
+          
+          
+          
+            </p>
+          <input type="hidden" name="berkas-3-2-id" value="61" id="id_berkas-3-2-id">
+          <input type="hidden" name="berkas-3-2-perjalanan" value="23" id="id_berkas-3-2-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-3-2-jenis_berkas" id="id_berkas-3-2-jenis_berkas">
+  <option value="">---------</option>
+
+  <option value="15">BOARDING PASS</option>
+
+  <option value="16">SPD TELAH DITANDATANGANI</option>
+
+  <option value="17">LEMBAR VISUM</option>
+
+  <option value="18">SIM DRIVER MOBIL RENTAL</option>
+
+  <option value="19">STNK MOBIL RENTAL</option>
+
+  <option value="21" selected>LAPORAN PERJADIN</option>
+
+  <option value="22">FOTO TEMPAT PENGINAPAN</option>
+
+  <option value="23">KTP TEMPAT MENGINAP</option>
+
+  <option value="30">PERNYATAAN TIDAK MENGINAP</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-3-2-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-3-2-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-3-2-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-3-2-keterangan" class="vTextField" maxlength="255" id="id_berkas-3-2-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-3-2-file" id="id_berkas-3-2-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-3-2-is_verified" id="id_berkas-3-2-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"><input type="checkbox" name="berkas-3-2-DELETE" id="id_berkas-3-2-DELETE"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row "
+             id="berkas-3-3">
+        <td class="original">
+          
+          <input type="hidden" name="berkas-3-3-id" id="id_berkas-3-3-id">
+          <input type="hidden" name="berkas-3-3-perjalanan" value="23" id="id_berkas-3-3-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-3-3-jenis_berkas" id="id_berkas-3-3-jenis_berkas">
+  <option value="" selected>---------</option>
+
+  <option value="15">BOARDING PASS</option>
+
+  <option value="16">SPD TELAH DITANDATANGANI</option>
+
+  <option value="17">LEMBAR VISUM</option>
+
+  <option value="18">SIM DRIVER MOBIL RENTAL</option>
+
+  <option value="19">STNK MOBIL RENTAL</option>
+
+  <option value="21">LAPORAN PERJADIN</option>
+
+  <option value="22">FOTO TEMPAT PENGINAPAN</option>
+
+  <option value="23">KTP TEMPAT MENGINAP</option>
+
+  <option value="30">PERNYATAAN TIDAK MENGINAP</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-3-3-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-3-3-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-3-3-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-3-3-keterangan" class="vTextField" maxlength="255" id="id_berkas-3-3-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-3-3-file" id="id_berkas-3-3-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-3-3-is_verified" id="id_berkas-3-3-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"></td>
+        
+        </tr>
+     
+        
+        <tr class="form-row  empty-form"
+             id="berkas-3-empty">
+        <td class="original">
+          
+          <input type="hidden" name="berkas-3-__prefix__-id" id="id_berkas-3-__prefix__-id">
+          <input type="hidden" name="berkas-3-__prefix__-perjalanan" value="23" id="id_berkas-3-__prefix__-perjalanan">
+        </td>
+        
+          
+            
+              <td class="field-jenis_berkas">
+              
+                  
+                  <div class="related-widget-wrapper" data-model-ref="Jenis Berkas">
+    <select name="berkas-3-__prefix__-jenis_berkas" id="id_berkas-3-__prefix__-jenis_berkas">
+  <option value="" selected>---------</option>
+
+  <option value="15">BOARDING PASS</option>
+
+  <option value="16">SPD TELAH DITANDATANGANI</option>
+
+  <option value="17">LEMBAR VISUM</option>
+
+  <option value="18">SIM DRIVER MOBIL RENTAL</option>
+
+  <option value="19">STNK MOBIL RENTAL</option>
+
+  <option value="21">LAPORAN PERJADIN</option>
+
+  <option value="22">FOTO TEMPAT PENGINAPAN</option>
+
+  <option value="23">KTP TEMPAT MENGINAP</option>
+
+  <option value="30">PERNYATAAN TIDAK MENGINAP</option>
+
+</select>
+    
+        <a class="related-widget-wrapper-link change-related" id="change_id_berkas-3-__prefix__-jenis_berkas"
+            data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id&amp;_popup=1"
+            data-popup="yes"
+            title="Ubah Jenis Berkas yang dipilih"><img src="/static/admin/img/icon-changelink.svg" alt="Ubah"></a><a class="related-widget-wrapper-link add-related" id="add_id_berkas-3-__prefix__-jenis_berkas"
+            data-popup="yes"
+            href="/admin/master_data/jenisberkas/add/?_to_field=id&amp;_popup=1"
+            title="Tambahkan Jenis Berkas yang lain"><img src="/static/admin/img/icon-addlink.svg" alt="Tambah"></a><a class="related-widget-wrapper-link view-related" id="view_id_berkas-3-__prefix__-jenis_berkas"
+             data-href-template="/admin/master_data/jenisberkas/__fk__/change/?_to_field=id"
+             title="Menampilkan Jenis Berkas terpilih"><img src="/static/admin/img/icon-viewlink.svg" alt="Lihat"></a>
+    
+</div>
+              
+              </td>
+            
+          
+            
+              <td class="field-keterangan">
+              
+                  
+                  <input type="text" name="berkas-3-__prefix__-keterangan" class="vTextField" maxlength="255" id="id_berkas-3-__prefix__-keterangan">
+              
+              </td>
+            
+          
+            
+              <td class="field-file">
+              
+                  
+                  <input type="file" name="berkas-3-__prefix__-file" id="id_berkas-3-__prefix__-file">
+              
+              </td>
+            
+          
+            
+              <td class="field-is_verified">
+              
+                  
+                  <input type="checkbox" name="berkas-3-__prefix__-is_verified" id="id_berkas-3-__prefix__-is_verified">
+              
+              </td>
+            
+          
+        
+        
+          <td class="delete"></td>
+        
+        </tr>
+     
+     </tbody>
+   </table>
+</fieldset>
+  </div>
+</div>
+
+
+    
+<fieldset class="module">
+  <h2>RINCIAN PERJALANAN DINAS</h2>
+  <div class="js-inline-admin-formset inline-group" id="biaya-group"
+    data-inline-type="stacked" data-inline-formset="{&quot;name&quot;: &quot;#biaya&quot;, &quot;options&quot;: {&quot;prefix&quot;: &quot;biaya&quot;, &quot;addText&quot;: &quot;Tambahkan Biaya perjalanan lagi&quot;, &quot;deleteText&quot;: &quot;Hapus&quot;}}">
+    <div class="module ">
+      
+      <input type="hidden" name="biaya-TOTAL_FORMS" value="1" id="id_biaya-TOTAL_FORMS"><input type="hidden" name="biaya-INITIAL_FORMS" value="1" id="id_biaya-INITIAL_FORMS"><input type="hidden" name="biaya-MIN_NUM_FORMS" value="0" id="id_biaya-MIN_NUM_FORMS"><input type="hidden" name="biaya-MAX_NUM_FORMS" value="1" id="id_biaya-MAX_NUM_FORMS">
+      
+
+      
+      <div
+        class="inline-related has_original"
+        id="biaya-0">
+        <h3><b>Biaya perjalanan:</b> <span class="inline_label">BiayaPerjalanan object (23)</span></h3>
+        
+
+        <!-- Render the fields directly without any outer nested tables or fieldsets -->
+        
+        
+        
+        
+        <div class="rincian-biaya-wrapper"
+          style="margin: 15px 0; background: #ffffff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          
+          
+        <div style="overflow-x: auto; margin-bottom: 1rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <table class="spreadsheet-table" style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #cbd5e1;">
+                <thead>
+                    <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: #334155; width: 20%;">Perihal</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; font-weight: 700; color: #334155; width: 5%;">No</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: #334155; width: 35%;">Keterangan</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #334155; width: 12%;">Harga</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; font-weight: 700; color: #334155; width: 8%;">Banyak</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #334155; width: 12%;">Total</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: center; font-weight: 700; color: #334155; width: 8%;">Berkas Pendukung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr style="border-bottom: 1px solid #cbd5e1;">
+                        
+                        <td rowspan="2" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; font-weight: 700; color: #334155; background: #f8fafc; vertical-align: top;">
+                            Uang Harian Riil
+                        </td>
+                        
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">1</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem;">Uang Harian Luar Kota (Sulawesi Tenggara)</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp 380.000</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">8 (hari)</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp 3.040.000</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">-</td>
+                    </tr>
+                    
+            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+                <td colspan="4" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
+                    Subtotal Uang Harian Riil
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    Rp 3.040.000
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+            </tr>
+            
+                <tr style="border-bottom: 1px solid #cbd5e1;">
+                    <td rowspan="2" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; font-weight: 700; color: #334155; background: #f8fafc; vertical-align: top;">
+                        Uang Representasi Riil
+                    </td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; color: #94a3b8;">-</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; color: #94a3b8; font-style: italic;">Tidak ada</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; color: #94a3b8;">Rp 0</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center; color: #94a3b8;">0</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; color: #94a3b8;">Rp 0</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">-</td>
+                </tr>
+                
+            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+                <td colspan="4" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
+                    Subtotal Uang Representasi Riil
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    Rp 0
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+            </tr>
+            
+                    <tr style="border-bottom: 1px solid #cbd5e1;">
+                        
+                        <td rowspan="2" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; font-weight: 700; color: #334155; background: #f8fafc; vertical-align: top;">
+                            Biaya Penginapan Riil
+                        </td>
+                        
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">2</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem;">Fullboard Luar Sulawesi Tenggara (31/05/2026 - 07/06/2026) | Pusdiklat BPSDM SULTRA</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp 0</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">7 (Malam)</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp 0</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">-</td>
+                    </tr>
+                    
+            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+                <td colspan="4" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
+                    Subtotal Biaya Penginapan Riil
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    Rp 0
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+            </tr>
+            
+                    <tr style="border-bottom: 1px solid #cbd5e1;">
+                        
+                        <td rowspan="3" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; font-weight: 700; color: #334155; background: #f8fafc; vertical-align: top;">
+                            Biaya Perjalanan Riil
+                        </td>
+                        
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">3</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem;">pergi</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp 100.000</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">1</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp 100.000</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">-</td>
+                    </tr>
+                    
+                    <tr style="border-bottom: 1px solid #cbd5e1;">
+                        
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">4</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem;">pulang</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp 100.000</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem; text-align: center;">1</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right;">Rp 100.000</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 0.5rem; text-align: center;">-</td>
+                    </tr>
+                    
+            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+                <td colspan="4" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
+                    Subtotal Biaya Perjalanan Riil
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                    Rp 200.000
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+            </tr>
+            
+        <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+            <td colspan="5" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
+                TOTAL DIBAYARKAN
+            </td>
+            <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                Rp 3.240.000
+            </td>
+            <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+        </tr>
+        
+        <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; ">
+            <td colspan="5" style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #475569;">
+                TIDAK DIBAYARKAN
+            </td>
+            <td style="border: 1px solid #cbd5e1; padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: #0f172a;">
+                -
+            </td>
+            <td style="border: 1px solid #cbd5e1; padding: 0.75rem;"></td>
+        </tr>
+        
+                </tbody>
+            </table>
+        </div>
+        
+          
+        </div>
+        
+        
+        
+        
+
+        <input type="hidden" name="biaya-0-id" value="23" id="id_biaya-0-id">
+        <input type="hidden" name="biaya-0-perjalanan" value="23" id="id_biaya-0-perjalanan">
+      </div>
+      
+      <div
+        class="inline-related empty-form last-related"
+        id="biaya-empty">
+        <h3><b>Biaya perjalanan:</b> <span class="inline_label"></span></h3>
+        
+
+        <!-- Render the fields directly without any outer nested tables or fieldsets -->
+        
+        
+        
+        
+        <div class="rincian-biaya-wrapper"
+          style="margin: 15px 0; background: #ffffff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          
+          -
+          
+        </div>
+        
+        
+        
+        
+
+        <input type="hidden" name="biaya-__prefix__-id" id="id_biaya-__prefix__-id">
+        <input type="hidden" name="biaya-__prefix__-perjalanan" value="23" id="id_biaya-__prefix__-perjalanan">
+      </div>
+      
+    </div>
+  </div>
+</fieldset>
+
+
+
+
+
+
+<div class="submit-row">
+
+<input type="submit" value="Simpan" class="default" name="_save">
+
+
+<input type="submit" value="Simpan dan terus mengedit" name="_continue">
+
+
+    
+    <a href="/admin/perjalanan/perjalanandinas/23/delete/" class="deletelink">Hapus</a>
+
+
+</div>
+
+
+
+
+    <script id="django-admin-form-add-constants"
+            src="/static/admin/js/change_form.js"
+            
+            async>
+    </script>
+
+
+<input type="hidden" id="id_tanggal_berangkat" value="2026-05-31">
+<input type="hidden" id="id_tanggal_kembali" value="2026-06-07">
+<input type="hidden" id="id_tujuan_provinsi" value="1">
+<input type="hidden" id="id_tujuan_provinsi_nama" value="Sulawesi Tenggara">
+<input type="hidden" id="id_jenis_transportasi" value="mobil_dinas">
+<input type="hidden" id="id_jenis_perjalanan" value="diklat">
+<input type="hidden" id="id_tahun_sbm" value="2025">
+<input type="hidden" id="id_pegawai" value="1">
+
+
+
+
+
+<script id="django-admin-prepopulated-fields-constants"
+        src="/static/admin/js/prepopulate_init.js"
+        data-prepopulated-fields="[]">
+</script>
+
+
+</div>
+</form></div>
+
+          
+          <br class="clear">
+        </div>
+        <!-- END Content -->
+        
+<div id="footer" style="padding: 1.5rem 0 !important; margin-top: auto !important; border-top: 1px solid var(--border-color, #e0e0e0) !important; background: none !important; width: 100%; text-align: center !important;">
+    <div style="font-size: 0.8rem; color: var(--body-quiet-color, #666); text-align: center !important;">
+        &copy; 2026 SIMPADI | By Subag Keuangan KPU Provinsi Sulawesi Tenggara
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const links = document.querySelectorAll('a[href*="/perjalanan/kalender/"]');
+        links.forEach(l => l.setAttribute('target', '_blank'));
+    });
+</script>
+
+      </div>
+    </div>
+</div>
+<!-- END Container -->
+
+<!-- SVGs -->
+<svg xmlns="http://www.w3.org/2000/svg" class="base-svgs">
+  <symbol viewBox="0 0 24 24" width="1rem" height="1rem" id="icon-auto"><path d="M0 0h24v24H0z" fill="currentColor"/><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2V4a8 8 0 1 0 0 16z"/></symbol>
+  <symbol viewBox="0 0 24 24" width="1rem" height="1rem" id="icon-moon"><path d="M0 0h24v24H0z" fill="currentColor"/><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7zm-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938 7.999 7.999 0 0 0 4 12z"/></symbol>
+  <symbol viewBox="0 0 24 24" width="1rem" height="1rem" id="icon-sun"><path d="M0 0h24v24H0z" fill="currentColor"/><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></symbol>
+</svg>
+<!-- END SVGs -->
+</body>
+</html>
