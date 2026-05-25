@@ -979,6 +979,9 @@
         const malamWrapper = row.querySelector('.malam-wrapper');
         const keteranganInput = row.querySelector('input[name$="-keterangan"]');
         const keteranganWrapper = keteranganInput ? keteranganInput.closest('.form-group') : null;
+        const nominalInput = row.querySelector('input[name$="-nominal"]');
+        const select = row.querySelector('select[name$="-jenis_berkas"]');
+        const isTidakMenginap = select && select.options[select.selectedIndex]?.text.toUpperCase().includes('TIDAK MENGINAP');
         
         if (isBadgeActive) {
             if (malamWrapper) malamWrapper.style.display = 'none';
@@ -987,13 +990,26 @@
                 const input = keteranganWrapper.querySelector('input');
                 if (input) input.removeAttribute('required');
             }
+            if (nominalInput && isTidakMenginap) {
+                nominalInput.readOnly = true;
+                nominalInput.style.backgroundColor = '#f1f5f9';
+                nominalInput.style.cursor = 'not-allowed';
+            } else if (nominalInput) {
+                nominalInput.readOnly = false;
+                nominalInput.style.backgroundColor = '';
+                nominalInput.style.cursor = '';
+            }
         } else {
-            const select = row.querySelector('select[name$="-jenis_berkas"]');
             const val = select ? parseInt(select.value) : null;
             if (val && penginapanRequiredIds.includes(val)) {
                 if (malamWrapper) malamWrapper.style.display = 'block';
             }
             if (keteranganWrapper) keteranganWrapper.style.display = 'block';
+            if (nominalInput) {
+                nominalInput.readOnly = false;
+                nominalInput.style.backgroundColor = '';
+                nominalInput.style.cursor = '';
+            }
         }
     }
 
@@ -2313,7 +2329,9 @@
 
                 const nominalInput = activeTicketRow.querySelector('input[name$="-nominal"]');
                 if (nominalInput) {
-                    nominalInput.value = route.nominal.toLocaleString('id-ID');
+                    nominalInput.value = route.nominal;
+                    nominalInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    nominalInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
 
                 document.getElementById('ticketModal').style.display = 'none';
@@ -2434,6 +2452,33 @@
 
                 toggleHotelInputs(activeHotelRow, true);
 
+                // Fetch plafon
+                const pegawaiId = "{{ perjadin.pegawai.id }}";
+                const tahunSbm = "{{ surat_tugas.tahun_sbm }}";
+                const row = activeHotelRow;
+                
+                if (pegawaiId && provId) {
+                    fetch(`/perjalanan/api/get-plafon-penginapan/?pegawai_id=${pegawaiId}&provinsi_id=${provId}&tahun_sbm=${tahunSbm}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            const plafon = data.plafon || 0;
+                            const totalNominal = plafon * nights;
+                            const nominalInput = row.querySelector('input[name$="-nominal"]');
+                            if (nominalInput) {
+                                nominalInput.value = totalNominal;
+                                nominalInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                nominalInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                            updateEstimasi();
+                        })
+                        .catch(err => {
+                            console.error("Error fetching hotel plafon:", err);
+                            updateEstimasi();
+                        });
+                } else {
+                    updateEstimasi();
+                }
+
                 document.getElementById('hotelModal').style.display = 'none';
                 document.body.style.overflow = 'auto';
                 activeHotelRow = null;
@@ -2444,6 +2489,12 @@
 
         // Run initial estimation on load
         updateEstimasi();
+
+        // Expose helper functions globally for event handlers
+        window.getMaxNights = getMaxNights;
+        window.getCurrentClaimedNights = getCurrentClaimedNights;
+        window.getSectionType = getSectionType;
+        window.openHotelModal = openHotelModal;
     });
 
     function openSTModal() {

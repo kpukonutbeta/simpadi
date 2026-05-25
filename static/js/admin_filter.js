@@ -912,6 +912,9 @@ function initAdminFilter() {
     function toggleAdminHotelInputs(row, isBadgeActive) {
         const malamInput = row.querySelector('input[name$="-malam_menginap"]');
         const keteranganInput = row.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
+        const nominalInput = row.querySelector('input[name$="-nominal"]');
+        const select = row.querySelector('select[name$="-jenis_berkas"]');
+        const isTidakMenginap = select && select.options[select.selectedIndex]?.text.toUpperCase().includes('TIDAK MENGINAP');
         
         if (isBadgeActive) {
             if (malamInput) {
@@ -925,6 +928,15 @@ function initAdminFilter() {
                 keteranganInput.style.cursor = 'not-allowed';
                 keteranganInput.removeAttribute('required');
             }
+            if (nominalInput && isTidakMenginap) {
+                nominalInput.readOnly = true;
+                nominalInput.style.backgroundColor = '#f1f5f9';
+                nominalInput.style.cursor = 'not-allowed';
+            } else if (nominalInput) {
+                nominalInput.readOnly = false;
+                nominalInput.style.backgroundColor = '';
+                nominalInput.style.cursor = '';
+            }
         } else {
             if (malamInput) {
                 malamInput.readOnly = false;
@@ -935,6 +947,11 @@ function initAdminFilter() {
                 keteranganInput.readOnly = false;
                 keteranganInput.style.backgroundColor = '';
                 keteranganInput.style.cursor = '';
+            }
+            if (nominalInput) {
+                nominalInput.readOnly = false;
+                nominalInput.style.backgroundColor = '';
+                nominalInput.style.cursor = '';
             }
         }
     }
@@ -1451,17 +1468,22 @@ function initAdminFilter() {
         toggleAdminHotelInputs(activeHotelRow, true);
 
         // --- Fetch plafon and calculate nominal ---
-        const pegawaiId = document.querySelector('#id_pegawai')?.value;
+        const pegawaiId = document.querySelector('#id_pegawai')?.value || '';
         const tahunSbm = document.querySelector('#id_tahun_sbm')?.value || '';
-        if (pegawaiId && provId) {
-            fetch(`/perjalanan/api/get-plafon-penginapan/?pegawai_id=${pegawaiId}&provinsi_id=${provId}&tahun_sbm=${tahunSbm}`)
+        const row = activeHotelRow;
+        const perjalananId = row.querySelector('input[name$="-perjalanan"]')?.value || '';
+        
+        if ((pegawaiId || perjalananId) && provId) {
+            fetch(`/perjalanan/api/get-plafon-penginapan/?pegawai_id=${pegawaiId}&provinsi_id=${provId}&tahun_sbm=${tahunSbm}&perjalanan_id=${perjalananId}`)
                 .then(res => res.json())
                 .then(data => {
                     const plafon = data.plafon || 0;
                     const totalNominal = plafon * nights;
-                    const nominalInput = activeHotelRow.querySelector('input[name$="-nominal"]');
+                    const nominalInput = row.querySelector('input[name$="-nominal"]');
                     if (nominalInput) {
-                        nominalInput.value = totalNominal.toLocaleString('id-ID');
+                        nominalInput.value = totalNominal;
+                        nominalInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        nominalInput.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                     updateAdminEstimasi();
                 })

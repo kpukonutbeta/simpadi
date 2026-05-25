@@ -461,11 +461,24 @@ def get_standar_biaya_penginapan_ajax(request):
     pegawai_id = request.GET.get('pegawai_id')
     provinsi_id = request.GET.get('provinsi_id')
     tahun_sbm = request.GET.get('tahun_sbm')
+    perjalanan_id = request.GET.get('perjalanan_id')
     
-    if not all([pegawai_id, provinsi_id, tahun_sbm]):
-        return JsonResponse({'error': 'Missing parameters'}, status=400)
-        
     try:
+        from django.utils import timezone
+        from perjalanan.models import PerjalananDinas
+        
+        if perjalanan_id:
+            pd = PerjalananDinas.objects.get(id=perjalanan_id)
+            pegawai_id = pd.pegawai_id
+            if not tahun_sbm and pd.surat_tugas:
+                tahun_sbm = pd.surat_tugas.tahun_sbm
+                
+        if not all([pegawai_id, provinsi_id]):
+            return JsonResponse({'error': 'Missing parameters'}, status=400)
+            
+        if not tahun_sbm:
+            tahun_sbm = timezone.now().year
+            
         pegawai = Pegawai.objects.get(id=pegawai_id)
         q_filter = get_eligible_sbm_filter(pegawai)
         sbm = StandarBiaya.objects.filter(
