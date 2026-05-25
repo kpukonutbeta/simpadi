@@ -826,6 +826,8 @@ def download_rincian_excel(request, perjadin_id):
         '{{NIP_SEKRETARIS}}': nip_sekretaris,
         '{{NAMA_BENDAHARA}}': nama_bendahara,
         '{{NIP_BENDAHARA}}': nip_bendahara,
+        '{{NAMA_PEGAWAI}}': perjadin.pegawai.nama,
+        '{{NIP_PEGAWAI}}': perjadin.pegawai.nip if perjadin.pegawai.nip else "-",
         '{{TOTAL_BIAYA}}': formatted_total,
         '{{TOTAL_DIBAYARKAN}}': formatted_total,
         '{{TAHUN_BULAN_SEKARANG}}': tahun_bulan_sekarang,
