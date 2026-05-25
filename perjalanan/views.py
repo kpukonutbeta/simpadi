@@ -888,7 +888,7 @@ def download_rincian_excel(request, perjadin_id):
                 if item.filename == 'xl/worksheets/sheet1.xml':
                     text = content.decode('utf-8')
                     if '<drawing' not in text:
-                        text = text.replace('</worksheet>', '<drawing r:id="rId1"/></worksheet>')
+                        text = text.replace('</worksheet>', '<drawing xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></worksheet>')
                     content = text.encode('utf-8')
                 zout.writestr(item, content)
 
