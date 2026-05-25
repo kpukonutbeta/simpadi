@@ -250,6 +250,7 @@ class PerjalananDinas(models.Model):
         existing = {h.hari_ke: h for h in self.harian_details.all()}
         
         # We want to create/keep records up to durasi
+        jp = self.surat_tugas.jenis_perjalanan if self.surat_tugas else 'luar_kota'
         for i in range(1, durasi + 1):
             tgl = self.tanggal_berangkat + timedelta(days=i - 1) if self.tanggal_berangkat else None
             if i in existing:
@@ -259,12 +260,23 @@ class PerjalananDinas(models.Model):
                     h.tanggal = tgl
                     h.save()
             else:
+                default_jh = 'luar_kota'
+                if jp == 'diklat':
+                    if i == 1 or i == durasi:
+                        default_jh = 'luar_kota'
+                    else:
+                        default_jh = 'diklat'
+                elif jp == 'dalam_kota':
+                    default_jh = 'dalam_kota'
+                elif jp in ['fullboard_luar', 'fullboard_dalam']:
+                    default_jh = 'fullboard'
+                    
                 HarianPerjalanan.objects.create(
                     perjalanan=self,
                     hari_ke=i,
                     tanggal=tgl,
                     provinsi=self.tujuan_provinsi,
-                    jenis_harian='luar_kota'
+                    jenis_harian=default_jh
                 )
         
         # Delete extra days if durasi was reduced
