@@ -728,7 +728,7 @@ def download_spd_excel(request, perjadin_id):
         '{{FULL_NO_SPD}}': perjadin.nomor_spd or "-",
         '{{NO_SPD}}': perjadin.nomor_spd.split('/')[0] if perjadin.nomor_spd else "-",
         '{{NAMA_PEGAWAI}}': pegawai.nama,
-        '{{NIP_PEGAWAI}}': pegawai.nip,
+        '{{NIP_PEGAWAI}}': pegawai.nip if pegawai.nip else "-",
         '{{GOLONGAN_PEGAWAI}}': pegawai.get_golongan_display(),
         '{{JABATAN_PEGAWAI}}': pegawai.jabatan,
         '{{MAKSUD_PERJALANAN_DINAS}}': surat_tugas.maksud_perjalanan or surat_tugas.perihal,
@@ -933,7 +933,7 @@ def download_kwitansi_excel(request, perjadin_id):
     mapping = {
         '{{NO_FULL_SPD}}': perjadin.nomor_spd or "-",
         '{{NAMA_PEGAWAI}}': pegawai.nama,
-        '{{NIP_PEGAWAI}}': pegawai.nip,
+        '{{NIP_PEGAWAI}}': pegawai.nip if pegawai.nip else "-",
         '{{NAMA_PPK}}': nama_ppk,
         '{{NIP_PPK}}': nip_ppk,
         '{{TANGGAL_KWITANSI}}': tanggal_kwitansi,

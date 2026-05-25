@@ -18,7 +18,7 @@ from django.conf import settings
 
 class Pegawai(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='pegawai_profile', null=True, blank=True)
-    nip = models.CharField(max_length=20, unique=True, verbose_name="NIP")
+    nip = models.CharField(max_length=20, unique=True, null=True, blank=True, verbose_name="NIP")
     nama = models.CharField(max_length=100, verbose_name="Nama Lengkap")
     email = models.EmailField(unique=True, verbose_name="Email", null=True, blank=True)
     golongan = models.CharField(max_length=15, choices=Golongan.choices, verbose_name="Golongan")
@@ -31,7 +31,7 @@ class Pegawai(models.Model):
     jabatan = models.CharField(max_length=100, verbose_name="Jabatan")
 
     def __str__(self):
-        return f"{self.nama} ({self.nip})"
+        return f"{self.nama} ({self.nip})" if self.nip else self.nama
 
     class Meta:
         verbose_name = "Pegawai"

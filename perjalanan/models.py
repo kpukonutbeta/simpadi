@@ -516,10 +516,10 @@ class BiayaPerjalanan(models.Model):
                     total_malam_fb_dalam += m
                     fb_dalam_bills.append({'nominal': nominal, 'malam': m, 'keterangan': keterangan or jenis.nama, 'file_url': file_url, 'file_name': file_name})
                 elif kategori in ['transportasi', 'transportasi_pesawat']:
-                    if self.perjalanan.jenis_transportasi != SuratTugas.JenisTransportasi.MOBIL_DINAS:
-                        if nominal:
-                            asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(keterangan)
-                            if asal_id and tujuan_id and kelas:
+                    if nominal:
+                        asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(keterangan)
+                        if asal_id and tujuan_id and kelas:
+                            if self.perjalanan.jenis_transportasi != SuratTugas.JenisTransportasi.MOBIL_DINAS:
                                 sbm_tikets = StandarBiayaTiket.objects.filter(
                                     get_eligible_tiket_filter(self.perjalanan.pegawai),
                                     kota_asal_id=asal_id,
@@ -536,9 +536,9 @@ class BiayaPerjalanan(models.Model):
                                     'file_url': file_url,
                                     'file_name': file_name
                                 })
-                            else:
-                                total_transport_non_pesawat_input += nominal
-                                non_flight_transports.append({'nominal': nominal, 'keterangan': keterangan or jenis.nama, 'file_url': file_url, 'file_name': file_name})
+                        else:
+                            total_transport_non_pesawat_input += nominal
+                            non_flight_transports.append({'nominal': nominal, 'keterangan': keterangan or jenis.nama, 'file_url': file_url, 'file_name': file_name})
         else:
             if self.perjalanan_id:
                 for b in BerkasPerjalanan.objects.filter(perjalanan_id=self.perjalanan_id):
@@ -570,10 +570,10 @@ class BiayaPerjalanan(models.Model):
                         total_malam_fb_dalam += m
                         fb_dalam_bills.append({'nominal': nominal, 'malam': m, 'keterangan': keterangan or jenis.nama, 'file_url': file_url, 'file_name': file_name})
                     elif kategori in ['transportasi', 'transportasi_pesawat']:
-                        if self.perjalanan.jenis_transportasi != SuratTugas.JenisTransportasi.MOBIL_DINAS:
-                            if nominal:
-                                asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(keterangan)
-                                if asal_id and tujuan_id and kelas:
+                        if nominal:
+                            asal_id, tujuan_id, kelas, nama_asal, nama_tujuan, user_desc = parse_tiket_keterangan(keterangan)
+                            if asal_id and tujuan_id and kelas:
+                                if self.perjalanan.jenis_transportasi != SuratTugas.JenisTransportasi.MOBIL_DINAS:
                                     sbm_tikets = StandarBiayaTiket.objects.filter(
                                         get_eligible_tiket_filter(self.perjalanan.pegawai),
                                         kota_asal_id=asal_id,
@@ -590,9 +590,9 @@ class BiayaPerjalanan(models.Model):
                                         'file_url': file_url,
                                         'file_name': file_name
                                     })
-                                else:
-                                    total_transport_non_pesawat_input += nominal
-                                    non_flight_transports.append({'nominal': nominal, 'keterangan': keterangan or jenis.nama, 'file_url': file_url, 'file_name': file_name})
+                            else:
+                                total_transport_non_pesawat_input += nominal
+                                non_flight_transports.append({'nominal': nominal, 'keterangan': keterangan or jenis.nama, 'file_url': file_url, 'file_name': file_name})
 
         # Process overlap cancellations for hotel and transport bills
         from datetime import datetime
@@ -883,19 +883,17 @@ class BiayaPerjalanan(models.Model):
         biaya_penginapan_riil = biaya_hotel_riil + biaya_hotel_lumpsum
 
         # Logic 3: Capping Transportasi (At-Cost)
-        if self.perjalanan.jenis_transportasi == SuratTugas.JenisTransportasi.MOBIL_DINAS:
-            biaya_transportasi_riil = Decimal('0')
-            transportasi_dana_pribadi = Decimal('0')
-            biaya_non_pesawat_riil = Decimal('0')
-            non_pesawat_dana_pribadi = Decimal('0')
+        if plafon_transport > 0 and total_transport_non_pesawat_input > plafon_transport:
+            biaya_non_pesawat_riil = plafon_transport
+            non_pesawat_dana_pribadi = total_transport_non_pesawat_input - plafon_transport
         else:
-            if plafon_transport > 0 and total_transport_non_pesawat_input > plafon_transport:
-                biaya_non_pesawat_riil = plafon_transport
-                non_pesawat_dana_pribadi = total_transport_non_pesawat_input - plafon_transport
-            else:
-                biaya_non_pesawat_riil = total_transport_non_pesawat_input
-                non_pesawat_dana_pribadi = Decimal('0')
+            biaya_non_pesawat_riil = total_transport_non_pesawat_input
+            non_pesawat_dana_pribadi = Decimal('0')
 
+        if self.perjalanan.jenis_transportasi == SuratTugas.JenisTransportasi.MOBIL_DINAS:
+            biaya_transportasi_riil = biaya_non_pesawat_riil
+            transportasi_dana_pribadi = non_pesawat_dana_pribadi
+        else:
             biaya_transportasi_riil = biaya_non_pesawat_riil + total_tiket_pesawat_riil
             transportasi_dana_pribadi = non_pesawat_dana_pribadi + tiket_pesawat_dana_pribadi
 
