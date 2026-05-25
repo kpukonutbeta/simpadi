@@ -40,7 +40,10 @@
 
         {% if data_rekap %}
         <div style="padding: 10px 10px 20px 10px; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: 14px; font-weight: bold; color: #666;">Preview Rekap Perjalanan Dinas</h2>
+            <div>
+                <h2 style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold; color: #666;">Preview Rekap Perjalanan Dinas</h2>
+                <div style="font-size: 13px; color: #444;"><strong>NAMA OPD:</strong> {{ nama_opd }}</div>
+            </div>
             <a href="?{% if selected_pegawai %}pegawai_id={{ selected_pegawai }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}export=excel" class="button" style="background-color: #10b981; color: white; padding: 6px 12px; font-weight: bold; border-radius: 4px;">
                 Export Excel
             </a>
@@ -51,7 +54,6 @@
                 <thead>
                     <tr>
                         <th scope="col" class="sortable">No</th>
-                        <th scope="col" class="sortable">Nama OPD</th>
                         <th scope="col" class="sortable">Jenis Perjadin</th>
                         <th scope="col" class="sortable">Nama Lengkap</th>
                         <th scope="col" class="sortable">NIP</th>
@@ -73,7 +75,6 @@
                     {% for item in data_rekap %}
                     <tr class="{% cycle 'row1' 'row2' %}">
                         <td class="field-no">{{ item.no }}</td>
-                        <td class="field-opd">{{ item.opd }}</td>
                         <td class="field-jenis">{{ item.jenis_perjadin }}</td>
                         <td class="field-nama"><strong>{{ item.nama_pegawai }}</strong></td>
                         <td class="field-nip">{{ item.nip|default:"-" }}</td>

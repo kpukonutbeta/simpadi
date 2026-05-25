@@ -1098,5 +1098,6 @@ def rekap_perjadin_view(request):
         'selected_pegawai': int(pegawai_id) if pegawai_id else '',
         'start_date': start_date,
         'end_date': end_date,
+        'nama_opd': nama_opd,
     }
     return render(request, 'perjalanan/admin_rekap_perjadin.html', context)
