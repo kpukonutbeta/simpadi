@@ -893,15 +893,19 @@ function initAdminFilter() {
         const tagHidden = activeTicketRow.querySelector('.admin-ticket-tag-hidden');
         if (tagHidden) tagHidden.value = tagVal;
 
-        updateAdminRowRouteLayout(activeTicketRow, true, originName, destName, kelasName);
+         updateAdminRowRouteLayout(activeTicketRow, true, originName, destName, kelasName);
 
-        const descInput = activeTicketRow.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
-        if (descInput) {
-            const nominalInput = activeTicketRow.querySelector('input[name$="-nominal"]');
-            if (nominalInput) {
-                nominalInput.value = route.nominal.toLocaleString('id-ID');
-            }
-        }
+         const descInput = activeTicketRow.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
+         const nominalInput = activeTicketRow.querySelector('input[name$="-nominal"]');
+
+         // Hanya auto-populate nominal ticket jika user belum pernah edit
+         const userAlreadyEditedNominal = nominalInput && nominalInput.dataset.nominalUserEdited === '1';
+
+         if (nominalInput && !userAlreadyEditedNominal) {
+             nominalInput.value = route.nominal.toLocaleString('id-ID');
+             // Mark sebagai auto-populated, bukan user-edited
+             nominalInput.dataset.nominalUserEdited = '0';
+         }
 
         document.getElementById('adminTicketModal').style.display = 'none';
         activeTicketRow = null;
@@ -909,52 +913,79 @@ function initAdminFilter() {
         updateAdminEstimasi();
     }
 
-    function toggleAdminHotelInputs(row, isBadgeActive) {
-        const malamInput = row.querySelector('input[name$="-malam_menginap"]');
-        const keteranganInput = row.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
-        const nominalInput = row.querySelector('input[name$="-nominal"]');
-        const select = row.querySelector('select[name$="-jenis_berkas"]');
-        const isTidakMenginap = select && select.options[select.selectedIndex]?.text.toUpperCase().includes('TIDAK MENGINAP');
-        
-        if (isBadgeActive) {
-            if (malamInput) {
-                malamInput.readOnly = true;
-                malamInput.style.backgroundColor = '#f1f5f9';
-                malamInput.style.cursor = 'not-allowed';
-            }
-            if (keteranganInput) {
-                keteranganInput.readOnly = true;
-                keteranganInput.style.backgroundColor = '#f1f5f9';
-                keteranganInput.style.cursor = 'not-allowed';
-                keteranganInput.removeAttribute('required');
-            }
-            if (nominalInput && isTidakMenginap) {
-                nominalInput.readOnly = true;
-                nominalInput.style.backgroundColor = '#f1f5f9';
-                nominalInput.style.cursor = 'not-allowed';
-            } else if (nominalInput) {
-                nominalInput.readOnly = false;
-                nominalInput.style.backgroundColor = '';
-                nominalInput.style.cursor = '';
-            }
-        } else {
-            if (malamInput) {
-                malamInput.readOnly = false;
-                malamInput.style.backgroundColor = '';
-                malamInput.style.cursor = '';
-            }
-            if (keteranganInput) {
-                keteranganInput.readOnly = false;
-                keteranganInput.style.backgroundColor = '';
-                keteranganInput.style.cursor = '';
-            }
-            if (nominalInput) {
-                nominalInput.readOnly = false;
-                nominalInput.style.backgroundColor = '';
-                nominalInput.style.cursor = '';
-            }
-        }
-    }
+     function setupNominalEditListener(nominalInput) {
+         // Attach listener untuk mendeteksi user input pada nominal field
+         if (!nominalInput || nominalInput.dataset.nominalListenerAttached === '1') return;
+         
+         nominalInput.dataset.nominalListenerAttached = '1';
+         
+         // Track any manual input change
+         nominalInput.addEventListener('input', function(e) {
+             // Hanya mark sebagai user-edited jika user benar-benar mengetik
+             // (bukan dari setValue programmatic)
+             if (e.isTrusted !== false) {  // isTrusted true = user action, false = script action
+                 this.dataset.nominalUserEdited = '1';
+             }
+         }, false);
+         
+         // Juga track via change event untuk memastikan
+         nominalInput.addEventListener('change', function(e) {
+             if (e.isTrusted !== false) {
+                 this.dataset.nominalUserEdited = '1';
+             }
+         }, false);
+     }
+
+     function toggleAdminHotelInputs(row, isBadgeActive) {
+         const malamInput = row.querySelector('input[name$="-malam_menginap"]');
+         const keteranganInput = row.querySelector('input[name$="-keterangan"], textarea[name$="-keterangan"]');
+         const nominalInput = row.querySelector('input[name$="-nominal"]');
+         const select = row.querySelector('select[name$="-jenis_berkas"]');
+         const isTidakMenginap = select && select.options[select.selectedIndex]?.text.toUpperCase().includes('TIDAK MENGINAP');
+         
+         if (isBadgeActive) {
+             if (malamInput) {
+                 malamInput.readOnly = true;
+                 malamInput.style.backgroundColor = '#f1f5f9';
+                 malamInput.style.cursor = 'not-allowed';
+             }
+             if (keteranganInput) {
+                 keteranganInput.readOnly = true;
+                 keteranganInput.style.backgroundColor = '#f1f5f9';
+                 keteranganInput.style.cursor = 'not-allowed';
+                 keteranganInput.removeAttribute('required');
+             }
+             if (nominalInput && isTidakMenginap) {
+                 nominalInput.readOnly = true;
+                 nominalInput.style.backgroundColor = '#f1f5f9';
+                 nominalInput.style.cursor = 'not-allowed';
+             } else if (nominalInput) {
+                 nominalInput.readOnly = false;
+                 nominalInput.style.backgroundColor = '';
+                 nominalInput.style.cursor = '';
+                 // Setup listener untuk nominal input
+                 setupNominalEditListener(nominalInput);
+             }
+         } else {
+             if (malamInput) {
+                 malamInput.readOnly = false;
+                 malamInput.style.backgroundColor = '';
+                 malamInput.style.cursor = '';
+             }
+             if (keteranganInput) {
+                 keteranganInput.readOnly = false;
+                 keteranganInput.style.backgroundColor = '';
+                 keteranganInput.style.cursor = '';
+             }
+             if (nominalInput) {
+                 nominalInput.readOnly = false;
+                 nominalInput.style.backgroundColor = '';
+                 nominalInput.style.cursor = '';
+                 // Setup listener untuk nominal input
+                 setupNominalEditListener(nominalInput);
+             }
+         }
+     }
 
     function updateAdminRowHotelLayout(row, isActive, provinsiNama, checkIn, checkOut) {
         const originalCell = row.querySelector('td.original') || row.querySelector('td.field-jenis_berkas') || row.querySelector('td:first-child');
@@ -1132,12 +1163,17 @@ function initAdminFilter() {
         }
     }
 
-    function initializeAdminTicketRows() {
-        const rows = document.querySelectorAll('.inline-related tr.form-row:not(.empty-form)');
-        rows.forEach(row => {
-            setupAdminRow(row);
-        });
-    }
+     function initializeAdminTicketRows() {
+         const rows = document.querySelectorAll('.inline-related tr.form-row:not(.empty-form)');
+         rows.forEach(row => {
+             setupAdminRow(row);
+             // Setup nominal listener untuk semua existing rows
+             const nominalInput = row.querySelector('input[name$="-nominal"]');
+             if (nominalInput) {
+                 setupNominalEditListener(nominalInput);
+             }
+         });
+     }
 
     function getAdminTransitDays() {
         const harian = [];
@@ -1465,35 +1501,42 @@ function initAdminFilter() {
             keteranganInput.value = userDesc;
         }
 
-        toggleAdminHotelInputs(activeHotelRow, true);
+         toggleAdminHotelInputs(activeHotelRow, true);
 
-        // --- Fetch plafon and calculate nominal ---
-        const pegawaiId = document.querySelector('#id_pegawai')?.value || '';
-        const tahunSbm = document.querySelector('#id_tahun_sbm')?.value || '';
-        const row = activeHotelRow;
-        const perjalananId = row.querySelector('input[name$="-perjalanan"]')?.value || '';
-        
-        if ((pegawaiId || perjalananId) && provId) {
-            fetch(`/perjalanan/api/get-plafon-penginapan/?pegawai_id=${pegawaiId}&provinsi_id=${provId}&tahun_sbm=${tahunSbm}&perjalanan_id=${perjalananId}`)
-                .then(res => res.json())
-                .then(data => {
-                    const plafon = data.plafon || 0;
-                    const totalNominal = plafon * nights;
-                    const nominalInput = row.querySelector('input[name$="-nominal"]');
-                    if (nominalInput) {
-                        nominalInput.value = totalNominal;
-                        nominalInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        nominalInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                    updateAdminEstimasi();
-                })
-                .catch(err => {
-                    console.error("Error fetching hotel plafon:", err);
-                    updateAdminEstimasi();
-                });
-        } else {
-            updateAdminEstimasi();
-        }
+         // --- Fetch plafon and calculate nominal ---
+         const pegawaiId = document.querySelector('#id_pegawai')?.value || '';
+         const tahunSbm = document.querySelector('#id_tahun_sbm')?.value || '';
+         const row = activeHotelRow;
+         const perjalananId = row.querySelector('input[name$="-perjalanan"]')?.value || '';
+         const nominalInput = row.querySelector('input[name$="-nominal"]');
+
+         // Cek apakah user sudah pernah edit nominal sebelumnya
+         const userAlreadyEditedNominal = nominalInput && nominalInput.dataset.nominalUserEdited === '1';
+
+         if ((pegawaiId || perjalananId) && provId && !userAlreadyEditedNominal) {
+             // Hanya auto-populate nominal jika user belum pernah edit sebelumnya
+             fetch(`/perjalanan/api/get-plafon-penginapan/?pegawai_id=${pegawaiId}&provinsi_id=${provId}&tahun_sbm=${tahunSbm}&perjalanan_id=${perjalananId}`)
+                 .then(res => res.json())
+                 .then(data => {
+                     const plafon = data.plafon || 0;
+                     const totalNominal = plafon * nights;
+                     const nominalInput = row.querySelector('input[name$="-nominal"]');
+                     if (nominalInput) {
+                         nominalInput.value = totalNominal;
+                         // Mark sebagai auto-populated, bukan user-edited
+                         nominalInput.dataset.nominalUserEdited = '0';
+                         nominalInput.dispatchEvent(new Event('input', { bubbles: true }));
+                         nominalInput.dispatchEvent(new Event('change', { bubbles: true }));
+                     }
+                     updateAdminEstimasi();
+                 })
+                 .catch(err => {
+                     console.error("Error fetching hotel plafon:", err);
+                     updateAdminEstimasi();
+                 });
+         } else {
+             updateAdminEstimasi();
+         }
 
         document.getElementById('adminHotelModal').style.display = 'none';
         activeHotelRow = null;
@@ -1573,21 +1616,26 @@ function initAdminFilter() {
         }
     });
 
-    if (window.django && django.jQuery) {
-        django.jQuery(document).on('formset:added', function (event, $row, formsetName) {
-            let row = null;
-            if ($row) {
-                if ($row.length) {
-                    row = $row[0];
-                } else if ($row.nodeType === 1) {
-                    row = $row;
-                }
-            }
-            if (row) {
-                setupAdminRow(row);
-            }
-        });
-    }
+     if (window.django && django.jQuery) {
+         django.jQuery(document).on('formset:added', function (event, $row, formsetName) {
+             let row = null;
+             if ($row) {
+                 if ($row.length) {
+                     row = $row[0];
+                 } else if ($row.nodeType === 1) {
+                     row = $row;
+                 }
+             }
+             if (row) {
+                 setupAdminRow(row);
+                 // Setup nominal listener untuk baris yang baru ditambahkan
+                 const nominalInput = row.querySelector('input[name$="-nominal"]');
+                 if (nominalInput) {
+                     setupNominalEditListener(nominalInput);
+                 }
+             }
+         });
+     }
 
     function setupAdminAccordion(groupSelector, defaultExpanded = false) {
         // Try to find the group using the selector first

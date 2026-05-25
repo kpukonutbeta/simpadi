@@ -11,6 +11,7 @@
     .form-section {
         margin-bottom: 1.5rem;
     }
+
     .form-section-title {
         font-size: 1.125rem;
         font-weight: 700;
@@ -20,9 +21,11 @@
         gap: 0.75rem;
         color: var(--primary);
     }
+
     .form-group {
         margin-bottom: 0.75rem;
     }
+
     .form-label {
         display: block;
         font-size: 0.875rem;
@@ -30,6 +33,7 @@
         margin-bottom: 0.5rem;
         color: var(--text-main);
     }
+
     .form-control {
         width: 100%;
         padding: 0.75rem 1rem;
@@ -38,16 +42,19 @@
         background: white;
         transition: border-color 0.2s;
     }
+
     .form-control:focus {
         outline: none;
         border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(159, 18, 57, 0.1);
     }
+
     .grid-2 {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 0.75rem;
     }
+
     .formset-row {
         background: var(--glass-bg);
         padding: 0.5rem 0.75rem;
@@ -55,38 +62,46 @@
         margin-bottom: 0.25rem;
         border: 1px dashed var(--border);
     }
+
     .sticky-summary {
         position: sticky;
         top: 2rem;
     }
+
     .error-msg {
         color: #ef4444;
         font-size: 0.75rem;
         font-weight: 500;
         margin-top: 0.25rem;
     }
+
     .status-badge {
         font-size: 0.7rem;
         font-weight: 600;
         padding: 0.25rem 0.5rem;
         border-radius: 0.375rem;
     }
+
     .status-badge.draft {
         background: #fbbf24;
         color: #78350f;
     }
+
     .status-badge.pending {
         background: #60a5fa;
         color: #1e3a8a;
     }
+
     .status-badge.approved {
         background: #10b981;
         color: #064e3b;
     }
+
     .status-badge.rejected {
         background: #ef4444;
         color: #7f1d1d;
     }
+
     .status-badge.processed {
         background: #8b5cf6;
         color: #4c1d95;
@@ -98,78 +113,101 @@
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        
+
         <!-- Nomor SPD Header -->
         {% if perjadin %}
-        <div class="card" style="margin-bottom: 2rem; background: linear-gradient(to right, #f8fafc, #f1f5f9); border-left: 5px solid var(--primary); padding: 1.5rem;">
+        <div class="card"
+            style="margin-bottom: 2rem; background: linear-gradient(to right, #f8fafc, #f1f5f9); border-left: 5px solid var(--primary); padding: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h2 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Nomor Surat Perjalanan Dinas (SPD)</h2>
-                    <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); font-family: 'Inter', sans-serif;">{{ perjadin.nomor_spd }}</div>
+                    <h2
+                        style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">
+                        Nomor Surat Perjalanan Dinas (SPD)</h2>
+                    <div
+                        style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); font-family: 'Inter', sans-serif;">
+                        {{ perjadin.nomor_spd }}</div>
                 </div>
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
-                        <div style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                            <i class="fas fa-file-invoice" style="font-size: 1.25rem; color: var(--primary);"></i>
-                        </div>
-                        <span class="status-badge {% if perjadin.status == 'DRAFT' %}draft{% elif perjadin.status == 'PENDING' %}pending{% elif perjadin.status == 'APPROVED' %}approved{% elif perjadin.status == 'REJECTED' %}rejected{% else %}processed{% endif %}">
-                            {{ perjadin.get_status_display }}
-                        </span>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                    <div
+                        style="width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                        <i class="fas fa-file-invoice" style="font-size: 1.25rem; color: var(--primary);"></i>
                     </div>
+                    <span
+                        class="status-badge {% if perjadin.status == 'DRAFT' %}draft{% elif perjadin.status == 'PENDING' %}pending{% elif perjadin.status == 'APPROVED' %}approved{% elif perjadin.status == 'REJECTED' %}rejected{% else %}processed{% endif %}">
+                        {{ perjadin.get_status_display }}
+                    </span>
+                </div>
             </div>
             {% if perjadin.status == 'APPROVED' %}
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <a href="{% url 'perjalanan:download_rincian_excel' perjadin.id %}" class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #10b981; border: none; border-radius: 0.5rem; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <div
+                style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <a href="{% url 'perjalanan:download_rincian_excel' perjadin.id %}" class="btn btn-success"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #10b981; border: none; border-radius: 0.5rem; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-file-excel"></i> Download Rincian Biaya
                 </a>
-                <a href="{% url 'perjalanan:download_kwitansi_excel' perjadin.id %}" class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #059669; border: none; border-radius: 0.5rem; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <a href="{% url 'perjalanan:download_kwitansi_excel' perjadin.id %}" class="btn btn-success"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #059669; border: none; border-radius: 0.5rem; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-file-invoice-dollar"></i> Download Kwitansi
                 </a>
             </div>
             {% endif %}
         </div>
         {% endif %}
-        
+
         <!-- Lock Warning Banner -->
         {% if not is_editable %}
-        <div class="card" style="margin-bottom: 2rem; background: #fef3c7; border: 1px solid #fcd34d; border-left: 5px solid #f59e0b; padding: 1rem 1.5rem;">
+        <div class="card"
+            style="margin-bottom: 2rem; background: #fef3c7; border: 1px solid #fcd34d; border-left: 5px solid #f59e0b; padding: 1rem 1.5rem;">
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <i class="fas fa-lock" style="font-size: 1.5rem; color: #d97706;"></i>
                 <div>
-                    <h3 style="font-size: 0.875rem; font-weight: 700; color: #92400e; margin-bottom: 0.25rem;">SPD Terkunci</h3>
-                    <p style="font-size: 0.8125rem; color: #b45309; margin: 0;">SPD ini sudah dalam status <strong>{{ perjadin.get_status_display }}</strong> dan tidak dapat diubah lagi. Anda hanya dapat melihat detail data.</p>
+                    <h3 style="font-size: 0.875rem; font-weight: 700; color: #92400e; margin-bottom: 0.25rem;">SPD
+                        Terkunci</h3>
+                    <p style="font-size: 0.8125rem; color: #b45309; margin: 0;">SPD ini sudah dalam status <strong>{{ perjadin.get_status_display }}</strong> dan tidak dapat diubah lagi. Anda hanya dapat
+                        melihat detail data.</p>
                 </div>
             </div>
         </div>
         {% endif %}
 
         <!-- Section 1: Informasi Perjalanan Dinas (Read-Only) -->
-        <div class="card form-section" style="border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; background: white;">
-            <div class="form-section-title" style="padding: 1.25rem 1.5rem; background: linear-gradient(to right, #f8fafc, #ffffff); border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-                <span style="display: flex; align-items: center; gap: 0.75rem; font-weight: 800; color: var(--primary);">
+        <div class="card form-section"
+            style="border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; background: white;">
+            <div class="form-section-title"
+                style="padding: 1.25rem 1.5rem; background: linear-gradient(to right, #f8fafc, #ffffff); border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <span
+                    style="display: flex; align-items: center; gap: 0.75rem; font-weight: 800; color: var(--primary);">
                     <i class="fas fa-info-circle"></i> DETAIL PERJALANAN DINAS
                 </span>
                 <span class="badge" style="background: #e2e8f0; color: #475569; font-size: 0.75rem; font-weight: 600;">
                     <i class="fas fa-lock"></i> Terkunci (Sesuai Surat Tugas)
                 </span>
             </div>
-            
+
             <div style="padding: 0 1.5rem 1.5rem 1.5rem;">
                 <!-- Maksud Perjalanan Banner -->
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem;">
-                    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 0.25rem; letter-spacing: 0.05em;">Maksud Perjalanan / Perihal</div>
+                <div
+                    style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem;">
+                    <div
+                        style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 0.25rem; letter-spacing: 0.05em;">
+                        Maksud Perjalanan / Perihal</div>
                     <div style="font-size: 1rem; font-weight: 700; color: #1e293b; line-height: 1.5;">{{ surat_tugas.maksud_perjalanan|default:surat_tugas.perihal }}</div>
                 </div>
 
                 <!-- Info Grid -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-                    
+
                     <!-- Waktu & Durasi -->
-                    <div style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
-                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #fef2f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div
+                        style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 8px; background: #fef2f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <i class="fas fa-calendar-alt" style="color: var(--primary); font-size: 1.2rem;"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Waktu Perjalanan</div>
+                            <div
+                                style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">
+                                Waktu Perjalanan</div>
                             <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
                                 {{ surat_tugas.tanggal_berangkat|date:"d M Y" }} s/d {{ surat_tugas.tanggal_kembali|date:"d M Y" }}
                             </div>
@@ -180,44 +218,61 @@
                     </div>
 
                     <!-- Rute / Tempat -->
-                    <div style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
-                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div
+                        style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 8px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <i class="fas fa-map-marked-alt" style="color: #15803d; font-size: 1.2rem;"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Rute / Tujuan</div>
+                            <div
+                                style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">
+                                Rute / Tujuan</div>
                             <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
-                                {{ surat_tugas.tempat_berangkat }} <i class="fas fa-arrow-right" style="font-size: 0.75rem; color: #94a3b8; margin: 0 0.25rem;"></i> {{ surat_tugas.tempat_tujuan }}
+                                {{ surat_tugas.tempat_berangkat }} <i class="fas fa-arrow-right"
+                                    style="font-size: 0.75rem; color: #94a3b8; margin: 0 0.25rem;"></i> {{ surat_tugas.tempat_tujuan }}
                             </div>
                             <div style="font-size: 0.75rem; color: #64748b;">
-                                Provinsi SBM: <strong>{{ surat_tugas.tujuan_provinsi.nama }}</strong> (SBM {{ surat_tugas.tahun_sbm }}{% if sbm_dokumen %} - <a href="{{ sbm_dokumen.file_pdf.url }}" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none; border-bottom: 1px dashed var(--primary);"><i class="fas fa-file-pdf"></i> PDF</a>{% endif %})
+                                Provinsi SBM: <strong>{{ surat_tugas.tujuan_provinsi.nama }}</strong> (SBM {{ surat_tugas.tahun_sbm }}{% if sbm_dokumen %} - <a href="{{ sbm_dokumen.file_pdf.url }}"
+                                    target="_blank"
+                                    style="color: var(--primary); font-weight: 600; text-decoration: none; border-bottom: 1px dashed var(--primary);"><i
+                                        class="fas fa-file-pdf"></i> PDF</a>{% endif %})
                             </div>
                         </div>
                     </div>
 
                     <!-- Sumber Anggaran -->
-                    <div style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
-                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div
+                        style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 8px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <i class="fas fa-wallet" style="color: #1d4ed8; font-size: 1.2rem;"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Sumber Anggaran</div>
+                            <div
+                                style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">
+                                Sumber Anggaran</div>
                             <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem; word-break: break-all;">
                                 {{ surat_tugas.anggaran.kode_dipa|default:"-" }}
                             </div>
-                            <div style="font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">
+                            <div
+                                style="font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">
                                 {{ surat_tugas.anggaran.nama_kegiatan }}
                             </div>
                         </div>
                     </div>
 
                     <!-- Ketentuan Perjalanan -->
-                    <div style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
-                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #faf5ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div
+                        style="border: 1px solid #f1f5f9; border-radius: 0.5rem; padding: 1rem; background: #ffffff; display: flex; gap: 1rem; align-items: center;">
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 8px; background: #faf5ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <i class="fas fa-exchange-alt" style="color: #6b21a8; font-size: 1.2rem;"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Ketentuan Perjalanan</div>
+                            <div
+                                style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">
+                                Ketentuan Perjalanan</div>
                             <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
                                 {{ surat_tugas.get_jenis_perjalanan_display }}
                             </div>
@@ -232,50 +287,70 @@
         </div>
 
         <!-- Hidden Inputs for JS/Backend calculations compatibility -->
-        <input type="hidden" id="id_tanggal_berangkat" name="tanggal_berangkat" value="{{ surat_tugas.tanggal_berangkat|date:'Y-m-d' }}">
-        <input type="hidden" id="id_tanggal_kembali" name="tanggal_kembali" value="{{ surat_tugas.tanggal_kembali|date:'Y-m-d' }}">
-        <input type="hidden" id="id_tempat_berangkat" name="tempat_berangkat" value="{{ surat_tugas.tempat_berangkat }}">
+        <input type="hidden" id="id_tanggal_berangkat" name="tanggal_berangkat"
+            value="{{ surat_tugas.tanggal_berangkat|date:'Y-m-d' }}">
+        <input type="hidden" id="id_tanggal_kembali" name="tanggal_kembali"
+            value="{{ surat_tugas.tanggal_kembali|date:'Y-m-d' }}">
+        <input type="hidden" id="id_tempat_berangkat" name="tempat_berangkat"
+            value="{{ surat_tugas.tempat_berangkat }}">
         <input type="hidden" id="id_tempat_tujuan" name="tempat_tujuan" value="{{ surat_tugas.tempat_tujuan }}">
-        <input type="hidden" id="id_tujuan_provinsi" name="tujuan_provinsi" value="{{ surat_tugas.tujuan_provinsi.id }}">
-        <input type="hidden" id="id_tujuan_provinsi_nama" name="tujuan_provinsi_nama" value="{{ surat_tugas.tujuan_provinsi.nama }}">
+        <input type="hidden" id="id_tujuan_provinsi" name="tujuan_provinsi"
+            value="{{ surat_tugas.tujuan_provinsi.id }}">
+        <input type="hidden" id="id_tujuan_provinsi_nama" name="tujuan_provinsi_nama"
+            value="{{ surat_tugas.tujuan_provinsi.nama }}">
         <input type="hidden" id="id_tahun_sbm" name="tahun_sbm" value="{{ surat_tugas.tahun_sbm }}">
-        <input type="hidden" id="id_maksud_perjalanan" name="maksud_perjalanan" value="{{ surat_tugas.maksud_perjalanan|default:surat_tugas.perihal }}">
+        <input type="hidden" id="id_maksud_perjalanan" name="maksud_perjalanan"
+            value="{{ surat_tugas.maksud_perjalanan|default:surat_tugas.perihal }}">
         <input type="hidden" id="id_anggaran" name="anggaran" value="{{ surat_tugas.anggaran.id }}">
-        <input type="hidden" id="id_jenis_perjalanan" name="jenis_perjalanan" value="{{ surat_tugas.jenis_perjalanan }}">
-        <input type="hidden" id="id_jenis_transportasi" name="jenis_transportasi" value="{{ surat_tugas.jenis_transportasi }}">
+        <input type="hidden" id="id_jenis_perjalanan" name="jenis_perjalanan"
+            value="{{ surat_tugas.jenis_perjalanan }}">
+        <input type="hidden" id="id_jenis_transportasi" name="jenis_transportasi"
+            value="{{ surat_tugas.jenis_transportasi }}">
 
         <!-- Hidden Biaya Formset fields -->
         {{ biaya_formset.management_form }}
         {% for b_form in biaya_formset %}
-            {{ b_form.id }}
+        {{ b_form.id }}
         {% endfor %}
 
         <!-- Section 3: Berkas Pendukung -->
         <div id="berkas-original-container" style="display: none;">
             {{ berkas_formset.management_form }}
             {% for br_form in berkas_formset %}
-            <div class="formset-row" style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; position: relative; margin-bottom: 1rem;">
+            <div class="formset-row"
+                style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; position: relative; margin-bottom: 1rem;">
                 {{ br_form.id }}
                 <!-- Close/Delete Button for dynamic rows -->
-                <button type="button" class="remove-row-btn" style="position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: color 0.2s;" onclick="removeFormRow(this)">
+                <button type="button" class="remove-row-btn"
+                    style="position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: color 0.2s;"
+                    onclick="removeFormRow(this)">
                     <i class="fas fa-times"></i>
                 </button>
-                <div class="berkas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
+                <div class="berkas-grid"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
                     <div class="form-group">
                         <label class="form-label">Jenis Berkas</label>
                         <!-- Badge for plane ticket route -->
-                        <div class="ticket-route-badge-container" style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
-                            <span class="ticket-route-text" style="font-size: 0.75rem; color: #1d4ed8; font-weight: 600;"></span>
-                            <button type="button" class="edit-ticket-route-btn" style="background: none; border: none; color: #2563eb; cursor: pointer; padding: 0; font-size: 0.75rem;" title="Ubah Rute">
+                        <div class="ticket-route-badge-container"
+                            style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
+                            <span class="ticket-route-text"
+                                style="font-size: 0.75rem; color: #1d4ed8; font-weight: 600;"></span>
+                            <button type="button" class="edit-ticket-route-btn"
+                                style="background: none; border: none; color: #2563eb; cursor: pointer; padding: 0; font-size: 0.75rem;"
+                                title="Ubah Rute">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
                         </div>
                         <input type="hidden" class="ticket-tag-hidden" value="">
 
                         <!-- Badge for hotel segment selection -->
-                        <div class="hotel-route-badge-container" style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
-                            <span class="hotel-route-text" style="font-size: 0.75rem; color: #047857; font-weight: 600;"></span>
-                            <button type="button" class="edit-hotel-route-btn" style="background: none; border: none; color: #059669; cursor: pointer; padding: 0; font-size: 0.75rem;" title="Ubah Akomodasi">
+                        <div class="hotel-route-badge-container"
+                            style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
+                            <span class="hotel-route-text"
+                                style="font-size: 0.75rem; color: #047857; font-weight: 600;"></span>
+                            <button type="button" class="edit-hotel-route-btn"
+                                style="background: none; border: none; color: #059669; cursor: pointer; padding: 0; font-size: 0.75rem;"
+                                title="Ubah Akomodasi">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
                         </div>
@@ -295,14 +370,17 @@
                     <div class="form-group">
                         <label class="form-label">Keterangan</label>
                         {{ br_form.keterangan }}
-                        {% if br_form.keterangan.errors %}<div class="error-msg">{{ br_form.keterangan.errors.0 }}</div>{% endif %}
+                        {% if br_form.keterangan.errors %}<div class="error-msg">{{ br_form.keterangan.errors.0 }}</div>
+                        {% endif %}
                     </div>
                     <div class="form-group file-upload-wrapper" style="transition: all 0.3s ease;">
                         <label class="form-label">Upload File</label>
                         {{ br_form.file }}
                         {% if br_form.instance.file %}
-                        <div style="margin-top: 0.25rem; background: #eff6ff; padding: 0.5rem; border-radius: 0.375rem; border: 1px dashed #93c5fd;">
-                            <a href="{{ br_form.instance.file.url }}" target="_blank" style="font-size: 0.75rem; color: #1d4ed8; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600;">
+                        <div
+                            style="margin-top: 0.25rem; background: #eff6ff; padding: 0.5rem; border-radius: 0.375rem; border: 1px dashed #93c5fd;">
+                            <a href="{{ br_form.instance.file.url }}" target="_blank"
+                                style="font-size: 0.75rem; color: #1d4ed8; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600;">
                                 <i class="fas fa-external-link-alt"></i> Lihat File{% if br_form.instance.jenis_berkas %} - {{ br_form.instance.jenis_berkas.nama }}{% else %} Saat Ini{% endif %}
                             </a>
                         </div>
@@ -323,7 +401,8 @@
         <div class="card form-section" id="section-uang-harian">
             <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
                 <span><i class="fas fa-wallet"></i> Rincian Uang Harian & Transit</span>
-                <button type="button" id="btn-toggle-harian-breakdown" class="btn" style="font-size: 0.8rem; background: var(--glass-bg); border: 1px solid var(--border); color: var(--text-main); padding: 0.35rem 0.75rem; border-radius: 0.375rem;">
+                <button type="button" id="btn-toggle-harian-breakdown" class="btn"
+                    style="font-size: 0.8rem; background: var(--glass-bg); border: 1px solid var(--border); color: var(--text-main); padding: 0.35rem 0.75rem; border-radius: 0.375rem;">
                     {% if request.user.is_staff %}
                     <i class="fas fa-sliders-h"></i> Atur Detail Transit per Hari
                     {% else %}
@@ -331,37 +410,53 @@
                     {% endif %}
                 </button>
             </div>
-            
+
             <!-- Summary Area -->
-            <div class="harian-summary-card" style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+            <div class="harian-summary-card"
+                style="background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Provinsi Tujuan Utama</span>
+                        <span
+                            style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Provinsi
+                            Tujuan Utama</span>
                         <span style="font-size: 1rem; font-weight: 600; color: var(--text-main);">{{ surat_tugas.tujuan_provinsi.nama }}</span>
                     </div>
                     <div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Estimasi Total Uang Harian</span>
-                        <span id="harian-summary-total" style="font-size: 1rem; font-weight: 600; color: var(--text-main);">Rp 0</span>
+                        <span
+                            style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Estimasi
+                            Total Uang Harian</span>
+                        <span id="harian-summary-total"
+                            style="font-size: 1rem; font-weight: 600; color: var(--text-main);">Rp 0</span>
                     </div>
                 </div>
             </div>
 
             <!-- Collapsible Table Formset -->
-            <div id="harian-breakdown-container" style="display: none; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div id="harian-breakdown-container"
+                style="display: none; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
                 {{ harian_formset.management_form }}
                 <div style="overflow-x: auto;">
                     <table class="table" style="width: 100%; border-collapse: collapse; min-width: 600px;">
                         <thead>
                             <tr style="border-bottom: 1px solid var(--border); text-align: left;">
-                                <th style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 120px; font-weight: 600;">Tanggal</th>
-                                <th style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Provinsi SBM</th>
-                                <th style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 220px; font-weight: 600;">Jenis Perjalanan Dinas</th>
-                                <th style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 140px; text-align: right; font-weight: 600;">Estimasi Rate</th>
+                                <th
+                                    style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 120px; font-weight: 600;">
+                                    Tanggal</th>
+                                <th
+                                    style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+                                    Provinsi SBM</th>
+                                <th
+                                    style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 220px; font-weight: 600;">
+                                    Jenis Perjalanan Dinas</th>
+                                <th
+                                    style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); width: 140px; text-align: right; font-weight: 600;">
+                                    Estimasi Rate</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for h_form in harian_formset %}
-                            <tr class="harian-row" style="border-bottom: 1px solid var(--border); vertical-align: middle;">
+                            <tr class="harian-row"
+                                style="border-bottom: 1px solid var(--border); vertical-align: middle;">
                                 {{ h_form.id }}
                                 {{ h_form.hari_ke }}
                                 {{ h_form.tanggal }}
@@ -370,26 +465,27 @@
                                 </td>
                                 <td style="padding: 0.5rem;">
                                     {% if request.user.is_staff %}
-                                        {{ h_form.provinsi }}
+                                    {{ h_form.provinsi }}
                                     {% else %}
-                                        <span style="font-size: 0.875rem; color: var(--text-main);">{{ h_form.instance.provinsi.nama }}</span>
-                                        <div style="display: none;">
-                                            {{ h_form.provinsi }}
-                                        </div>
+                                    <span style="font-size: 0.875rem; color: var(--text-main);">{{ h_form.instance.provinsi.nama }}</span>
+                                    <div style="display: none;">
+                                        {{ h_form.provinsi }}
+                                    </div>
                                     {% endif %}
                                 </td>
                                 <td style="padding: 0.5rem;">
                                     {% if request.user.is_staff %}
-                                        {{ h_form.jenis_harian }}
+                                    {{ h_form.jenis_harian }}
                                     {% else %}
-                                        <span style="font-size: 0.875rem; color: var(--text-main);">{{ h_form.instance.get_jenis_harian_display }}</span>
-                                        <div style="display: none;">
-                                            {{ h_form.jenis_harian }}
-                                        </div>
+                                    <span style="font-size: 0.875rem; color: var(--text-main);">{{ h_form.instance.get_jenis_harian_display }}</span>
+                                    <div style="display: none;">
+                                        {{ h_form.jenis_harian }}
+                                    </div>
                                     {% endif %}
                                 </td>
                                 <td style="padding: 0.5rem; text-align: right; vertical-align: middle;">
-                                    <span class="badge harian-rate-preview" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #10b981; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; font-weight: 600; display: inline-block;">
+                                    <span class="badge harian-rate-preview"
+                                        style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #10b981; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; font-weight: 600; display: inline-block;">
                                         Rp 0
                                     </span>
                                 </td>
@@ -409,7 +505,8 @@
             <div id="berkas-penginapan-container" style="display: flex; flex-direction: column; gap: 1rem;">
                 <!-- Penginapan rows will be appended here by JS on load -->
             </div>
-            <button type="button" id="add-berkas-penginapan-btn" class="btn" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
+            <button type="button" id="add-berkas-penginapan-btn" class="btn"
+                style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
                 <i class="fas fa-plus"></i> Tambah Berkas Penginapan
             </button>
         </div>
@@ -422,7 +519,8 @@
             <div id="berkas-nominal-container" style="display: flex; flex-direction: column; gap: 1rem;">
                 <!-- Nominal rows will be appended here by JS on load -->
             </div>
-            <button type="button" id="add-berkas-nominal-btn" class="btn" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
+            <button type="button" id="add-berkas-nominal-btn" class="btn"
+                style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
                 <i class="fas fa-plus"></i> Tambah Berkas Transportasi
             </button>
         </div>
@@ -435,34 +533,47 @@
             <div id="berkas-non-nominal-container" style="display: flex; flex-direction: column; gap: 1rem;">
                 <!-- Non-nominal rows will be appended here by JS on load -->
             </div>
-            <button type="button" id="add-berkas-non-nominal-btn" class="btn" style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
+            <button type="button" id="add-berkas-non-nominal-btn" class="btn"
+                style="background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--border); width: 100%; margin-top: 1rem;">
                 <i class="fas fa-plus"></i> Tambah Berkas Administratif (Tanpa Nominal)
             </button>
         </div>
 
         <!-- Empty form template for dynamic addition -->
         <div id="berkas-empty-form" style="display: none;">
-            <div class="formset-row" style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; position: relative;">
+            <div class="formset-row"
+                style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; position: relative;">
                 <!-- Close/Delete Button for dynamic rows -->
-                <button type="button" class="remove-row-btn" style="position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: color 0.2s;" onclick="removeFormRow(this)">
+                <button type="button" class="remove-row-btn"
+                    style="position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: color 0.2s;"
+                    onclick="removeFormRow(this)">
                     <i class="fas fa-times"></i>
                 </button>
-                <div class="berkas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
+                <div class="berkas-grid"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
                     <div class="form-group">
                         <label class="form-label">Jenis Berkas</label>
                         <!-- Badge for plane ticket route -->
-                        <div class="ticket-route-badge-container" style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
-                            <span class="ticket-route-text" style="font-size: 0.75rem; color: #1d4ed8; font-weight: 600;"></span>
-                            <button type="button" class="edit-ticket-route-btn" style="background: none; border: none; color: #2563eb; cursor: pointer; padding: 0; font-size: 0.75rem;" title="Ubah Rute">
+                        <div class="ticket-route-badge-container"
+                            style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
+                            <span class="ticket-route-text"
+                                style="font-size: 0.75rem; color: #1d4ed8; font-weight: 600;"></span>
+                            <button type="button" class="edit-ticket-route-btn"
+                                style="background: none; border: none; color: #2563eb; cursor: pointer; padding: 0; font-size: 0.75rem;"
+                                title="Ubah Rute">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
                         </div>
                         <input type="hidden" class="ticket-tag-hidden" value="">
 
                         <!-- Badge for hotel segment selection -->
-                        <div class="hotel-route-badge-container" style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
-                            <span class="hotel-route-text" style="font-size: 0.75rem; color: #047857; font-weight: 600;"></span>
-                            <button type="button" class="edit-hotel-route-btn" style="background: none; border: none; color: #059669; cursor: pointer; padding: 0; font-size: 0.75rem;" title="Ubah Akomodasi">
+                        <div class="hotel-route-badge-container"
+                            style="display: none; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.375rem 0.75rem; border-radius: 0.375rem; justify-content: space-between;">
+                            <span class="hotel-route-text"
+                                style="font-size: 0.75rem; color: #047857; font-weight: 600;"></span>
+                            <button type="button" class="edit-hotel-route-btn"
+                                style="background: none; border: none; color: #059669; cursor: pointer; padding: 0; font-size: 0.75rem;"
+                                title="Ubah Akomodasi">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
                         </div>
@@ -495,7 +606,8 @@
             <button type="submit" name="action" value="save" class="btn btn-primary" style="flex: 1;">
                 <i class="fas fa-save"></i> Simpan Draft
             </button>
-            <button type="submit" name="action" value="submit_verification" class="btn" style="background: #059669; color: white; flex: 1;">
+            <button type="submit" name="action" value="submit_verification" class="btn"
+                style="background: #059669; color: white; flex: 1;">
                 <i class="fas fa-paper-plane"></i> Ajukan Verifikasi
             </button>
             {% else %}
@@ -509,14 +621,20 @@
 
     <!-- Sidebar Info -->
     <div class="sticky-summary">
-        <div class="card st-preview-card" onclick="openSTModal()" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; cursor: pointer; transition: transform 0.2s; position: relative; overflow: hidden;">
+        <div class="card st-preview-card" onclick="openSTModal()"
+            style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; cursor: pointer; transition: transform 0.2s; position: relative; overflow: hidden;">
             <div style="position: absolute; top: 0; right: 0; padding: 0.5rem; background: rgba(255,255,255,0.1);">
                 <i class="fas fa-search-plus" style="font-size: 0.75rem; color: #94a3b8;"></i>
             </div>
-            <h3 style="margin-bottom: 1.5rem; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Surat Tugas</h3>
+            <h3
+                style="margin-bottom: 1.5rem; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
+                Surat Tugas</h3>
             <div style="margin-bottom: 1.5rem;">
-                <div style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem;">{{ surat_tugas.nomor_surat }}</div>
-                <div style="font-size: 0.875rem; color: #cbd5e1; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ surat_tugas.perihal }}</div>
+                <div style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem;">{{ surat_tugas.nomor_surat }}
+                </div>
+                <div
+                    style="font-size: 0.875rem; color: #cbd5e1; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    {{ surat_tugas.perihal }}</div>
             </div>
             <div style="border-top: 1px solid #334155; padding-top: 1.5rem;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
@@ -548,192 +666,253 @@
                 <i class="fas fa-wallet" style="color: var(--primary);"></i>
                 <h4 style="font-size: 0.875rem; font-weight: 700;">Rincian Biaya Perjalanan Dinas</h4>
             </div>
-            
-            <div id="cost-preview-container" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 0.25rem 0;">
+
+            <div id="cost-preview-container"
+                style="display: flex; flex-direction: column; gap: 0.75rem; padding: 0.25rem 0;">
                 <!-- Uang Harian -->
                 <div style="border-bottom: 1px dashed var(--border); padding-bottom: 0.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCostDetail('harian')">
-                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; user-select: none;">
-                            <i id="icon-harian" class="fas fa-chevron-right" style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
+                        onclick="toggleCostDetail('harian')">
+                        <span
+                            style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; user-select: none;">
+                            <i id="icon-harian" class="fas fa-chevron-right"
+                                style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
                             Uang Harian
                         </span>
-                        <span id="preview-uang-harian" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_harian_riil|intcomma }}</span>
+                        <span id="preview-uang-harian"
+                            style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_harian_riil|intcomma }}</span>
                     </div>
-                    <div id="detail-harian" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
+                    <div id="detail-harian"
+                        style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
                         {% if breakdown_initial and breakdown_initial.breakdown_categories.uang_harian.items %}
-                            <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
-                                        <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
-                                        <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
-                                        <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in breakdown_initial.breakdown_categories.uang_harian.items %}
-                                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
-                                                {{ item.keterangan }}
-                                                {% if item.file_url %}
-                                                    <a href="{{ item.file_url }}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
-                                                        <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </td>
-                                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
-                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|intcomma }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <table
+                            style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                    <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                                    <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">
+                                        Qty</th>
+                                    <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">
+                                        Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in breakdown_initial.breakdown_categories.uang_harian.items %}
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                        {{ item.keterangan }}
+                                        {% if item.file_url %}
+                                        <a href="{{ item.file_url }}" target="_blank"
+                                            style="margin-left: 4px; color: #0284c7; text-decoration: none;"
+                                            title="Lihat berkas">
+                                            <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
+                                    <td
+                                        style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">
+                                        Rp {{ item.total|intcomma }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                         {% else %}
-                            <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
+                        <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Uang Representasi -->
                 <div style="border-bottom: 1px dashed var(--border); padding-bottom: 0.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCostDetail('representasi')">
-                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; user-select: none;">
-                            <i id="icon-representasi" class="fas fa-chevron-right" style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
+                        onclick="toggleCostDetail('representasi')">
+                        <span
+                            style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; user-select: none;">
+                            <i id="icon-representasi" class="fas fa-chevron-right"
+                                style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
                             Uang Representasi
                         </span>
-                        <span id="preview-uang-representasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_representasi_riil|intcomma }}</span>
+                        <span id="preview-uang-representasi"
+                            style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.uang_representasi_riil|intcomma }}</span>
                     </div>
-                    <div id="detail-representasi" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
+                    <div id="detail-representasi"
+                        style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
                         {% if breakdown_initial and breakdown_initial.breakdown_categories.uang_representasi.items %}
-                            <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
-                                        <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
-                                        <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
-                                        <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in breakdown_initial.breakdown_categories.uang_representasi.items %}
-                                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
-                                                {{ item.keterangan }}
-                                                {% if item.file_url %}
-                                                    <a href="{{ item.file_url }}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
-                                                        <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </td>
-                                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
-                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|intcomma }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <table
+                            style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                    <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                                    <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">
+                                        Qty</th>
+                                    <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">
+                                        Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in breakdown_initial.breakdown_categories.uang_representasi.items %}
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                        {{ item.keterangan }}
+                                        {% if item.file_url %}
+                                        <a href="{{ item.file_url }}" target="_blank"
+                                            style="margin-left: 4px; color: #0284c7; text-decoration: none;"
+                                            title="Lihat berkas">
+                                            <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
+                                    <td
+                                        style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">
+                                        Rp {{ item.total|intcomma }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                         {% else %}
-                            <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
+                        <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Biaya Penginapan -->
                 <div style="border-bottom: 1px dashed var(--border); padding-bottom: 0.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCostDetail('penginapan')">
-                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; user-select: none;">
-                            <i id="icon-penginapan" class="fas fa-chevron-right" style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
+                        onclick="toggleCostDetail('penginapan')">
+                        <span
+                            style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; user-select: none;">
+                            <i id="icon-penginapan" class="fas fa-chevron-right"
+                                style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
                             Biaya Penginapan
                         </span>
-                        <span id="preview-biaya-penginapan" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_penginapan_riil|intcomma }}</span>
+                        <span id="preview-biaya-penginapan"
+                            style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_penginapan_riil|intcomma }}</span>
                     </div>
-                    <div id="detail-penginapan" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
+                    <div id="detail-penginapan"
+                        style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
                         {% if breakdown_initial and breakdown_initial.breakdown_categories.biaya_penginapan.items %}
-                            <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
-                                        <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
-                                        <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
-                                        <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in breakdown_initial.breakdown_categories.biaya_penginapan.items %}
-                                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
-                                                {{ item.keterangan }}
-                                                {% if item.file_url %}
-                                                    <a href="{{ item.file_url }}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
-                                                        <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </td>
-                                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
-                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|intcomma }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <table
+                            style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                    <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                                    <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">
+                                        Qty</th>
+                                    <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">
+                                        Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in breakdown_initial.breakdown_categories.biaya_penginapan.items %}
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                        {{ item.keterangan }}
+                                        {% if item.file_url %}
+                                        <a href="{{ item.file_url }}" target="_blank"
+                                            style="margin-left: 4px; color: #0284c7; text-decoration: none;"
+                                            title="Lihat berkas">
+                                            <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
+                                    <td
+                                        style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">
+                                        Rp {{ item.total|intcomma }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                         {% else %}
-                            <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
+                        <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Biaya Transportasi -->
                 <div style="border-bottom: 1px dashed var(--border); padding-bottom: 0.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCostDetail('transportasi')">
-                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; user-select: none;">
-                            <i id="icon-transportasi" class="fas fa-chevron-right" style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
+                        onclick="toggleCostDetail('transportasi')">
+                        <span
+                            style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.35rem; user-select: none;">
+                            <i id="icon-transportasi" class="fas fa-chevron-right"
+                                style="font-size: 0.65rem; transition: transform 0.2s; color: var(--primary);"></i>
                             Biaya Transportasi
                         </span>
-                        <span id="preview-biaya-transportasi" style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_transportasi_riil|intcomma }}</span>
+                        <span id="preview-biaya-transportasi"
+                            style="font-size: 0.875rem; font-weight: 700; color: var(--text-main);">Rp {{ perjadin.biaya.biaya_transportasi_riil|intcomma }}</span>
                     </div>
-                    <div id="detail-transportasi" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
+                    <div id="detail-transportasi"
+                        style="display: none; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #475569; line-height: 1.4; font-family: 'Inter', sans-serif; background: #f8fafc; border-left: 2px solid var(--primary); border-radius: 0 4px 4px 0; margin-top: 0.25rem;">
                         {% if breakdown_initial and breakdown_initial.breakdown_categories.biaya_perjalanan.items %}
-                            <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
-                                        <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
-                                        <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">Qty</th>
-                                        <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in breakdown_initial.breakdown_categories.biaya_perjalanan.items %}
-                                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                                            <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
-                                                {{ item.keterangan }}
-                                                {% if item.file_url %}
-                                                    <a href="{{ item.file_url }}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
-                                                        <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </td>
-                                            <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
-                                            <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">Rp {{ item.total|intcomma }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <table
+                            style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                    <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
+                                    <th style="padding: 0.25rem 0; text-align: center; font-weight: 600; width: 20%;">
+                                        Qty</th>
+                                    <th style="padding: 0.25rem 0; text-align: right; font-weight: 600; width: 30%;">
+                                        Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in breakdown_initial.breakdown_categories.biaya_perjalanan.items %}
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
+                                        {{ item.keterangan }}
+                                        {% if item.file_url %}
+                                        <a href="{{ item.file_url }}" target="_blank"
+                                            style="margin-left: 4px; color: #0284c7; text-decoration: none;"
+                                            title="Lihat berkas">
+                                            <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 0.35rem 0; text-align: center; color: #475569;">{{ item.kuantitas }}</td>
+                                    <td
+                                        style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">
+                                        Rp {{ item.total|intcomma }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                         {% else %}
-                            <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
+                        <span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>
                         {% endif %}
                     </div>
                 </div>
             </div>
-            
+
             <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                <div style="padding: 0.75rem 1rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
-                    <span style="font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">Total Dibayarkan</span>
-                    <span id="preview-total-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">Rp {{ perjadin.biaya.total_dibayarkan|intcomma }}</span>
+                <div
+                    style="padding: 0.75rem 1rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
+                    <span
+                        style="font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">Total
+                        Dibayarkan</span>
+                    <span id="preview-total-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">Rp
+                        {{ perjadin.biaya.total_dibayarkan|intcomma }}</span>
                 </div>
-                <div id="row-total-tidak-dibayarkan" style="padding: 0.75rem 1rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.02) 0%, rgba(220, 38, 38, 0.02) 100%); border-radius: 0.5rem; border: 1px dashed #dc2626; display: {% if perjadin.biaya.total_tidak_dibayarkan > 0 %}flex{% else %}none{% endif %}; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
-                    <span style="font-size: 0.75rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em;">Total Tidak Dibayarkan</span>
-                    <span id="preview-total-tidak-dibayarkan" style="font-size: 1.15rem; font-weight: 800; color: #dc2626;">Rp {{ perjadin.biaya.total_tidak_dibayarkan|intcomma }}</span>
+                <div id="row-total-tidak-dibayarkan"
+                    style="padding: 0.75rem 1rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.02) 0%, rgba(220, 38, 38, 0.02) 100%); border-radius: 0.5rem; border: 1px dashed #dc2626; display: {% if perjadin.biaya.total_tidak_dibayarkan > 0 %}flex{% else %}none{% endif %}; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
+                    <span
+                        style="font-size: 0.75rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em;">Total
+                        Tidak Dibayarkan</span>
+                    <span id="preview-total-tidak-dibayarkan"
+                        style="font-size: 1.15rem; font-weight: 800; color: #dc2626;">Rp {{ perjadin.biaya.total_tidak_dibayarkan|intcomma }}</span>
                 </div>
-                <div id="row-warning-overlimit" style="padding: 0.75rem 1rem; background: #fff1f2; border-radius: 0.5rem; border: 1px solid #fda4af; display: none; flex-direction: column; gap: 0.25rem; box-shadow: var(--shadow-sm);">
+                <div id="row-warning-overlimit"
+                    style="padding: 0.75rem 1rem; background: #fff1f2; border-radius: 0.5rem; border: 1px solid #fda4af; display: none; flex-direction: column; gap: 0.25rem; box-shadow: var(--shadow-sm);">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-exclamation-triangle" style="color: #e11d48;"></i>
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #be123c; text-transform: uppercase;">Melebihi Batas Malam</span>
+                        <span
+                            style="font-size: 0.75rem; font-weight: 700; color: #be123c; text-transform: uppercase;">Melebihi
+                            Batas Malam</span>
                     </div>
-                    <span style="font-size: 0.75rem; color: #9f1239; line-height: 1.4;">Total malam hotel + lumpsum melebihi batas durasi perjalanan dinas. Mohon sesuaikan jumlah malam menginap.</span>
+                    <span style="font-size: 0.75rem; color: #9f1239; line-height: 1.4;">Total malam hotel + lumpsum
+                        melebihi batas durasi perjalanan dinas. Mohon sesuaikan jumlah malam menginap.</span>
                 </div>
             </div>
         </div>
@@ -758,15 +937,19 @@
             </div>
             <div class="info-row">
                 <div class="info-label">Perihal</div>
-                <div class="info-value" style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; line-height: 1.6;">{{ surat_tugas.perihal }}</div>
+                <div class="info-value"
+                    style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; line-height: 1.6;">
+                    {{ surat_tugas.perihal }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Pegawai Ditugaskan</div>
                 <div class="info-value">
                     <div style="display: grid; gap: 0.5rem;">
                         {% for p in surat_tugas.pegawai.all %}
-                        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f1f5f9; border-radius: 0.5rem;">
-                            <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                        <div
+                            style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f1f5f9; border-radius: 0.5rem;">
+                            <div
+                                style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
                                 <i class="fas fa-user"></i>
                             </div>
                             <div>
@@ -781,12 +964,15 @@
             {% if surat_tugas.file_path %}
             <div style="margin-top: 2rem;">
                 <div class="info-label">Pratinjau Dokumen</div>
-                <div id="pdf-preview-container" style="width: 100%; height: 400px; border-radius: 0.75rem; overflow: hidden; border: 1px solid #e2e8f0; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">
-                    <iframe id="st-pdf-iframe" src="" style="width: 100%; height: 100%; border: none;" allow="autoplay"></iframe>
+                <div id="pdf-preview-container"
+                    style="width: 100%; height: 400px; border-radius: 0.75rem; overflow: hidden; border: 1px solid #e2e8f0; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">
+                    <iframe id="st-pdf-iframe" src="" style="width: 100%; height: 100%; border: none;"
+                        allow="autoplay"></iframe>
                     <div id="preview-error" style="display: none; text-align: center; padding: 2rem;">
                         <i class="fas fa-file-pdf fa-3x" style="color: #94a3b8; margin-bottom: 1rem;"></i>
                         <p style="font-size: 0.875rem; color: var(--text-muted);">Pratinjau tidak tersedia langsung.</p>
-                        <a href="{{ surat_tugas.file_path.url }}" target="_blank" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Buka di Tab Baru</a>
+                        <a href="{{ surat_tugas.file_path.url }}" target="_blank" class="btn btn-primary"
+                            style="margin-top: 1rem; display: inline-block;">Buka di Tab Baru</a>
                     </div>
                 </div>
             </div>
@@ -805,31 +991,39 @@
         <div class="modal-body" style="padding: 1.5rem;">
             <div class="form-group" style="margin-bottom: 1.25rem;">
                 <label class="form-label" style="font-weight: 600;">Kota Asal</label>
-                <select id="ticket-asal-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                <select id="ticket-asal-select" class="form-control"
+                    style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
                     <option value="">-- Pilih Kota Asal --</option>
                 </select>
             </div>
             <div class="form-group" style="margin-bottom: 1.25rem;">
                 <label class="form-label" style="font-weight: 600;">Kota Tujuan</label>
-                <select id="ticket-tujuan-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);" disabled>
+                <select id="ticket-tujuan-select" class="form-control"
+                    style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);"
+                    disabled>
                     <option value="">-- Pilih Kota Tujuan --</option>
                 </select>
             </div>
             <div class="form-group" style="margin-bottom: 1.25rem;">
                 <label class="form-label" style="font-weight: 600;">Kelas Tiket</label>
-                <select id="ticket-kelas-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);" disabled>
+                <select id="ticket-kelas-select" class="form-control"
+                    style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);"
+                    disabled>
                     <option value="">-- Pilih Kelas --</option>
                 </select>
             </div>
-            
-            <div id="ticket-sbm-preview" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between;">
+
+            <div id="ticket-sbm-preview"
+                style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between;">
                 <span style="font-size: 0.875rem; color: #065f46; font-weight: 600;">Plafon SBM (Tiket PP):</span>
                 <span id="ticket-sbm-amount" style="font-size: 1.125rem; color: #059669; font-weight: 700;">Rp 0</span>
             </div>
 
             <div style="display: flex; gap: 0.75rem;">
-                <button type="button" id="btn-save-ticket" class="btn btn-primary" style="flex: 1; padding: 0.625rem;" disabled>Simpan Rute</button>
-                <button type="button" class="btn" style="background: #e2e8f0; color: #475569; padding: 0.625rem;" onclick="closeTicketModal()">Batal</button>
+                <button type="button" id="btn-save-ticket" class="btn btn-primary" style="flex: 1; padding: 0.625rem;"
+                    disabled>Simpan Rute</button>
+                <button type="button" class="btn" style="background: #e2e8f0; color: #475569; padding: 0.625rem;"
+                    onclick="closeTicketModal()">Batal</button>
             </div>
         </div>
     </div>
@@ -844,33 +1038,45 @@
         </div>
         <div class="modal-body" style="padding: 1.5rem;">
             <div class="form-group" style="margin-bottom: 1.25rem;">
-                <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Provinsi (SBM)</label>
-                <select id="hotel-province-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Provinsi
+                    (SBM)</label>
+                <select id="hotel-province-select" class="form-control"
+                    style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
                     <!-- Will be populated dynamically via JavaScript -->
                 </select>
             </div>
             <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem;">
                 <div class="form-group" style="flex: 1;">
-                    <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Tanggal Check-in</label>
-                    <input type="date" id="hotel-check-in" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                    <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Tanggal
+                        Check-in</label>
+                    <input type="date" id="hotel-check-in" class="form-control"
+                        style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Tanggal Check-out</label>
-                    <input type="date" id="hotel-check-out" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                    <label class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Tanggal
+                        Check-out</label>
+                    <input type="date" id="hotel-check-out" class="form-control"
+                        style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
                 </div>
             </div>
-            <div id="hotel-nights-preview" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.25rem; align-items: center; justify-content: space-between;">
+            <div id="hotel-nights-preview"
+                style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.25rem; align-items: center; justify-content: space-between;">
                 <span style="font-size: 0.875rem; color: #1e3a8a; font-weight: 600;">Jumlah Malam Menginap:</span>
-                <span id="hotel-nights-count" style="font-size: 1.125rem; color: #1d4ed8; font-weight: 700;">0 Malam</span>
+                <span id="hotel-nights-count" style="font-size: 1.125rem; color: #1d4ed8; font-weight: 700;">0
+                    Malam</span>
             </div>
             <div class="form-group" style="margin-bottom: 1.25rem;">
                 <label class="form-label" style="font-weight: 600;">Nama Hotel / Keterangan Tambahan</label>
-                <input type="text" id="hotel-user-desc" class="form-control" placeholder="Contoh: Hotel Grand Hyatt (Opsional)" style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                <input type="text" id="hotel-user-desc" class="form-control"
+                    placeholder="Contoh: Hotel Grand Hyatt (Opsional)"
+                    style="width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
             </div>
-            
+
             <div style="display: flex; gap: 0.75rem;">
-                <button type="button" id="btn-save-hotel" class="btn btn-primary" style="flex: 1; padding: 0.625rem;">Simpan Akomodasi</button>
-                <button type="button" class="btn" style="background: #e2e8f0; color: #475569; padding: 0.625rem;" onclick="closeHotelModal()">Batal</button>
+                <button type="button" id="btn-save-hotel" class="btn btn-primary"
+                    style="flex: 1; padding: 0.625rem;">Simpan Akomodasi</button>
+                <button type="button" class="btn" style="background: #e2e8f0; color: #475569; padding: 0.625rem;"
+                    onclick="closeHotelModal()">Batal</button>
             </div>
         </div>
     </div>
@@ -881,6 +1087,7 @@
         transform: translateY(-5px);
         box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.2);
     }
+
     /* Modal Styles */
     .modal {
         display: none;
@@ -894,6 +1101,7 @@
         backdrop-filter: blur(8px);
         animation: fadeIn 0.3s ease;
     }
+
     .modal-content {
         background-color: white;
         margin: 2% auto;
@@ -905,11 +1113,29 @@
         overflow: hidden;
         animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideDown { 
-        from { transform: translateY(-30px); opacity: 0; } 
-        to { transform: translateY(0); opacity: 1; } 
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
     }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-30px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
     .modal-header {
         padding: 1.25rem 2rem;
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
@@ -918,23 +1144,60 @@
         justify-content: space-between;
         align-items: center;
     }
-    .modal-header h2 { font-size: 1.125rem; margin: 0; font-weight: 700; letter-spacing: -0.025em; }
-    .close { color: rgba(255,255,255,0.8); font-size: 1.5rem; font-weight: 300; cursor: pointer; transition: color 0.2s; }
-    .close:hover { color: white; }
-    .modal-body { padding: 2rem; max-height: 85vh; overflow-y: auto; }
-    .info-row { margin-bottom: 1.5rem; }
-    .info-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-    .info-value { font-weight: 600; color: var(--text-main); font-size: 0.9375rem; }
+
+    .modal-header h2 {
+        font-size: 1.125rem;
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+    }
+
+    .close {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.5rem;
+        font-weight: 300;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .close:hover {
+        color: white;
+    }
+
+    .modal-body {
+        padding: 2rem;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .info-row {
+        margin-bottom: 1.5rem;
+    }
+
+    .info-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.9375rem;
+    }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    const nominalRequiredIds = {{ jenis_berkas_nominal|safe }};
-    const wajibRequiredIds = {{ jenis_berkas_wajib|safe }};
-    const penginapanRequiredIds = {{ jenis_berkas_penginapan|safe }};
-    const fbLuarIds = {{ jenis_berkas_fb_luar|safe }};
-    const fbDalamIds = {{ jenis_berkas_fb_dalam|safe }};
+    const nominalRequiredIds = {{ jenis_berkas_nominal| safe }};
+    const wajibRequiredIds = {{ jenis_berkas_wajib| safe }};
+    const penginapanRequiredIds = {{ jenis_berkas_penginapan| safe }};
+    const fbLuarIds = {{ jenis_berkas_fb_luar| safe }};
+    const fbDalamIds = {{ jenis_berkas_fb_dalam| safe }};
     const ticketPesawatIds = {{ jenis_berkas_tiket_pesawat|default:"[]"|safe }};
     const transportasiIds = {{ jenis_berkas_transportasi|default:"[]"|safe }};
     let originalOptions = [];
@@ -982,7 +1245,7 @@
         const nominalInput = row.querySelector('input[name$="-nominal"]');
         const select = row.querySelector('select[name$="-jenis_berkas"]');
         const isTidakMenginap = select && select.options[select.selectedIndex]?.text.toUpperCase().includes('TIDAK MENGINAP');
-        
+
         if (isBadgeActive) {
             if (malamWrapper) malamWrapper.style.display = 'none';
             if (keteranganWrapper) {
@@ -1173,7 +1436,7 @@
     function closeTicketModal() {
         document.getElementById('ticketModal').style.display = 'none';
         document.body.style.overflow = 'auto';
-        
+
         if (activeTicketRow) {
             const tagHidden = activeTicketRow.querySelector('.ticket-tag-hidden');
             const select = activeTicketRow.querySelector('select[name$="-jenis_berkas"]');
@@ -1282,11 +1545,11 @@
         const nominalWrapper = row.querySelector('.nominal-wrapper');
         const malamWrapper = row.querySelector('.malam-wrapper');
         const uploadWrapper = row.querySelector('.file-upload-wrapper');
-        
+
         const nominalInput = row.querySelector('input[name$="-nominal"]');
         const malamInput = row.querySelector('input[name$="-malam_menginap"]');
         const fileInput = row.querySelector('input[name$="-file"]');
-        
+
         if (!select) return;
 
         // Filter select options based on whether this row belongs to the specific section
@@ -1295,7 +1558,7 @@
         }
 
         const val = select.value ? parseInt(select.value) : null;
-        
+
         // 1. Handle Nominal Biaya Visibility & ReadOnly State
         const isLumpsumPenginapan = val && penginapanRequiredIds.includes(val) && !nominalRequiredIds.includes(val);
 
@@ -1359,7 +1622,7 @@
                 }
             }
         }
-        
+
         // 4. Handle Grid Columns Layout
         const berkasGrid = row.querySelector('.berkas-grid');
         if (berkasGrid) {
@@ -1374,7 +1637,7 @@
     function filterSelectOptions(selectElement, sectionType) {
         const valBefore = selectElement.value;
         selectElement.innerHTML = ''; // Clear options
-        
+
         originalOptions.forEach(opt => {
             if (opt.value === "") {
                 const newOpt = new Option(opt.text, opt.value);
@@ -1385,7 +1648,7 @@
             const optIsPenginapan = penginapanRequiredIds.includes(val);
             const optIsTransport = transportasiIds.includes(val);
             const optIsNominal = nominalRequiredIds.includes(val);
-            
+
             if (sectionType === 'penginapan' && optIsPenginapan) {
                 const newOpt = new Option(opt.text, opt.value);
                 selectElement.add(newOpt);
@@ -1397,7 +1660,7 @@
                 selectElement.add(newOpt);
             }
         });
-        
+
         selectElement.value = valBefore;
     }
 
@@ -1421,7 +1684,13 @@
         }
     }
 
+    let estimasiTimeout = null;
     function updateEstimasi() {
+        if (estimasiTimeout) clearTimeout(estimasiTimeout);
+        estimasiTimeout = setTimeout(doUpdateEstimasi, 500);
+    }
+
+    function doUpdateEstimasi() {
         const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
         const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
         const tujuanProvinsi = document.querySelector('#id_tujuan_provinsi')?.value;
@@ -1438,7 +1707,7 @@
                 const malamInput = row.querySelector('input[name$="-malam_menginap"]');
                 const deleteInput = row.querySelector('input[name$="-DELETE"]');
                 const idInput = row.querySelector('input[name$="-id"]');
-                
+
                 if (deleteInput && deleteInput.checked) return;
 
                 if (select) {
@@ -1499,61 +1768,61 @@
             },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) return;
-            
-            const formatRupiah = (val) => {
-                return 'Rp ' + parseFloat(val).toLocaleString('id-ID', {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                });
-            };
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) return;
 
-            const harianEl = document.querySelector('#preview-uang-harian');
-            const reprEl = document.querySelector('#preview-uang-representasi');
-            const hotelEl = document.querySelector('#preview-biaya-penginapan');
-            const transportEl = document.querySelector('#preview-biaya-transportasi');
-            const totalEl = document.querySelector('#preview-total-dibayarkan');
-            const tidakDibayarkanEl = document.querySelector('#preview-total-tidak-dibayarkan');
-            const rowTidakDibayarkanEl = document.querySelector('#row-total-tidak-dibayarkan');
- 
-            if (harianEl) harianEl.textContent = formatRupiah(data.uang_harian_riil);
-            if (reprEl) reprEl.textContent = formatRupiah(data.uang_representasi_riil);
-            if (hotelEl) hotelEl.textContent = formatRupiah(data.biaya_penginapan_riil);
-            if (transportEl) transportEl.textContent = formatRupiah(data.biaya_transportasi_riil);
-            if (totalEl) totalEl.textContent = formatRupiah(data.total_dibayarkan);
-
-            const harianSummaryTotal = document.querySelector('#harian-summary-total');
-            if (harianSummaryTotal) {
-                harianSummaryTotal.textContent = formatRupiah(data.uang_harian_riil);
-            }
-
-            if (data.harian_breakdown) {
-                const hrRows = document.querySelectorAll('.harian-row');
-                data.harian_breakdown.forEach(item => {
-                    hrRows.forEach(row => {
-                        const hkInput = row.querySelector('input[name$="-hari_ke"]');
-                        if (hkInput && parseInt(hkInput.value) === item.hari_ke) {
-                            const previewBadge = row.querySelector('.harian-rate-preview');
-                            if (previewBadge) {
-                                previewBadge.textContent = formatRupiah(item.rate);
-                            }
-                        }
+                const formatRupiah = (val) => {
+                    return 'Rp ' + parseFloat(val).toLocaleString('id-ID', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
                     });
-                });
-            }
+                };
 
-            const harianDetailEl = document.querySelector('#detail-harian');
-            const reprDetailEl = document.querySelector('#detail-representasi');
-            const hotelDetailEl = document.querySelector('#detail-penginapan');
-            const transportDetailEl = document.querySelector('#detail-transportasi');
+                const harianEl = document.querySelector('#preview-uang-harian');
+                const reprEl = document.querySelector('#preview-uang-representasi');
+                const hotelEl = document.querySelector('#preview-biaya-penginapan');
+                const transportEl = document.querySelector('#preview-biaya-transportasi');
+                const totalEl = document.querySelector('#preview-total-dibayarkan');
+                const tidakDibayarkanEl = document.querySelector('#preview-total-tidak-dibayarkan');
+                const rowTidakDibayarkanEl = document.querySelector('#row-total-tidak-dibayarkan');
 
-            const renderCompactBreakdown = (catData) => {
-                if (!catData || !catData.items || catData.items.length === 0) {
-                    return '<span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>';
+                if (harianEl) harianEl.textContent = formatRupiah(data.uang_harian_riil);
+                if (reprEl) reprEl.textContent = formatRupiah(data.uang_representasi_riil);
+                if (hotelEl) hotelEl.textContent = formatRupiah(data.biaya_penginapan_riil);
+                if (transportEl) transportEl.textContent = formatRupiah(data.biaya_transportasi_riil);
+                if (totalEl) totalEl.textContent = formatRupiah(data.total_dibayarkan);
+
+                const harianSummaryTotal = document.querySelector('#harian-summary-total');
+                if (harianSummaryTotal) {
+                    harianSummaryTotal.textContent = formatRupiah(data.uang_harian_riil);
                 }
-                let html = `<table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
+
+                if (data.harian_breakdown) {
+                    const hrRows = document.querySelectorAll('.harian-row');
+                    data.harian_breakdown.forEach(item => {
+                        hrRows.forEach(row => {
+                            const hkInput = row.querySelector('input[name$="-hari_ke"]');
+                            if (hkInput && parseInt(hkInput.value) === item.hari_ke) {
+                                const previewBadge = row.querySelector('.harian-rate-preview');
+                                if (previewBadge) {
+                                    previewBadge.textContent = formatRupiah(item.rate);
+                                }
+                            }
+                        });
+                    });
+                }
+
+                const harianDetailEl = document.querySelector('#detail-harian');
+                const reprDetailEl = document.querySelector('#detail-representasi');
+                const hotelDetailEl = document.querySelector('#detail-penginapan');
+                const transportDetailEl = document.querySelector('#detail-transportasi');
+
+                const renderCompactBreakdown = (catData) => {
+                    if (!catData || !catData.items || catData.items.length === 0) {
+                        return '<span style="color: #94a3b8; font-style: italic;">Tidak ada detail</span>';
+                    }
+                    let html = `<table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.725rem; margin-top: 0.25rem;">
                     <thead>
                         <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
                             <th style="padding: 0.25rem 0; text-align: left; font-weight: 600;">Keterangan</th>
@@ -1562,15 +1831,15 @@
                         </tr>
                     </thead>
                     <tbody>`;
-                catData.items.forEach(item => {
-                    let fileLink = '';
-                    if (item.file_url) {
-                        fileLink = `
+                    catData.items.forEach(item => {
+                        let fileLink = '';
+                        if (item.file_url) {
+                            fileLink = `
                             <a href="${item.file_url}" target="_blank" style="margin-left: 4px; color: #0284c7; text-decoration: none;" title="Lihat berkas">
                                 <i class="fas fa-file-alt" style="font-size: 0.65rem;"></i>
                             </a>`;
-                    }
-                    html += `
+                        }
+                        html += `
                         <tr style="border-bottom: 1px solid #f1f5f9;">
                             <td style="padding: 0.35rem 0; color: #334155; line-height: 1.2;">
                                 ${item.keterangan}${fileLink}
@@ -1578,86 +1847,86 @@
                             <td style="padding: 0.35rem 0; text-align: center; color: #475569;">${item.kuantitas}</td>
                             <td style="padding: 0.35rem 0; text-align: right; color: #0f172a; font-weight: 600;">${formatRupiah(item.total)}</td>
                         </tr>`;
-                });
-                html += `</tbody></table>`;
-                return html;
-            };
+                    });
+                    html += `</tbody></table>`;
+                    return html;
+                };
 
-            if (data.breakdown_categories) {
-                if (harianDetailEl) harianDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.uang_harian);
-                if (reprDetailEl) reprDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.uang_representasi);
-                if (hotelDetailEl) hotelDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.biaya_penginapan);
-                if (transportDetailEl) transportDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.biaya_perjalanan);
-            }
-
-            const unpaidVal = parseFloat(data.total_tidak_dibayarkan) || 0.0;
-            if (unpaidVal > 0) {
-                if (rowTidakDibayarkanEl) rowTidakDibayarkanEl.style.display = 'flex';
-                if (tidakDibayarkanEl) tidakDibayarkanEl.textContent = formatRupiah(unpaidVal);
-            } else {
-                if (rowTidakDibayarkanEl) rowTidakDibayarkanEl.style.display = 'none';
-            }
-
-            const warningOverlimitEl = document.querySelector('#row-warning-overlimit');
-            const submitBtn = document.querySelector('button[type="submit"]');
-            
-            if (data.over_limit) {
-                if (warningOverlimitEl) warningOverlimitEl.style.display = 'flex';
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.5';
-                    submitBtn.style.cursor = 'not-allowed';
-                    submitBtn.title = "Total klaim penginapan melebihi batas malam perjalanan.";
+                if (data.breakdown_categories) {
+                    if (harianDetailEl) harianDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.uang_harian);
+                    if (reprDetailEl) reprDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.uang_representasi);
+                    if (hotelDetailEl) hotelDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.biaya_penginapan);
+                    if (transportDetailEl) transportDetailEl.innerHTML = renderCompactBreakdown(data.breakdown_categories.biaya_perjalanan);
                 }
-            } else {
-                if (warningOverlimitEl) warningOverlimitEl.style.display = 'none';
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.style.opacity = '1';
-                    submitBtn.style.cursor = 'pointer';
-                    submitBtn.title = "";
+
+                const unpaidVal = parseFloat(data.total_tidak_dibayarkan) || 0.0;
+                if (unpaidVal > 0) {
+                    if (rowTidakDibayarkanEl) rowTidakDibayarkanEl.style.display = 'flex';
+                    if (tidakDibayarkanEl) tidakDibayarkanEl.textContent = formatRupiah(unpaidVal);
+                } else {
+                    if (rowTidakDibayarkanEl) rowTidakDibayarkanEl.style.display = 'none';
                 }
-            }
-            // Populate lumpsum nominal inputs dynamically
-            const plafonHotel = parseFloat(data.plafon_hotel) || 0;
-            const lumpsumNominal = 0.30 * plafonHotel;
-            
-            const rows = document.querySelectorAll('.formset-row');
-            rows.forEach(row => {
-                if (row.style.display !== 'none') {
-                    const select = row.querySelector('select[name$="-jenis_berkas"]');
-                    if (select) {
-                        const val = select.value ? parseInt(select.value) : null;
-                        const isLumpsum = val && penginapanRequiredIds.includes(val) && !nominalRequiredIds.includes(val);
-                        if (isLumpsum) {
-                            const malamInput = row.querySelector('input[name$="-malam_menginap"]');
-                            const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
-                            const nominalInput = row.querySelector('input[name$="-nominal"]');
-                            if (nominalInput) {
-                                if (fbLuarIds.includes(val) || fbDalamIds.includes(val)) {
-                                    nominalInput.value = '0';
-                                } else {
-                                    const calculatedValue = lumpsumNominal * malamVal;
-                                    nominalInput.value = calculatedValue.toLocaleString('id-ID', {
-                                        minimumFractionDigits: 0,
-                                        maximumFractionDigits: 0
-                                    });
+
+                const warningOverlimitEl = document.querySelector('#row-warning-overlimit');
+                const submitBtn = document.querySelector('button[type="submit"]');
+
+                if (data.over_limit) {
+                    if (warningOverlimitEl) warningOverlimitEl.style.display = 'flex';
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                        submitBtn.style.cursor = 'not-allowed';
+                        submitBtn.title = "Total klaim penginapan melebihi batas malam perjalanan.";
+                    }
+                } else {
+                    if (warningOverlimitEl) warningOverlimitEl.style.display = 'none';
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.style.cursor = 'pointer';
+                        submitBtn.title = "";
+                    }
+                }
+                // Populate lumpsum nominal inputs dynamically
+                const plafonHotel = parseFloat(data.plafon_hotel) || 0;
+                const lumpsumNominal = 0.30 * plafonHotel;
+
+                const rows = document.querySelectorAll('.formset-row');
+                rows.forEach(row => {
+                    if (row.style.display !== 'none') {
+                        const select = row.querySelector('select[name$="-jenis_berkas"]');
+                        if (select) {
+                            const val = select.value ? parseInt(select.value) : null;
+                            const isLumpsum = val && penginapanRequiredIds.includes(val) && !nominalRequiredIds.includes(val);
+                            if (isLumpsum) {
+                                const malamInput = row.querySelector('input[name$="-malam_menginap"]');
+                                const malamVal = malamInput ? parseInt(malamInput.value) || 0 : 0;
+                                const nominalInput = row.querySelector('input[name$="-nominal"]');
+                                if (nominalInput && nominalInput.readOnly) {
+                                    if (fbLuarIds.includes(val) || fbDalamIds.includes(val)) {
+                                        nominalInput.value = '0';
+                                    } else {
+                                        const calculatedValue = lumpsumNominal * malamVal;
+                                        nominalInput.value = calculatedValue.toLocaleString('id-ID', {
+                                            minimumFractionDigits: 0,
+                                            maximumFractionDigits: 0
+                                        });
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            });
-        })
-        .catch(err => console.error('Estimation error:', err));
+                });
+            })
+            .catch(err => console.error('Estimation error:', err));
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const originalContainer = document.querySelector('#berkas-original-container');
         const penginapanContainer = document.querySelector('#berkas-penginapan-container');
         const nominalContainer = document.querySelector('#berkas-nominal-container');
         const nonNominalContainer = document.querySelector('#berkas-non-nominal-container');
-        
+
         const addPenginapanBtn = document.querySelector('#add-berkas-penginapan-btn');
         const addNominalBtn = document.querySelector('#add-berkas-nominal-btn');
         const addNonNominalBtn = document.querySelector('#add-berkas-non-nominal-btn');
@@ -1691,7 +1960,7 @@
                 if (select) {
                     const val = select.value ? parseInt(select.value) : null;
                     const sectionType = getSectionType(val);
-                    
+
                     if (sectionType === 'penginapan') {
                         penginapanContainer.appendChild(row);
                     } else if (sectionType === 'nominal') {
@@ -1700,7 +1969,7 @@
                         nonNominalContainer.appendChild(row);
                     }
                     toggleFieldsBasedOnJenis(row, sectionType);
-                    
+
                     select.addEventListener('change', () => {
                         const newVal = select.value ? parseInt(select.value) : null;
                         const newSectionType = getSectionType(newVal);
@@ -1741,7 +2010,7 @@
                 const provSelect = row.querySelector('.harian-provinsi-select');
                 const jenisSelect = row.querySelector('.harian-jenis-select');
                 const tglInput = row.querySelector('input[name$="-tanggal"]');
-                
+
                 if (hariKeInput && provSelect && jenisSelect && tglInput) {
                     const provOpt = provSelect.options[provSelect.selectedIndex];
                     const provNama = provOpt ? provOpt.text : '';
@@ -1763,13 +2032,13 @@
             const checkOutVal = document.getElementById('hotel-check-out').value;
             const previewEl = document.getElementById('hotel-nights-preview');
             const countEl = document.getElementById('hotel-nights-count');
-            
+
             if (checkInVal && checkOutVal) {
                 const checkInDate = new Date(checkInVal);
                 const checkOutDate = new Date(checkOutVal);
                 const timeDiff = checkOutDate - checkInDate;
                 const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                
+
                 if (daysDiff > 0) {
                     countEl.textContent = `${daysDiff} Malam`;
                     previewEl.style.display = 'flex';
@@ -1791,9 +2060,9 @@
             // Get destination province
             const destProvId = document.querySelector('#id_tujuan_provinsi')?.value;
             const destProvNama = document.querySelector('#id_tujuan_provinsi_nama')?.value || 'Provinsi Utama';
-            
+
             const addedProvinceIds = new Set();
-            
+
             // Add main destination province first
             if (destProvId) {
                 const opt = document.createElement('option');
@@ -1818,7 +2087,7 @@
             // Set min and max limits for date inputs
             const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
             const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
-            
+
             const checkInInput = document.getElementById('hotel-check-in');
             const checkOutInput = document.getElementById('hotel-check-out');
 
@@ -1853,10 +2122,10 @@
             document.body.style.overflow = 'hidden';
         }
 
-        window.closeHotelModal = function() {
+        window.closeHotelModal = function () {
             document.getElementById('hotelModal').style.display = 'none';
             document.body.style.overflow = 'auto';
-            
+
             if (activeHotelRow) {
                 const tagHidden = activeHotelRow.querySelector('.hotel-tag-hidden');
                 const select = activeHotelRow.querySelector('select[name$="-jenis_berkas"]');
@@ -1877,7 +2146,7 @@
                 if (select) {
                     const descInput = row.querySelector('input[name$="-keterangan"]');
                     const tagHidden = row.querySelector('.hotel-tag-hidden');
-                    
+
                     if (descInput) {
                         const parsed = parsePenginapanKeterangan(descInput.value);
                         if (parsed) {
@@ -1915,7 +2184,7 @@
                 if (select) {
                     const descInput = row.querySelector('input[name$="-keterangan"]');
                     const tagHidden = row.querySelector('.ticket-tag-hidden');
-                    
+
                     if (descInput) {
                         const parsed = parseTicketKeterangan(descInput.value);
                         if (parsed) {
@@ -1951,7 +2220,7 @@
             const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
             const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
             const jenisPerjadin = document.querySelector('#id_jenis_perjalanan')?.value;
-            
+
             let maxNights = 0;
             if (jenisPerjadin !== 'fullboard_luar' && jenisPerjadin !== 'fullboard_dalam') {
                 if (tanggalBerangkat && tanggalKembali) {
@@ -1983,14 +2252,14 @@
         function addNewForm(sectionType) {
             const currentCount = parseInt(totalFormsInput.value);
             const templateHtml = document.querySelector('#berkas-empty-form').innerHTML;
-            
+
             // Replace prefix __prefix__ with count
             const resolvedHtml = templateHtml.replace(/__prefix__/g, currentCount);
-            
+
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = resolvedHtml;
             const newRow = tempDiv.firstElementChild;
-            
+
             if (sectionType === 'penginapan') {
                 penginapanContainer.appendChild(newRow);
             } else if (sectionType === 'nominal') {
@@ -2076,7 +2345,7 @@
         const btnToggleHarian = document.getElementById('btn-toggle-harian-breakdown');
         const harianBreakdownContainer = document.getElementById('harian-breakdown-container');
         if (btnToggleHarian && harianBreakdownContainer) {
-            btnToggleHarian.addEventListener('click', function() {
+            btnToggleHarian.addEventListener('click', function () {
                 if (harianBreakdownContainer.style.display === 'none') {
                     harianBreakdownContainer.style.display = 'block';
                     btnToggleHarian.innerHTML = '<i class="fas fa-times"></i> Tutup Detail Transit';
@@ -2102,7 +2371,7 @@
 
         const jenisPerjalananSelect = document.querySelector('#id_jenis_perjalanan');
         const sectionPenginapan = document.querySelector('#section-berkas-penginapan');
-        
+
         function checkFullboard() {
             if (!jenisPerjalananSelect) return;
             const val = jenisPerjalananSelect.value;
@@ -2117,7 +2386,7 @@
                         }
                     });
                 }
-                
+
                 let notice = document.querySelector('#fullboard-notice');
                 if (!notice) {
                     notice = document.createElement('div');
@@ -2147,7 +2416,7 @@
                 }
             }
         }
-        
+
         if (jenisPerjalananSelect) {
             jenisPerjalananSelect.addEventListener('change', () => {
                 checkFullboard();
@@ -2179,7 +2448,7 @@
             return parseInt(digits, 10).toLocaleString('id-ID');
         }
 
-        document.addEventListener('input', function(e) {
+        document.addEventListener('input', function (e) {
             if (e.target.matches('input.nominal-input-field')) {
                 let input = e.target;
                 if (input.type === 'number') {
@@ -2187,7 +2456,7 @@
                 }
                 let cursorPosition = input.selectionStart;
                 let originalLength = input.value.length;
-                
+
                 let formatted = formatRupiahInput(input.value);
                 if (input.value !== formatted) {
                     input.value = formatted;
@@ -2211,7 +2480,7 @@
         // Strip dots and concat ticket tags before form submit in Employee page
         const employeeForm = document.querySelector('form');
         if (employeeForm) {
-            employeeForm.addEventListener('submit', function(e) {
+            employeeForm.addEventListener('submit', function (e) {
                 let flightCount = 0;
                 const rows = document.querySelectorAll('.formset-row');
                 rows.forEach(row => {
@@ -2282,17 +2551,17 @@
         const kelasSelect = document.getElementById('ticket-kelas-select');
 
         if (asalSelect) {
-            asalSelect.addEventListener('change', function() {
+            asalSelect.addEventListener('change', function () {
                 populateDestinations(this.value);
             });
         }
         if (tujuanSelect) {
-            tujuanSelect.addEventListener('change', function() {
+            tujuanSelect.addEventListener('change', function () {
                 populateClasses(asalSelect.value, this.value);
             });
         }
         if (kelasSelect) {
-            kelasSelect.addEventListener('change', function() {
+            kelasSelect.addEventListener('change', function () {
                 updateSBMPrice();
             });
         }
@@ -2300,7 +2569,7 @@
         // Save ticket route selection
         const btnSaveTicket = document.getElementById('btn-save-ticket');
         if (btnSaveTicket) {
-            btnSaveTicket.addEventListener('click', function() {
+            btnSaveTicket.addEventListener('click', function () {
                 if (!activeTicketRow) return;
 
                 const originId = asalSelect.value;
@@ -2351,7 +2620,7 @@
         // Save hotel selection
         const btnSaveHotel = document.getElementById('btn-save-hotel');
         if (btnSaveHotel) {
-            btnSaveHotel.addEventListener('click', function() {
+            btnSaveHotel.addEventListener('click', function () {
                 if (!activeHotelRow) return;
 
                 const checkIn = document.getElementById('hotel-check-in').value;
@@ -2371,10 +2640,10 @@
 
                 const checkInDate = new Date(checkIn);
                 const checkOutDate = new Date(checkOut);
-                
+
                 const tanggalBerangkat = document.querySelector('#id_tanggal_berangkat')?.value;
                 const tanggalKembali = document.querySelector('#id_tanggal_kembali')?.value;
-                
+
                 if (tanggalBerangkat && checkIn < tanggalBerangkat) {
                     alert(`Tanggal check-in tidak boleh kurang dari tanggal berangkat (${formatTglIndo(tanggalBerangkat)}).`);
                     return;
@@ -2383,7 +2652,7 @@
                     alert(`Tanggal check-out tidak boleh melebihi tanggal kembali (${formatTglIndo(tanggalKembali)}).`);
                     return;
                 }
-                
+
                 const timeDiff = checkOutDate - checkInDate;
                 const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
@@ -2406,7 +2675,7 @@
                 const rows = document.querySelectorAll('.formset-row');
                 rows.forEach(r => {
                     if (r === activeHotelRow) return;
-                    
+
                     const select = r.querySelector('select[name$="-jenis_berkas"]');
                     if (select && isPenginapanBerkas(select)) {
                         const tagHidden = r.querySelector('.hotel-tag-hidden');
@@ -2456,7 +2725,7 @@
                 const pegawaiId = "{{ perjadin.pegawai.id }}";
                 const tahunSbm = "{{ surat_tugas.tahun_sbm }}";
                 const row = activeHotelRow;
-                
+
                 if (pegawaiId && provId) {
                     fetch(`/perjalanan/api/get-plafon-penginapan/?pegawai_id=${pegawaiId}&provinsi_id=${provId}&tahun_sbm=${tahunSbm}`)
                         .then(res => res.json())
@@ -2507,9 +2776,9 @@
         if (rawUrl) {
             const iframe = document.getElementById('st-pdf-iframe');
             const errorDiv = document.getElementById('preview-error');
-            
+
             let embedUrl = rawUrl;
-            
+
             // Convert Google Drive view link to preview link
             if (rawUrl.includes('drive.google.com')) {
                 if (rawUrl.includes('/view')) {
@@ -2520,9 +2789,9 @@
             }
 
             iframe.src = embedUrl;
-            
+
             // Basic error handling (if iframe fails to load or blocked by CSP/X-Frame)
-            iframe.onerror = function() {
+            iframe.onerror = function () {
                 iframe.style.display = 'none';
                 errorDiv.style.display = 'block';
             };
@@ -2537,7 +2806,7 @@
         if (iframe) iframe.src = '';
     }
 
-    window.onclick = function(event) {
+    window.onclick = function (event) {
         const modal = document.getElementById('stModal');
         if (event.target == modal) {
             closeSTModal();
@@ -2545,9 +2814,9 @@
     }
 
     {% if perjadin.status != 'DRAFT' %}
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Buka semua accordion rincian biaya jika bukan draft
-        ['harian', 'representasi', 'penginapan', 'transportasi'].forEach(function(cat) {
+        ['harian', 'representasi', 'penginapan', 'transportasi'].forEach(function (cat) {
             const detailEl = document.getElementById('detail-' + cat);
             if (detailEl && detailEl.style.display === 'none') {
                 toggleCostDetail(cat);
