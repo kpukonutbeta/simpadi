@@ -406,14 +406,14 @@ class PerjalananDinasAdmin(admin.ModelAdmin):
     
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ('nomor_spd', 'surat_tugas', 'pegawai', 'get_detail_perjalanan_table')
+            return ('nomor_spd', 'surat_tugas', 'pegawai', 'get_detail_perjalanan_table', 'download_buttons')
         return ('nomor_spd',)
     
     def get_fieldsets(self, request, obj=None):
         if obj:
             return (
                 ('Informasi Utama SPD', {
-                    'fields': ('nomor_spd', 'surat_tugas', 'pegawai', 'status')
+                    'fields': ('nomor_spd', 'surat_tugas', 'pegawai', 'status', 'download_buttons')
                 }),
                 ('Rincian Perjalanan Dinas', {
                     'fields': ('get_detail_perjalanan_table',),
@@ -432,6 +432,30 @@ class PerjalananDinasAdmin(admin.ModelAdmin):
         BerkasPerjalananNonNominalInline,
         BiayaPerjalananInline
     ]
+
+    def download_buttons(self, obj):
+        if not obj or not obj.id:
+            return "-"
+        
+        from .models import PerjalananDinas
+        if obj.status != PerjalananDinas.Status.APPROVED:
+            return "-"
+        
+        url_rincian = reverse('perjalanan:download_rincian_excel', args=[obj.id])
+        url_kwitansi = reverse('perjalanan:download_kwitansi_excel', args=[obj.id])
+        
+        html = f"""
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <a href="{url_rincian}" class="button" style="background-color: #10b981; color: white; border-radius: 4px; padding: 6px 12px; text-decoration: none; font-weight: bold; font-size: 13px;">
+                Download Rincian Biaya
+            </a>
+            <a href="{url_kwitansi}" class="button" style="background-color: #3b82f6; color: white; border-radius: 4px; padding: 6px 12px; text-decoration: none; font-weight: bold; font-size: 13px;">
+                Download Kwitansi
+            </a>
+        </div>
+        """
+        return mark_safe(html)
+    download_buttons.short_description = "Unduh Dokumen"
 
     def get_detail_perjalanan_table(self, obj):
         if not obj or not obj.surat_tugas:

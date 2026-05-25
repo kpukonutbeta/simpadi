@@ -44,6 +44,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{% url 'admin_rekap_perjadin' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_rekap_perjadin' %}active{% endif %}">
+                    <i class="fas fa-file-excel"></i> Rekap Perjadin
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{% url 'perjalanan:kalender_perjadin' %}" target="_blank" class="nav-link {% if request.resolver_match.url_name == 'kalender_perjadin' %}active{% endif %}">
                     <i class="fas fa-calendar-alt"></i> Kalender Perjadin
                 </a>

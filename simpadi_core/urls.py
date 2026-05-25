@@ -19,7 +19,10 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from perjalanan import views as perjalanan_views
+
 urlpatterns = [
+    path('admin/perjalanan/rekap/', perjalanan_views.rekap_perjadin_view, name='admin_rekap_perjadin'),
     path('admin/', admin.site.urls),
     path('perjalanan/', include('perjalanan.urls')),
     path('', include('core.urls')),
@@ -40,6 +43,13 @@ def _ordered_get_app_list(self, request, app_label=None):
     app_list = _original_get_app_list(self, request, app_label)
     for app in app_list:
         if app.get('app_label') == 'perjalanan':
+            if not any(m.get('object_name') == 'RekapPerjadin' for m in app.get('models', [])):
+                app['models'].append({
+                    'name': 'Rekap Perjadin',
+                    'object_name': 'RekapPerjadin',
+                    'admin_url': '/admin/perjalanan/rekap/',
+                    'view_only': True,
+                })
             if not any(m.get('object_name') == 'KalenderPerjadin' for m in app.get('models', [])):
                 app['models'].append({
                     'name': 'Kalender Perjadin',

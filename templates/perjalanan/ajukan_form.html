@@ -138,19 +138,7 @@
                     </span>
                 </div>
             </div>
-            {% if perjadin.status == 'APPROVED' %}
-            <div
-                style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <a href="{% url 'perjalanan:download_rincian_excel' perjadin.id %}" class="btn btn-success"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #10b981; border: none; border-radius: 0.5rem; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-file-excel"></i> Download Rincian Biaya
-                </a>
-                <a href="{% url 'perjalanan:download_kwitansi_excel' perjadin.id %}" class="btn btn-success"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #059669; border: none; border-radius: 0.5rem; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-file-invoice-dollar"></i> Download Kwitansi
-                </a>
-            </div>
-            {% endif %}
+
         </div>
         {% endif %}
 

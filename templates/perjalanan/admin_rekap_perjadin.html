@@ -1,0 +1,108 @@
+{% extends "admin/base_site.html" %}
+{% load humanize %}
+
+{% block title %}Rekap Perjalanan Dinas | SIMPADI Admin{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Beranda</a>
+    &rsaquo; Rekap Perjalanan Dinas
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module" id="changelist">
+        <div id="toolbar" style="padding: 10px; background: #f8f8f8; border-bottom: 1px solid #eee; margin-bottom: 20px;">
+            <form method="GET" action="" id="changelist-search" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div>
+                    <label for="pegawai_id" style="display: block; font-weight: bold; margin-bottom: 5px;">Pegawai</label>
+                    <select name="pegawai_id" id="pegawai_id" style="padding: 5px; min-width: 200px;">
+                        <option value="">-- Semua Pegawai --</option>
+                        {% for p in pegawais %}
+                        <option value="{{ p.id }}" {% if p.id == selected_pegawai %}selected{% endif %}>{{ p.nama }} ({{ p.nip|default:"-" }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="start_date" style="display: block; font-weight: bold; margin-bottom: 5px;">Dari Tanggal</label>
+                    <input type="date" name="start_date" id="start_date" value="{{ start_date|default:'' }}" style="padding: 5px;">
+                </div>
+                <div>
+                    <label for="end_date" style="display: block; font-weight: bold; margin-bottom: 5px;">Sampai Tanggal</label>
+                    <input type="date" name="end_date" id="end_date" value="{{ end_date|default:'' }}" style="padding: 5px;">
+                </div>
+                <div>
+                    <input type="submit" value="Tampilkan Data" class="default" style="padding: 6px 12px; cursor: pointer;">
+                </div>
+            </form>
+        </div>
+
+        {% if data_rekap %}
+        <div style="padding: 10px 10px 20px 10px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 14px; font-weight: bold; color: #666;">Preview Rekap Perjalanan Dinas</h2>
+            <a href="?{% if selected_pegawai %}pegawai_id={{ selected_pegawai }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}export=excel" class="button" style="background-color: #10b981; color: white; padding: 6px 12px; font-weight: bold; border-radius: 4px;">
+                Export Excel
+            </a>
+        </div>
+
+        <div class="results" style="overflow-x: auto;">
+            <table id="result_list" style="width: 100%; white-space: nowrap;">
+                <thead>
+                    <tr>
+                        <th scope="col" class="sortable">No</th>
+                        <th scope="col" class="sortable">Nama OPD</th>
+                        <th scope="col" class="sortable">Jenis Perjadin</th>
+                        <th scope="col" class="sortable">Nama Lengkap</th>
+                        <th scope="col" class="sortable">NIP</th>
+                        <th scope="col" class="sortable">Nomor Surat Tugas</th>
+                        <th scope="col" class="sortable">Tgl Surat Tugas</th>
+                        <th scope="col" class="sortable">Keperluan</th>
+                        <th scope="col" class="sortable">Tujuan</th>
+                        <th scope="col" class="sortable">Tgl Berangkat</th>
+                        <th scope="col" class="sortable">Tgl Kembali</th>
+                        <th scope="col" class="sortable">Lama Hari</th>
+                        <th scope="col" class="sortable">Total Uang Harian</th>
+                        <th scope="col" class="sortable">Total Transport & Repres</th>
+                        <th scope="col" class="sortable">Total Penginapan</th>
+                        <th scope="col" class="sortable">Total Tiket</th>
+                        <th scope="col" class="sortable" style="background-color: #e0f2fe;">TOTAL BIAYA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data_rekap %}
+                    <tr class="{% cycle 'row1' 'row2' %}">
+                        <td class="field-no">{{ item.no }}</td>
+                        <td class="field-opd">{{ item.opd }}</td>
+                        <td class="field-jenis">{{ item.jenis_perjadin }}</td>
+                        <td class="field-nama"><strong>{{ item.nama_pegawai }}</strong></td>
+                        <td class="field-nip">{{ item.nip|default:"-" }}</td>
+                        <td class="field-no_st">{{ item.no_st }}</td>
+                        <td class="field-tgl_st">{{ item.tgl_st|date:"d/m/Y" }}</td>
+                        <td class="field-keperluan" style="white-space: normal; min-width: 250px;">{{ item.keperluan }}</td>
+                        <td class="field-tujuan">{{ item.tujuan }}</td>
+                        <td class="field-tgl_berangkat">{{ item.tgl_berangkat|date:"d/m/Y" }}</td>
+                        <td class="field-tgl_kembali">{{ item.tgl_kembali|date:"d/m/Y" }}</td>
+                        <td class="field-lama">{{ item.lama_hari }}</td>
+                        <td class="field-uang_harian" style="text-align: right;">{{ item.uang_harian_riil|intcomma }}</td>
+                        <td class="field-biaya_lainnya" style="text-align: right;">{{ item.total_biaya_lainnya|intcomma }}</td>
+                        <td class="field-penginapan" style="text-align: right;">{{ item.uang_penginapan_riil|intcomma }}</td>
+                        <td class="field-tiket" style="text-align: right;">{{ item.uang_tiket_riil|intcomma }}</td>
+                        <td class="field-total" style="text-align: right; font-weight: bold; background-color: #f0f9ff;">{{ item.total_biaya|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% elif request.GET.pegawai_id or request.GET.start_date or request.GET.end_date %}
+        <p class="errornote" style="margin: 20px;">
+            Tidak ada data perjalanan dinas yang sesuai dengan filter pencarian.
+        </p>
+        {% else %}
+        <p class="help" style="margin: 20px; padding: 20px; text-align: center; color: #666; background: #f9f9f9; border: 1px dashed #ccc;">
+            Silakan pilih filter di atas dan klik <strong>Tampilkan Data</strong> untuk melihat rekapitulasi perjalanan dinas.
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
