@@ -997,6 +997,10 @@ def rekap_perjadin_view(request):
     pegawais = Pegawai.objects.all().order_by('nama')
     qs = PerjalananDinas.objects.filter(status=PerjalananDinas.Status.APPROVED)
     
+    from core.models import GlobalConfig
+    opd_config = GlobalConfig.objects.filter(key='NAMA_OPD').first()
+    nama_opd = opd_config.value if opd_config else 'KPU PROVINSI SULAWESI TENGGARA'
+    
     if pegawai_id:
         qs = qs.filter(pegawai_id=pegawai_id)
     if start_date:
@@ -1023,7 +1027,7 @@ def rekap_perjadin_view(request):
         
         item = {
             'no': idx,
-            'opd': 'KPU PROVINSI SULAWESI TENGGARA',
+            'opd': nama_opd,
             'jenis_perjadin': st.get_jenis_perjalanan_display() if st else '',
             'no_bukti': '',
             'tgl_bukti': '',
