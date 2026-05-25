@@ -722,7 +722,7 @@ def download_spd_excel(request, perjadin_id):
         durasi = "-"
         
     # Ambil tempat tujuan
-    tempat_tujuan = surat_tugas.tujuan_provinsi.nama if surat_tugas.tujuan_provinsi else surat_tugas.tempat_tujuan
+    tempat_tujuan = surat_tugas.tempat_tujuan
 
     mapping = {
         '{{FULL_NO_SPD}}': perjadin.nomor_spd or "-",
@@ -811,8 +811,11 @@ def download_rincian_excel(request, perjadin_id):
 
     # Tambahan TAHUN_BULAN_SEKARANG
     from datetime import date
+    from terbilang import Terbilang
+
     today = date.today()
     tahun_bulan_sekarang = f"{months[today.month]} {today.year}"
+    t = Terbilang()
 
     mapping = {
         '{{NOMOR_SPD}}': perjadin.nomor_spd or "-",
@@ -827,6 +830,7 @@ def download_rincian_excel(request, perjadin_id):
         '{{TOTAL_DIBAYARKAN}}': formatted_total,
         '{{TAHUN_BULAN_SEKARANG}}': tahun_bulan_sekarang,
         '{{BULAN_TAHUN_SEKARANG}}': tahun_bulan_sekarang,
+        '{{TERBILANG_TOTAL_DIBAYARKAN}}': t.parse(str(int(total))).getresult() if total else "",
     }
 
     template_path = os.path.join(settings.BASE_DIR, 'static', 'template_documents', 'rincian_SPD.xlsx')
@@ -928,7 +932,10 @@ def download_kwitansi_excel(request, perjadin_id):
         
     formatted_total = '{:,.0f}'.format(total).replace(',', '.')
 
-    tempat_tujuan = surat_tugas.tujuan_provinsi.nama if surat_tugas.tujuan_provinsi else surat_tugas.tempat_tujuan
+    tempat_tujuan = surat_tugas.tempat_tujuan
+
+    from terbilang import Terbilang
+    t = Terbilang()
 
     mapping = {
         '{{NO_FULL_SPD}}': perjadin.nomor_spd or "-",
@@ -941,6 +948,7 @@ def download_kwitansi_excel(request, perjadin_id):
         '{{TEMPAT_BERANGKAT}}': surat_tugas.tempat_berangkat or "-",
         '{{TEMPAT_TUJUAN}}': tempat_tujuan or "-",
         '{{TOTAL_DIBAYARKAN}}': formatted_total,
+        '{{TERBILANG_TOTAL_DIBAYARKAN}}': t.parse(str(int(total))).getresult() if total else "",
     }
 
     template_path = os.path.join(settings.BASE_DIR, 'static', 'template_documents', 'kwitansi_SPD.xlsx')
