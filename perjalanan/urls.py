@@ -15,5 +15,6 @@ urlpatterns = [
     path('resolusi-konflik/', views.resolusi_konflik, name='resolusi_konflik'),
     path('spd/<int:perjadin_id>/download-excel/', views.download_spd_excel, name='download_spd_excel'),
     path('spd/<int:perjadin_id>/download-rincian/', views.download_rincian_excel, name='download_rincian_excel'),
+    path('spd/<int:perjadin_id>/download-visum/', views.download_visum_excel, name='download_visum_excel'),
     path('spd/<int:perjadin_id>/download-kwitansi/', views.download_kwitansi_excel, name='download_kwitansi_excel'),
 ]

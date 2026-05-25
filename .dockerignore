@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# .env  <-- Hapus atau komentari bagian ini agar ikut dibungkus
+.git
+.github
+.gitignore
+db/
+media/
