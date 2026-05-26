@@ -2,18 +2,19 @@ version: '3.8'
 
 services:
   web:
-    # Saat build lokal menggunakan instruksi build, tapi saat di-pull menggunakan image dari Docker Hub
     image: muhakbaryasinkpukonut/simpadi:latest
     build: .
     ports:
-      - "8002:8002"
+      - "8002:8000"
     volumes:
-      - simpadi_db_data:/app/db
+      # Menggunakan Named Volume terpisah untuk Database dan Media
+      - simpadi_db_volume:/app/db
+      - simpadi_media_volume:/app/media
     environment:
       - DEBUG=True
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8002"
+    # Menjalankan server tanpa melakukan otomatisasi migrasi agar tidak merusak DB asli
+    command: python manage.py runserver 0.0.0.0:8000
 
 volumes:
-  simpadi_db_data:
+  simpadi_db_volume:
+  simpadi_media_volume:

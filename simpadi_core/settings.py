@@ -38,6 +38,9 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.zrok.io',
     'https://*.ngrok.io',
     'https://*.ngrok-free.app',
+    'https://*.ngrok-free.dev',
+    'https://simpadi.arti-pos.com',
+    'https://*.arti-pos.com',
     'http://127.0.0.1:8002',
     'http://localhost:8002',
 ]
