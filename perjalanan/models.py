@@ -12,31 +12,34 @@ import re
 from django.db.models import Q
 
 def get_eligible_sbm_filter(pegawai):
-    q_conditions = Q()
+    valid_golongan = []
+    valid_jabatan = []
     
     # 1. Direct Golongan match and its Eselon equivalent
     if pegawai.golongan:
-        q_conditions |= Q(golongan=pegawai.golongan)
+        valid_golongan.append(pegawai.golongan)
         if pegawai.golongan == 'IV':
-            q_conditions |= Q(posisi_jabatan='ES_III')
+            valid_jabatan.append('ES_III')
         elif pegawai.golongan == 'III':
-            q_conditions |= Q(posisi_jabatan='ES_IV')
+            valid_jabatan.append('ES_IV')
             
     # 2. Direct Eselon match and its Golongan equivalent
     if pegawai.posisi_jabatan and pegawai.posisi_jabatan != 'NON_ESELON':
-        q_conditions |= Q(posisi_jabatan=pegawai.posisi_jabatan)
+        valid_jabatan.append(pegawai.posisi_jabatan)
         if pegawai.posisi_jabatan == 'ES_III':
-            q_conditions |= Q(golongan='IV')
+            valid_golongan.append('IV')
         elif pegawai.posisi_jabatan == 'ES_IV':
-            q_conditions |= Q(golongan='III')
-            
-    # 3. Fallback: match generic SBM records where both are null or empty
-    q_conditions |= Q(golongan__isnull=True, posisi_jabatan__isnull=True)
-    q_conditions |= Q(golongan='', posisi_jabatan__isnull=True)
-    q_conditions |= Q(golongan__isnull=True, posisi_jabatan='')
-    q_conditions |= Q(golongan='', posisi_jabatan='')
+            valid_golongan.append('III')
+    elif pegawai.posisi_jabatan == 'NON_ESELON':
+        valid_jabatan.append('NON_ESELON')
+        
+    q_filter = (
+        Q(golongan__isnull=True) | Q(golongan='') | Q(golongan__in=valid_golongan)
+    ) & (
+        Q(posisi_jabatan__isnull=True) | Q(posisi_jabatan='') | Q(posisi_jabatan__in=valid_jabatan)
+    )
     
-    return q_conditions
+    return q_filter
 
 def get_eligible_tiket_filter(pegawai):
     """Filter for StandarBiayaTiket — only uses posisi_jabatan (no golongan) and filters by eligible ticket class."""
