@@ -72,16 +72,10 @@
                     </td>
                     <td style="vertical-align: middle;">
                         {% if item.status == 'DRAFT' or item.status == 'REJECTED' %}
-                        <a href="{% url 'perjalanan:ajukan_perjadin' item.surat_tugas.id %}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--glass-bg); border: 1px solid var(--border); color: var(--text-main); font-weight: 600;">
+                        <a href="{% url 'perjalanan:ajukan_perjadin' item.surat_tugas.id %}" class="btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--glass-bg); border: 1px solid var(--border); color: var(--text-main); font-weight: 600; white-space: nowrap; border-radius: 4px; text-decoration: none;">
                             <i class="fas fa-edit"></i> Edit
                         </a>
                         {% endif %}
-                        <a href="{% url 'perjalanan:download_spd_excel' item.id %}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #10b981; color: white; margin-left: 0.25rem; font-weight: 600; text-decoration: none; border-radius: 4px;">
-                            <i class="fas fa-file-excel"></i> SPD
-                        </a>
-                        <a href="{% url 'perjalanan:download_visum_excel' item.id %}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #3b82f6; color: white; margin-left: 0.25rem; font-weight: 600; text-decoration: none; border-radius: 4px;">
-                            <i class="fas fa-file-excel"></i> Visum
-                        </a>
                     </td>
                 </tr>
                 <!-- Accordion Timeline Collapse Row -->
